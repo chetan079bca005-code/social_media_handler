@@ -1,0 +1,7 @@
+for text "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"
+for audio "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"
+for image "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"
+
+mongodb+srv://socialMedia:socialMedia1234@cluster0.xnj88gx.mongodb.net/?appName=Cluster0
+
+mongodb+srv://socialmedia:socialmedia@cluster0.1npe3rk.mongodb.net/?appName=Cluster0

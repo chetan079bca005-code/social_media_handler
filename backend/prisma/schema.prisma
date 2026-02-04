@@ -1,0 +1,481 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+// ==================== USER & AUTH ====================
+
+model User {
+  id                String    @id @default(uuid()) @map("_id")
+  email             String    @unique
+  passwordHash      String
+  name              String
+  avatarUrl         String?
+  subscriptionTier  SubscriptionTier @default(FREE)
+  isEmailVerified   Boolean   @default(false)
+  emailVerifyToken  String?
+  passwordResetToken String?
+  passwordResetExpires DateTime?
+  lastLoginAt       DateTime?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  // Preferences stored as JSON
+  preferences       Json      @default("{}")
+  
+  // Relations
+  ownedWorkspaces   Workspace[] @relation("WorkspaceOwner")
+  workspaceMembers  WorkspaceMember[]
+  posts             Post[]
+  mediaFiles        MediaFile[]
+  templates         Template[]
+  notifications     Notification[]
+  refreshTokens     RefreshToken[]
+  activityLogs      ActivityLog[]
+
+}
+
+model RefreshToken {
+  id          String    @id @default(uuid()) @map("_id")
+  token       String    @unique
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt   DateTime
+  createdAt   DateTime  @default(now())
+
+  @@index([userId])
+}
+
+// ==================== WORKSPACE & TEAM ====================
+
+model Workspace {
+  id                String    @id @default(uuid()) @map("_id")
+  name              String
+  slug              String    @unique
+  logoUrl           String?
+  ownerId           String
+  owner             User      @relation("WorkspaceOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  subscriptionStatus SubscriptionStatus @default(TRIAL)
+  trialEndsAt       DateTime?
+  settings          Json      @default("{}")
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  // Relations
+  members           WorkspaceMember[]
+  socialAccounts    SocialAccount[]
+  posts             Post[]
+  mediaFiles        MediaFile[]
+  templates         Template[]
+  invitations       WorkspaceInvitation[]
+  analyticsSnapshots AnalyticsSnapshot[]
+
+  @@index([ownerId])
+}
+
+model WorkspaceMember {
+  id          String    @id @default(uuid()) @map("_id")
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role        WorkspaceRole @default(VIEWER)
+  joinedAt    DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@unique([workspaceId, userId])
+  @@index([workspaceId])
+  @@index([userId])
+}
+
+model WorkspaceInvitation {
+  id          String    @id @default(uuid()) @map("_id")
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  email       String
+  role        WorkspaceRole @default(VIEWER)
+  token       String    @unique
+  expiresAt   DateTime
+  acceptedAt  DateTime?
+  createdAt   DateTime  @default(now())
+
+  @@index([workspaceId])
+  @@index([email])
+}
+
+// ==================== SOCIAL ACCOUNTS ====================
+
+model SocialAccount {
+  id              String    @id @default(uuid()) @map("_id")
+  workspaceId     String
+  workspace       Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  platform        SocialPlatform
+  platformAccountId String
+  accountName     String
+  accountUsername String?
+  profileImageUrl String?
+  accessToken     String    // Encrypted
+  refreshToken    String?   // Encrypted
+  tokenExpiresAt  DateTime?
+  scopes          String[]
+  isActive        Boolean   @default(true)
+  lastSyncedAt    DateTime?
+  metadata        Json      @default("{}")
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  // Relations
+  posts           PostPlatform[]
+  analytics       SocialAccountAnalytics[]
+
+  @@unique([workspaceId, platform, platformAccountId])
+  @@index([workspaceId])
+  @@index([platform])
+}
+
+model SocialAccountAnalytics {
+  id              String    @id @default(uuid()) @map("_id")
+  socialAccountId String
+  socialAccount   SocialAccount @relation(fields: [socialAccountId], references: [id], onDelete: Cascade)
+  date            DateTime
+  followers       Int       @default(0)
+  following       Int       @default(0)
+  posts           Int       @default(0)
+  engagement      Float     @default(0)
+  impressions     Int       @default(0)
+  reach           Int       @default(0)
+  profileViews    Int       @default(0)
+  metadata        Json      @default("{}")
+  createdAt       DateTime  @default(now())
+
+  @@unique([socialAccountId, date])
+  @@index([socialAccountId])
+  @@index([date])
+}
+
+// ==================== POSTS & CONTENT ====================
+
+model Post {
+  id              String    @id @default(uuid()) @map("_id")
+  workspaceId     String
+  workspace       Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  authorId        String
+  author          User      @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  content         String
+  contentHtml     String?
+  scheduledAt     DateTime?
+  publishedAt     DateTime?
+  status          PostStatus @default(DRAFT)
+  postType        PostType   @default(TEXT)
+  hashtags        String[]
+  mentions        String[]
+  linkUrl         String?
+  linkPreview     Json?
+  aiGenerated     Boolean   @default(false)
+  aiPrompt        String?
+  approvalStatus  ApprovalStatus?
+  approvedBy      String?
+  approvedAt      DateTime?
+  rejectionReason String?
+  metadata        Json      @default("{}")
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  // Relations
+  platforms       PostPlatform[]
+  mediaFiles      PostMedia[]
+
+  @@index([workspaceId])
+  @@index([authorId])
+  @@index([status])
+  @@index([scheduledAt])
+}
+
+model PostPlatform {
+  id              String    @id @default(uuid()) @map("_id")
+  postId          String
+  post            Post      @relation(fields: [postId], references: [id], onDelete: Cascade)
+  socialAccountId String
+  socialAccount   SocialAccount @relation(fields: [socialAccountId], references: [id], onDelete: Cascade)
+  platformPostId  String?   // ID of the post on the platform after publishing
+  platformUrl     String?   // URL to the post on the platform
+  status          PostStatus @default(DRAFT)
+  publishedAt     DateTime?
+  errorMessage    String?
+  metrics         Json      @default("{}")
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@unique([postId, socialAccountId])
+  @@index([postId])
+  @@index([socialAccountId])
+  @@index([status])
+}
+
+model PostMedia {
+  id          String    @id @default(uuid()) @map("_id")
+  postId      String
+  post        Post      @relation(fields: [postId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  mediaFileId String
+  mediaFile   MediaFile @relation(fields: [mediaFileId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  order       Int       @default(0)
+  createdAt   DateTime  @default(now())
+
+  @@unique([postId, mediaFileId])
+  @@index([postId])
+}
+
+// ==================== MEDIA LIBRARY ====================
+
+model MediaFile {
+  id            String    @id @default(uuid()) @map("_id")
+  workspaceId   String
+  workspace     Workspace @relation(fields: [workspaceId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  uploadedById  String
+  uploadedBy    User      @relation(fields: [uploadedById], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  folderId      String?
+  folder        MediaFolder? @relation(fields: [folderId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  filename      String
+  originalName  String
+  mimeType      String
+  size          Int
+  url           String
+  thumbnailUrl  String?
+  width         Int?
+  height        Int?
+  duration      Float?    // For video/audio
+  altText       String?
+  tags          String[]
+  metadata      Json      @default("{}")
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // Relations
+  posts         PostMedia[]
+
+  @@index([workspaceId])
+  @@index([uploadedById])
+  @@index([folderId])
+  @@index([mimeType])
+}
+
+model MediaFolder {
+  id            String    @id @default(uuid()) @map("_id")
+  workspaceId   String
+  name          String
+  parentId      String?
+  parent        MediaFolder? @relation("FolderHierarchy", fields: [parentId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  children      MediaFolder[] @relation("FolderHierarchy")
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // Relations
+  files         MediaFile[]
+
+  @@unique([workspaceId, name, parentId])
+  @@index([workspaceId])
+  @@index([parentId])
+}
+
+// ==================== TEMPLATES ====================
+
+model Template {
+  id            String    @id @default(uuid()) @map("_id")
+  workspaceId   String
+  workspace     Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  createdById   String
+  createdBy     User      @relation(fields: [createdById], references: [id], onDelete: Cascade)
+  name          String
+  description   String?
+  content       String
+  category      String?
+  platforms     SocialPlatform[]
+  tags          String[]
+  isPublic      Boolean   @default(false)
+  usageCount    Int       @default(0)
+  metadata      Json      @default("{}")
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@index([workspaceId])
+  @@index([createdById])
+  @@index([category])
+}
+
+// ==================== ANALYTICS ====================
+
+model AnalyticsSnapshot {
+  id            String    @id @default(uuid()) @map("_id")
+  workspaceId   String
+  workspace     Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  date          DateTime
+  platform      SocialPlatform?
+  totalFollowers Int      @default(0)
+  totalPosts    Int       @default(0)
+  totalEngagement Int     @default(0)
+  totalImpressions Int    @default(0)
+  totalReach    Int       @default(0)
+  topPosts      Json      @default("[]")
+  demographics  Json      @default("{}")
+  createdAt     DateTime  @default(now())
+
+  @@unique([workspaceId, date, platform])
+  @@index([workspaceId])
+  @@index([date])
+}
+
+// ==================== NOTIFICATIONS ====================
+
+model Notification {
+  id          String    @id @default(uuid()) @map("_id")
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type        NotificationType
+  title       String
+  message     String
+  data        Json      @default("{}")
+  isRead      Boolean   @default(false)
+  readAt      DateTime?
+  createdAt   DateTime  @default(now())
+
+  @@index([userId])
+  @@index([isRead])
+  @@index([createdAt])
+}
+
+// ==================== ACTIVITY LOG ====================
+
+model ActivityLog {
+  id          String    @id @default(uuid()) @map("_id")
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  action      String
+  entityType  String
+  entityId    String?
+  metadata    Json      @default("{}")
+  ipAddress   String?
+  userAgent   String?
+  createdAt   DateTime  @default(now())
+
+  @@index([userId])
+  @@index([entityType])
+  @@index([createdAt])
+}
+
+// ==================== SCHEDULED JOBS ====================
+
+model ScheduledJob {
+  id          String    @id @default(uuid()) @map("_id")
+  type        JobType
+  status      JobStatus @default(PENDING)
+  payload     Json
+  scheduledAt DateTime
+  startedAt   DateTime?
+  completedAt DateTime?
+  failedAt    DateTime?
+  errorMessage String?
+  retryCount  Int       @default(0)
+  maxRetries  Int       @default(3)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([type])
+  @@index([status])
+  @@index([scheduledAt])
+}
+
+// ==================== ENUMS ====================
+
+enum SubscriptionTier {
+  FREE
+  PRO
+  BUSINESS
+  AGENCY
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  INACTIVE
+  TRIAL
+  CANCELLED
+  PAST_DUE
+}
+
+enum WorkspaceRole {
+  OWNER
+  ADMIN
+  EDITOR
+  VIEWER
+}
+
+enum SocialPlatform {
+  FACEBOOK
+  INSTAGRAM
+  TWITTER
+  LINKEDIN
+  TIKTOK
+  YOUTUBE
+  PINTEREST
+  THREADS
+}
+
+enum PostStatus {
+  DRAFT
+  SCHEDULED
+  PUBLISHING
+  PUBLISHED
+  FAILED
+  DELETED
+}
+
+enum PostType {
+  TEXT
+  IMAGE
+  VIDEO
+  CAROUSEL
+  STORY
+  REEL
+  LINK
+}
+
+enum ApprovalStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum NotificationType {
+  POST_PUBLISHED
+  POST_FAILED
+  POST_SCHEDULED
+  APPROVAL_NEEDED
+  APPROVAL_RECEIVED
+  TEAM_INVITE
+  ACCOUNT_CONNECTED
+  ACCOUNT_DISCONNECTED
+  ANALYTICS_REPORT
+  SYSTEM
+}
+
+enum JobType {
+  PUBLISH_POST
+  SYNC_ANALYTICS
+  REFRESH_TOKEN
+  GENERATE_REPORT
+  CLEANUP
+}
+
+enum JobStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+  CANCELLED
+}
