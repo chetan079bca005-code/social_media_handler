@@ -3,6 +3,7 @@ import { asyncHandler } from '../middleware/error';
 import { sendSuccess, sendError } from '../utils/response';
 import { AuthRequest } from '../types';
 import * as aiService from '../services/ai.service';
+import prisma from '../config/database';
 
 export const generateContent = asyncHandler(async (req: AuthRequest, res: Response) => {
   const { prompt, platform, tone, maxLength, language, includeHashtags, includeEmojis } = req.body;
@@ -97,24 +98,85 @@ export const generateHashtags = asyncHandler(async (req: AuthRequest, res: Respo
 });
 
 export const generateImage = asyncHandler(async (req: AuthRequest, res: Response) => {
-  const { prompt, style, aspectRatio, count } = req.body;
+  const { prompt, image, aspectRatio, resolution } = req.body;
 
-  const result = await aiService.generateImage({
+  const result = await aiService.submitImageEdit({
     prompt,
-    style,
+    image,
     aspectRatio,
-    count,
+    resolution,
   });
 
   if (!result.success) {
-    return sendError(res, result.error || 'Image generation failed', 500);
+    return sendError(res, result.error || 'Image generation failed', 502);
   }
 
-  if (req.workspace?.id) {
-    await aiService.trackAIUsage(req.workspace.id, 'image', 1);
+  sendSuccess(res, { requestId: (result.data as { requestId: string }).requestId }, 'Image submitted', 202);
+});
+
+export const getImageResult = asyncHandler(async (req: AuthRequest, res: Response) => {
+  const requestIdParam = req.params.requestId;
+  const requestId = Array.isArray(requestIdParam) ? requestIdParam[0] : requestIdParam;
+
+  console.log('Fetching image result for requestId:', requestId);
+  const result = await aiService.getImageEditResult(requestId);
+
+  if (!result.success) {
+    console.error('Image result failed:', result.error);
+    return sendError(res, result.error || 'Image result failed', 502);
   }
 
-  sendSuccess(res, { images: result.data }, 'Image generated');
+  const data = result.data as { status?: string; images?: string[]; error?: string };
+  console.log('Image result data:', JSON.stringify(data, null, 2));
+
+  // Check for success status (already normalized to 'success' by service)
+  const isSuccessStatus = data.status === 'success';
+  const hasWorkspace = !!req.workspace?.id;
+  const hasUser = !!req.user?.id;
+  const hasImages = Array.isArray(data.images) && data.images.length > 0;
+
+  console.log('Status check:', { isSuccessStatus, hasWorkspace, hasUser, hasImages, status: data.status });
+
+  if (isSuccessStatus && hasWorkspace && hasUser) {
+    await aiService.trackAIUsage(req.workspace!.id, 'image', 1);
+    if (hasImages) {
+      console.log('Saving generated images to workspace:', req.workspace!.id);
+      await aiService.saveGeneratedImages({
+        workspaceId: req.workspace!.id,
+        userId: req.user!.id,
+        urls: data.images!,
+        prompt: 'AI image edit',
+        model: process.env.AI_IMAGE_MODEL || 'google/nano-banana-pro/edit',
+      });
+      console.log('Images saved successfully');
+    }
+  }
+
+  sendSuccess(res, data, 'Image result');
+});
+
+export const getImageHistory = asyncHandler(async (req: AuthRequest, res: Response) => {
+  if (!req.workspace?.id) {
+    return sendError(res, 'Workspace not found', 404);
+  }
+
+  const images = await prisma.mediaFile.findMany({
+    where: {
+      workspaceId: req.workspace.id,
+      tags: { has: 'ai-generated' },
+    },
+    orderBy: { createdAt: 'desc' },
+    take: 50,
+  });
+
+  const history = images.map((img) => ({
+    id: img.id,
+    url: img.url,
+    createdAt: img.createdAt,
+    metadata: img.metadata,
+  }));
+
+  sendSuccess(res, { images: history }, 'Image history');
 });
 
 export const generateCalendar = asyncHandler(async (req: AuthRequest, res: Response) => {

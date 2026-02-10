@@ -36,12 +36,14 @@ export const config = {
   
   // AI Services
   ai: {
+    apiBaseUrl: process.env.AI_API_BASE_URL || process.env.OPENROUTER_BASE_URL || 'https://api.apifree.ai/v1',
+    apiKey: process.env.AI_API_KEY || '',
     openRouterApiKey: process.env.OPENROUTER_API_KEY || '',
-    textApiKey: process.env.OPENROUTER_TEXT_API_KEY || '',
-    audioApiKey: process.env.OPENROUTER_AUDIO_API_KEY || '',
-    imageApiKey: process.env.OPENROUTER_IMAGE_API_KEY || '',
+    textApiKey: process.env.AI_TEXT_API_KEY || process.env.OPENROUTER_TEXT_API_KEY || '',
+    audioApiKey: process.env.AI_AUDIO_API_KEY || process.env.OPENROUTER_AUDIO_API_KEY || '',
+    imageApiKey: process.env.AI_IMAGE_API_KEY || process.env.OPENROUTER_IMAGE_API_KEY || '',
     textModel: process.env.AI_TEXT_MODEL || 'anthropic/claude-3.5-sonnet',
-    imageModel: process.env.AI_IMAGE_MODEL || 'stability/sdxl-turbo',
+    imageModel: process.env.AI_IMAGE_MODEL || 'google/nano-banana-pro/edit',
     audioModel: process.env.AI_AUDIO_MODEL || 'openai/whisper-1',
   },
   

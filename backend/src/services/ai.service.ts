@@ -15,9 +15,9 @@ export interface TextGenerationRequest {
 
 export interface ImageGenerationRequest {
   prompt: string;
-  style?: string;
+  image: string;
   aspectRatio?: string;
-  count?: number;
+  resolution?: '1K' | '2K' | '4K';
 }
 
 export interface ContentImprovementRequest {
@@ -55,17 +55,20 @@ async function callOpenRouter(
     responseFormat?: { type: string };
   } = {}
 ): Promise<AIGenerationResult> {
+  const apiKey = config.ai.textApiKey || config.ai.apiKey || config.ai.openRouterApiKey;
+  const baseUrl = config.ai.apiBaseUrl || OPENROUTER_BASE_URL;
+
   // Check if API key is configured
-  if (!config.ai.openRouterApiKey) {
+  if (!apiKey) {
     return {
       success: false,
-      error: 'AI service not configured. Please set OPENROUTER_API_KEY in your environment variables.',
+      error: 'AI service not configured. Please set AI_API_KEY (or OPENROUTER_API_KEY) in your environment variables.',
     };
   }
 
   try {
     const response = await axios.post(
-      `${OPENROUTER_BASE_URL}/chat/completions`,
+      `${baseUrl}/chat/completions`,
       {
         model,
         messages,
@@ -75,7 +78,7 @@ async function callOpenRouter(
       },
       {
         headers: {
-          Authorization: `Bearer ${config.ai.openRouterApiKey}`,
+          Authorization: `Bearer ${apiKey}`,
           'HTTP-Referer': config.frontendUrl,
           'X-Title': 'Social Media Handler',
           'Content-Type': 'application/json',
@@ -83,9 +86,16 @@ async function callOpenRouter(
       }
     );
 
+    if (response.data?.error) {
+      return {
+        success: false,
+        error: response.data.error?.message || 'AI service error. Please check your API key configuration.',
+      };
+    }
+
     return {
       success: true,
-      data: response.data.choices[0]?.message?.content,
+      data: response.data.choices?.[0]?.message?.content,
       usage: {
         promptTokens: response.data.usage?.prompt_tokens || 0,
         completionTokens: response.data.usage?.completion_tokens || 0,
@@ -177,7 +187,6 @@ Only output the JSON array, nothing else.`;
     {
       maxTokens: 1500,
       temperature: 0.9,
-      responseFormat: { type: 'json_object' },
     }
   );
 
@@ -252,7 +261,6 @@ Only output the JSON array, nothing else.`;
     {
       maxTokens: 300,
       temperature: 0.7,
-      responseFormat: { type: 'json_object' },
     }
   );
 
@@ -268,53 +276,195 @@ Only output the JSON array, nothing else.`;
 }
 
 // Generate image from prompt
-export async function generateImage(
+function getImageApiConfig() {
+  const apiKey = config.ai.imageApiKey || config.ai.apiKey || config.ai.openRouterApiKey;
+  const baseUrl = config.ai.apiBaseUrl || 'https://api.apifree.ai/v1';
+  return { apiKey, baseUrl };
+}
+
+export async function submitImageEdit(
   request: ImageGenerationRequest
 ): Promise<AIGenerationResult> {
+  const { apiKey, baseUrl } = getImageApiConfig();
+
+  if (!apiKey) {
+    return {
+      success: false,
+      error: 'AI image service not configured. Please set AI_IMAGE_API_KEY (or AI_API_KEY).',
+    };
+  }
+
   try {
-    const response = await axios.post(
-      `${OPENROUTER_BASE_URL}/images/generations`,
+    const submitResponse = await axios.post(
+      `${baseUrl}/image/submit`,
       {
+        aspect_ratio: request.aspectRatio || '1:1',
+        image: request.image,
         model: config.ai.imageModel,
         prompt: request.prompt,
-        n: request.count || 1,
-        size: getImageSize(request.aspectRatio),
-        style: request.style || 'vivid',
+        resolution: request.resolution || '1K',
       },
       {
         headers: {
-          Authorization: `Bearer ${config.ai.openRouterApiKey}`,
-          'HTTP-Referer': config.frontendUrl,
+          Authorization: `Bearer ${apiKey}`,
           'Content-Type': 'application/json',
         },
       }
     );
 
+    const submitData = submitResponse.data;
+    if (submitData?.code !== 200 || !submitData?.resp_data?.request_id) {
+      return {
+        success: false,
+        error: submitData?.code_msg
+          || submitData?.error
+          || 'Image submission failed (missing request_id).',
+      };
+    }
+
     return {
       success: true,
-      data: response.data.data.map((img: { url: string }) => img.url),
+      data: {
+        requestId: submitData.resp_data.request_id,
+      },
     };
   } catch (error) {
     if (axios.isAxiosError(error)) {
-      console.error('Image generation error:', error.response?.data);
+      console.error('Image submission error:', error.response?.data);
       return {
         success: false,
-        error: error.response?.data?.error?.message || 'Image generation failed',
+        error: error.response?.data?.code_msg
+          || error.response?.data?.error
+          || error.response?.data?.error?.message
+          || 'Image submission failed',
       };
     }
     throw error;
   }
 }
 
-function getImageSize(aspectRatio?: string): string {
-  const sizes: Record<string, string> = {
-    '1:1': '1024x1024',
-    '16:9': '1792x1024',
-    '9:16': '1024x1792',
-    '4:3': '1024x768',
-    '3:4': '768x1024',
-  };
-  return sizes[aspectRatio || '1:1'] || '1024x1024';
+export async function getImageEditResult(
+  requestId: string
+): Promise<AIGenerationResult> {
+  const { apiKey, baseUrl } = getImageApiConfig();
+
+  if (!apiKey) {
+    return {
+      success: false,
+      error: 'AI image service not configured. Please set AI_IMAGE_API_KEY (or AI_API_KEY).',
+    };
+  }
+
+  try {
+    const resultResponse = await axios.get(
+      `${baseUrl}/image/${requestId}/result`,
+      {
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+        },
+      }
+    );
+
+    const resultData = resultResponse.data;
+    console.log('Image result API response:', JSON.stringify(resultData, null, 2));
+    
+    if (resultData?.code !== 200) {
+      return {
+        success: false,
+        error: resultData?.code_msg || resultData?.error || 'Image result check failed',
+      };
+    }
+
+    // Normalize status to lowercase for consistent comparison
+    const rawStatus = resultData?.resp_data?.status || '';
+    const normalizedStatus = typeof rawStatus === 'string' ? rawStatus.toLowerCase() : '';
+    
+    // Map various success statuses to 'success'
+    const successStatuses = ['success', 'completed', 'done', 'finished'];
+    const finalStatus = successStatuses.includes(normalizedStatus) ? 'success' : normalizedStatus;
+    
+    // Extract images from response
+    const images = resultData?.resp_data?.image_list || resultData?.resp_data?.images || [];
+    console.log('Extracted images:', images);
+
+    return {
+      success: true,
+      data: {
+        status: finalStatus,
+        images,
+        error: resultData?.resp_data?.error,
+      },
+    };
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      console.error('Image result error:', error.response?.data);
+      return {
+        success: false,
+        error: error.response?.data?.code_msg
+          || error.response?.data?.error
+          || error.response?.data?.error?.message
+          || 'Image result check failed',
+      };
+    }
+    throw error;
+  }
+}
+
+function getGeneratedImageFilename(imageUrl: string): string {
+  try {
+    const parsed = new URL(imageUrl);
+    const name = parsed.pathname.split('/').pop();
+    return name && name.length > 0 ? name : 'ai-image.png';
+  } catch {
+    return 'ai-image.png';
+  }
+}
+
+export async function saveGeneratedImages(params: {
+  workspaceId: string;
+  userId: string;
+  urls: string[];
+  prompt: string;
+  model: string;
+}): Promise<void> {
+  const { workspaceId, userId, urls, prompt, model } = params;
+
+  await Promise.all(
+    urls.map(async (url, index) => {
+      const existing = await prisma.mediaFile.findFirst({
+        where: {
+          workspaceId,
+          url,
+        },
+      });
+
+      if (existing) {
+        return;
+      }
+
+      const filename = getGeneratedImageFilename(url);
+
+      await prisma.mediaFile.create({
+        data: {
+          workspaceId,
+          uploadedById: userId,
+          filename,
+          originalName: filename,
+          mimeType: 'image/png',
+          size: 0,
+          url,
+          tags: ['ai-generated'],
+          metadata: {
+            aiGenerated: true,
+            prompt,
+            model,
+            source: 'apifree',
+            index,
+          },
+        },
+      });
+    })
+  );
 }
 
 // Generate content calendar

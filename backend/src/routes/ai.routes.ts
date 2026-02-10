@@ -40,9 +40,9 @@ const generateHashtagsSchema = z.object({
 
 const generateImageSchema = z.object({
   prompt: z.string().min(1).max(1000),
-  style: z.string().optional(),
-  aspectRatio: z.enum(['1:1', '16:9', '9:16', '4:3', '3:4']).optional(),
-  count: z.number().min(1).max(4).optional(),
+  image: z.string().url(),
+  aspectRatio: z.enum(['1:1', '2:3', '3:2', '3:4', '4:3', '4:5', '5:4', '9:16', '16:9', '21:9']).optional(),
+  resolution: z.enum(['1K', '2K', '4K']).optional(),
 });
 
 const generateCalendarSchema = z.object({
@@ -73,6 +73,8 @@ router.post('/variations', requireWorkspace(), validateBody(generateVariationsSc
 router.post('/improve', requireWorkspace(), validateBody(improveContentSchema), aiController.improveContent);
 router.post('/hashtags', requireWorkspace(), validateBody(generateHashtagsSchema), aiController.generateHashtags);
 router.post('/image', requireWorkspace(), validateBody(generateImageSchema), aiController.generateImage);
+router.get('/image/history', requireWorkspace(), aiController.getImageHistory);
+router.get('/image/:requestId', requireWorkspace(), aiController.getImageResult);
 router.post('/calendar', requireWorkspace(), validateBody(generateCalendarSchema), aiController.generateCalendar);
 router.post('/sentiment', requireWorkspace(), validateBody(analyzeSentimentSchema), aiController.analyzeSentiment);
 router.post('/replies', requireWorkspace(), validateBody(generateRepliesSchema), aiController.generateReplies);

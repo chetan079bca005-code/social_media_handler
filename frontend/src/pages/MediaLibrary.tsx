@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { motion } from 'framer-motion'
 import { useDropzone } from 'react-dropzone'
 import {
@@ -21,6 +21,7 @@ import {
   Play,
   Loader2,
   ImageIcon,
+  Sparkles,
 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card'
 import { Button } from '../components/ui/Button'
@@ -48,6 +49,8 @@ import {
   SelectValue,
 } from '../components/ui/Select'
 import { cn, formatFileSize, formatDate } from '../lib/utils'
+import { mediaApi } from '../services/api'
+import { useWorkspaceStore } from '../store'
 import toast from 'react-hot-toast'
 
 interface MediaFile {
@@ -73,96 +76,6 @@ interface Folder {
   itemCount: number
 }
 
-// Mock data
-const MOCK_MEDIA: MediaFile[] = [
-  {
-    id: '1',
-    name: 'product-hero.jpg',
-    url: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=800',
-    thumbnailUrl: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=300',
-    type: 'image',
-    mimeType: 'image/jpeg',
-    size: 2457600,
-    width: 1920,
-    height: 1080,
-    createdAt: '2024-01-15T10:30:00Z',
-    folder: 'Products',
-    tags: ['product', 'headphones', 'hero'],
-  },
-  {
-    id: '2',
-    name: 'team-photo.jpg',
-    url: 'https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=800',
-    thumbnailUrl: 'https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=300',
-    type: 'image',
-    mimeType: 'image/jpeg',
-    size: 1843200,
-    width: 1920,
-    height: 1280,
-    createdAt: '2024-01-14T15:45:00Z',
-    folder: 'Team',
-    tags: ['team', 'office', 'collaboration'],
-  },
-  {
-    id: '3',
-    name: 'promo-video.mp4',
-    url: 'https://example.com/video.mp4',
-    thumbnailUrl: 'https://images.unsplash.com/photo-1611162616475-46b635cb6868?w=300',
-    type: 'video',
-    mimeType: 'video/mp4',
-    size: 15728640,
-    width: 1920,
-    height: 1080,
-    duration: 45,
-    createdAt: '2024-01-13T09:00:00Z',
-    folder: 'Videos',
-    tags: ['promo', 'marketing', 'launch'],
-  },
-  {
-    id: '4',
-    name: 'summer-campaign.jpg',
-    url: 'https://images.unsplash.com/photo-1473496169904-658ba7c44d8a?w=800',
-    thumbnailUrl: 'https://images.unsplash.com/photo-1473496169904-658ba7c44d8a?w=300',
-    type: 'image',
-    mimeType: 'image/jpeg',
-    size: 3145728,
-    width: 2400,
-    height: 1600,
-    createdAt: '2024-01-12T14:20:00Z',
-    folder: 'Campaigns',
-    tags: ['summer', 'beach', 'campaign'],
-  },
-  {
-    id: '5',
-    name: 'brand-logo.png',
-    url: 'https://images.unsplash.com/photo-1599305445671-ac291c95aaa9?w=800',
-    thumbnailUrl: 'https://images.unsplash.com/photo-1599305445671-ac291c95aaa9?w=300',
-    type: 'image',
-    mimeType: 'image/png',
-    size: 524288,
-    width: 512,
-    height: 512,
-    createdAt: '2024-01-10T11:00:00Z',
-    folder: 'Branding',
-    tags: ['logo', 'brand', 'identity'],
-  },
-  {
-    id: '6',
-    name: 'behind-scenes.mp4',
-    url: 'https://example.com/bts.mp4',
-    thumbnailUrl: 'https://images.unsplash.com/photo-1574717024653-61fd2cf4d44d?w=300',
-    type: 'video',
-    mimeType: 'video/mp4',
-    size: 52428800,
-    width: 1920,
-    height: 1080,
-    duration: 120,
-    createdAt: '2024-01-08T16:30:00Z',
-    folder: 'Videos',
-    tags: ['bts', 'content', 'raw'],
-  },
-]
-
 const MOCK_FOLDERS: Folder[] = [
   { id: '1', name: 'Products', color: '#6366F1', itemCount: 24 },
   { id: '2', name: 'Team', color: '#8B5CF6', itemCount: 12 },
@@ -172,23 +85,86 @@ const MOCK_FOLDERS: Folder[] = [
 ]
 
 export function MediaLibrary() {
-  const [media, setMedia] = useState<MediaFile[]>(MOCK_MEDIA)
+  const { currentWorkspace } = useWorkspaceStore()
+  const [media, setMedia] = useState<MediaFile[]>([])
   const [folders] = useState<Folder[]>(MOCK_FOLDERS)
   const [selectedFolder, setSelectedFolder] = useState<string | null>(null)
   const [selectedMedia, setSelectedMedia] = useState<Set<string>>(new Set())
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
   const [searchQuery, setSearchQuery] = useState('')
-  const [typeFilter, setTypeFilter] = useState<'all' | 'image' | 'video' | 'document'>('all')
+  const [typeFilter, setTypeFilter] = useState<'all' | 'image' | 'video' | 'document' | 'ai-generated'>('all')
   const [previewMedia, setPreviewMedia] = useState<MediaFile | null>(null)
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false)
   const [isUploading, setIsUploading] = useState(false)
   const [uploadProgress, setUploadProgress] = useState(0)
+  const [isLoadingMedia, setIsLoadingMedia] = useState(false)
+
+  const mapMediaFile = (item: any): MediaFile => {
+    const mimeType = item.mimeType || 'application/octet-stream'
+    const type = mimeType.startsWith('image/')
+      ? 'image'
+      : mimeType.startsWith('video/')
+        ? 'video'
+        : 'document'
+
+    return {
+      id: item.id,
+      name: item.originalName || item.filename || 'Untitled',
+      url: item.url,
+      thumbnailUrl: item.thumbnailUrl || item.url,
+      type,
+      mimeType,
+      size: item.size || 0,
+      width: item.width,
+      height: item.height,
+      duration: item.duration,
+      createdAt: item.createdAt,
+      folder: item.folder?.name,
+      tags: item.tags || [],
+    }
+  }
+
+  const loadMedia = useCallback(async () => {
+    if (!currentWorkspace?.id) {
+      return
+    }
+
+    setIsLoadingMedia(true)
+    try {
+      const response = await mediaApi.getAll(currentWorkspace.id, {
+        type: typeFilter === 'all' ? undefined : typeFilter,
+        search: searchQuery || undefined,
+        folderId: selectedFolder || undefined,
+        page: 1,
+        limit: 200,
+      })
+
+      const items = Array.isArray(response.data) ? response.data.map(mapMediaFile) : []
+      setMedia(items)
+    } catch (error) {
+      toast.error('Failed to load media library')
+    } finally {
+      setIsLoadingMedia(false)
+    }
+  }, [currentWorkspace?.id, searchQuery, selectedFolder, typeFilter])
+
+  useEffect(() => {
+    loadMedia()
+  }, [loadMedia])
 
   const filteredMedia = media.filter((item) => {
     const matchesSearch =
       item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       item.tags.some((tag) => tag.toLowerCase().includes(searchQuery.toLowerCase()))
-    const matchesType = typeFilter === 'all' || item.type === typeFilter
+    
+    // Handle AI-generated filter specially
+    let matchesType: boolean
+    if (typeFilter === 'ai-generated') {
+      matchesType = item.tags.includes('ai-generated')
+    } else {
+      matchesType = typeFilter === 'all' || item.type === typeFilter
+    }
+    
     const matchesFolder = !selectedFolder || item.folder === selectedFolder
     return matchesSearch && matchesType && matchesFolder
   })
@@ -205,12 +181,13 @@ export function MediaLibrary() {
           setIsUploading(false)
           setIsUploadModalOpen(false)
           toast.success(`${acceptedFiles.length} file(s) uploaded successfully!`)
+          loadMedia()
           return 0
         }
         return prev + 10
       })
     }, 200)
-  }, [])
+  }, [loadMedia])
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
@@ -310,6 +287,13 @@ export function MediaLibrary() {
               <span className="text-sm font-medium">All Files</span>
               <span className="ml-auto text-xs text-slate-500">{media.length}</span>
             </button>
+            <Button variant="outline" size="sm" onClick={loadMedia} disabled={isLoadingMedia}>
+              {isLoadingMedia ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                'Refresh'
+              )}
+            </Button>
             {folders.map((folder) => (
               <button
                 key={folder.id}
@@ -352,6 +336,7 @@ export function MediaLibrary() {
                 <SelectItem value="image">Images</SelectItem>
                 <SelectItem value="video">Videos</SelectItem>
                 <SelectItem value="document">Documents</SelectItem>
+                <SelectItem value="ai-generated">AI Generated</SelectItem>
               </SelectContent>
             </Select>
             <div className="flex items-center border border-slate-200 dark:border-slate-700 rounded-lg">
@@ -451,7 +436,15 @@ export function MediaLibrary() {
                   </button>
 
                   {/* Type Badge */}
-                  <div className="absolute top-2 right-2">
+                  <div className="absolute top-2 right-2 flex gap-1">
+                    {item.tags.includes('ai-generated') && (
+                      <Badge
+                        variant="secondary"
+                        className="bg-purple-500/80 text-white border-0"
+                      >
+                        <Sparkles className="w-3 h-3" />
+                      </Badge>
+                    )}
                     <Badge
                       variant="secondary"
                       className="bg-black/50 text-white border-0"

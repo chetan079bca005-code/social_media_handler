@@ -14,9 +14,16 @@ interface TextGenerationOptions {
 
 interface ImageGenerationOptions {
   prompt: string
-  style?: 'realistic' | 'cartoon' | 'abstract' | 'minimalist' | '3d'
-  aspectRatio?: '1:1' | '16:9' | '9:16' | '4:5'
-  count?: number
+  imageUrl: string
+  aspectRatio?: '1:1' | '2:3' | '3:2' | '3:4' | '4:3' | '4:5' | '5:4' | '9:16' | '16:9' | '21:9'
+  resolution?: '1K' | '2K' | '4K'
+}
+
+export interface GeneratedImageHistoryItem {
+  id: string
+  url: string
+  createdAt: string
+  metadata?: Record<string, unknown>
 }
 
 interface AudioGenerationOptions {
@@ -115,7 +122,7 @@ Format your response as a JSON array of strings, each containing a complete post
 Example: ["Post 1 content here...", "Post 2 content here...", "Post 3 content here..."]`
 
   try {
-    const response = await request<{ data: { variations: string[] } }>(
+    const response = await request<{ success: boolean; data?: { variations?: string[] | string; usage?: unknown } }>(
       {
         method: 'POST',
         url: '/ai/variations',
@@ -128,12 +135,43 @@ Example: ["Post 1 content here...", "Post 2 content here...", "Post 3 content he
       }
     )
 
-    const variationsList = response.data?.variations
-    if (Array.isArray(variationsList) && variationsList.length > 0) {
-      return variationsList
+    if (response.success === false) {
+      throw new Error('AI service returned an error')
     }
 
-    return ['']
+    const variationsList = response.data?.variations ?? (response as unknown as { variations?: string[] | string })?.variations
+    if (Array.isArray(variationsList) && variationsList.length > 0) {
+      return variationsList
+        .map((item) => (typeof item === 'string' ? item.trim() : ''))
+        .filter((item) => item.length > 0)
+    }
+
+    if (typeof variationsList === 'string') {
+      const trimmed = variationsList.trim()
+      if (trimmed.length > 0) {
+        try {
+          const parsed = JSON.parse(trimmed)
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            return parsed
+          }
+        } catch {
+          // ignore parse errors
+        }
+
+        const lines = trimmed
+          .split(/\r?\n/)
+          .map((line) => line.replace(/^\s*[-*\d.)]+\s*/, '').trim())
+          .filter((line) => line.length > 0)
+
+        if (lines.length > 0) {
+          return lines
+        }
+
+        return [trimmed]
+      }
+    }
+
+    return []
   } catch (error) {
     console.error('Text generation error:', error)
     throw new Error('Failed to generate text content. Please try again.')
@@ -179,7 +217,7 @@ export async function generateHashtags(
   count: number = 10
 ): Promise<string[]> {
   try {
-    const response = await request<{ data: { hashtags: string[]; error?: string } }>(
+    const response = await request<{ data?: { hashtags?: string[] | string; error?: string } }>(
       {
         method: 'POST',
         url: '/ai/hashtags',
@@ -198,7 +236,37 @@ export async function generateHashtags(
       return []
     }
 
-    return (response.data?.hashtags || []).map((tag: string) => tag.replace(/^#/, ''))
+    const rawHashtags = response.data?.hashtags
+    if (Array.isArray(rawHashtags)) {
+      return rawHashtags
+        .map((tag) => String(tag).replace(/^#/, '').trim())
+        .filter((tag) => tag.length > 0)
+    }
+
+    if (typeof rawHashtags === 'string') {
+      const trimmed = rawHashtags.trim()
+      if (trimmed.length === 0) {
+        return []
+      }
+
+      try {
+        const parsed = JSON.parse(trimmed)
+        if (Array.isArray(parsed)) {
+          return parsed
+            .map((tag) => String(tag).replace(/^#/, '').trim())
+            .filter((tag) => tag.length > 0)
+        }
+      } catch {
+        // ignore parse errors
+      }
+
+      return trimmed
+        .split(/[,\n]/)
+        .map((tag) => tag.replace(/^#/, '').trim())
+        .filter((tag) => tag.length > 0)
+    }
+
+    return []
   } catch (error) {
     console.error('Hashtag generation error:', error)
     // Return empty array instead of throwing to prevent UI crashes
@@ -213,7 +281,7 @@ export async function generateContentIdeas(
   count: number = 5
 ): Promise<{ title: string; description: string; contentType: string }[]> {
   try {
-    const response = await request<{ data: { content: string } }>(
+    const response = await request<{ data?: { content?: string | Array<{ title: string; description: string; contentType: string }> } }>(
       {
         method: 'POST',
         url: '/ai/generate',
@@ -224,13 +292,31 @@ export async function generateContentIdeas(
       }
     )
 
-    const content = response.data?.content || '[]'
+    const content = response.data?.content
+    if (Array.isArray(content)) {
+      return content
+    }
+
+    const raw = typeof content === 'string' ? content : '[]'
     try {
-      const parsed = JSON.parse(content)
+      const parsed = JSON.parse(raw)
       if (Array.isArray(parsed)) {
         return parsed
       }
     } catch {
+      const start = raw.indexOf('[')
+      const end = raw.lastIndexOf(']')
+      if (start >= 0 && end > start) {
+        try {
+          const sliced = raw.slice(start, end + 1)
+          const parsed = JSON.parse(sliced)
+          if (Array.isArray(parsed)) {
+            return parsed
+          }
+        } catch {
+          return []
+        }
+      }
       return []
     }
 
@@ -243,39 +329,89 @@ export async function generateContentIdeas(
 
 // Image Generation using OpenRouter with compatible model
 export async function generateImage(options: ImageGenerationOptions): Promise<string[]> {
-  const { prompt, style = 'realistic', aspectRatio = '1:1', count = 1 } = options
+  const { prompt, imageUrl, aspectRatio = '1:1', resolution = '1K' } = options
 
-  const dimensionMap = {
-    '1:1': { width: 1024, height: 1024 },
-    '16:9': { width: 1792, height: 1024 },
-    '9:16': { width: 1024, height: 1792 },
-    '4:5': { width: 1024, height: 1280 },
-  }
-
-  // dimensions can be used for client-side validation or display
-  const _dimensions = dimensionMap[aspectRatio]
-  void _dimensions // suppress unused variable warning
-  
-  const enhancedPrompt = `${style} style: ${prompt}. High quality, professional, suitable for social media.`
+  const enhancedPrompt = prompt.trim()
 
   try {
-    const response = await request<{ data: { images: string[] } }>(
+    const submitResponse = await request<{ data?: { requestId?: string } }>(
       {
         method: 'POST',
         url: '/ai/image',
+        timeout: 120000,
         data: {
           prompt: enhancedPrompt,
-          style,
+          image: imageUrl,
           aspectRatio,
-          count,
+          resolution,
         },
+      }
+    )
+
+    const requestId = submitResponse.data?.requestId
+    console.log('Image generation submitted, requestId:', requestId)
+    if (!requestId) {
+      console.error('No requestId returned from image submission')
+      return []
+    }
+
+    const maxAttempts = 30
+    const delayMs = 2000
+
+    for (let attempt = 0; attempt < maxAttempts; attempt++) {
+      await new Promise((resolve) => setTimeout(resolve, delayMs))
+
+      const resultResponse = await request<{ data?: { status?: string; images?: string[]; error?: string } }>(
+        {
+          method: 'GET',
+          url: `/ai/image/${requestId}`,
+          timeout: 120000,
+        }
+      )
+
+      console.log(`Attempt ${attempt + 1}: Image result response:`, resultResponse)
+
+      // Normalize status for case-insensitive comparison
+      const status = (resultResponse.data?.status || '').toLowerCase()
+      const successStatuses = ['success', 'completed', 'done', 'finished']
+      const errorStatuses = ['error', 'failed', 'failure']
+      
+      if (successStatuses.includes(status)) {
+        const images = resultResponse.data?.images || []
+        console.log('Image generation successful, images:', images)
+        return images
+      }
+
+      if (errorStatuses.includes(status)) {
+        console.error('Image generation failed with status:', status, 'error:', resultResponse.data?.error)
+        return []
+      }
+      
+      // Still processing, continue polling
+      console.log(`Image generation status: ${status}, continuing to poll...`)
+    }
+
+    console.warn('Image generation timed out after max attempts')
+    return []
+  } catch (error) {
+    console.error('Image generation error:', error)
+    throw new Error('Failed to generate image. Please try again.')
+  }
+}
+
+export async function getImageHistory(): Promise<GeneratedImageHistoryItem[]> {
+  try {
+    const response = await request<{ data?: { images?: GeneratedImageHistoryItem[] } }>(
+      {
+        method: 'GET',
+        url: '/ai/image/history',
       }
     )
 
     return response.data?.images || []
   } catch (error) {
-    console.error('Image generation error:', error)
-    throw new Error('Failed to generate image. Please try again.')
+    console.error('Image history error:', error)
+    return []
   }
 }
 

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+﻿import { useState, useEffect, useCallback } from 'react'
 import { motion } from 'framer-motion'
 import {
   FileText,
@@ -6,7 +6,6 @@ import {
   Search,
   Grid3X3,
   List,
-  Star,
   Copy,
   Edit2,
   Trash2,
@@ -17,6 +16,9 @@ import {
   Linkedin,
   Youtube,
   Type,
+  Loader2,
+  RefreshCw,
+  TrendingUp,
 } from 'lucide-react'
 import { Card, CardContent } from '../components/ui/Card'
 import { Button } from '../components/ui/Button'
@@ -44,9 +46,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from '../components/ui/Select'
-import { Tabs, TabsList, TabsTrigger } from '../components/ui/Tabs'
 import { cn, PLATFORMS, getPlatformColor } from '../lib/utils'
 import toast from 'react-hot-toast'
+import { templatesApi } from '../services/api'
 
 interface Template {
   id: string
@@ -56,96 +58,16 @@ interface Template {
   category: string
   platforms: string[]
   tags: string[]
-  isFavorite: boolean
+  isPublic: boolean
   usageCount: number
   createdAt: string
   updatedAt: string
-  thumbnail?: string
+  createdBy?: { id: string; name: string; avatarUrl?: string }
 }
 
-const MOCK_TEMPLATES: Template[] = [
-  {
-    id: '1',
-    name: 'Product Launch Announcement',
-    description: 'Perfect for announcing new product releases',
-    content: '🚀 Exciting news! We\'re thrilled to introduce [Product Name] - [Brief description]!\n\n✨ Key features:\n• [Feature 1]\n• [Feature 2]\n• [Feature 3]\n\n🎁 Special launch offer: [Offer details]\n\nLink in bio to learn more! 👆\n\n#NewProduct #Launch #Innovation',
-    category: 'announcement',
-    platforms: ['instagram', 'facebook', 'twitter'],
-    tags: ['product', 'launch', 'announcement'],
-    isFavorite: true,
-    usageCount: 45,
-    createdAt: '2024-01-10T10:00:00Z',
-    updatedAt: '2024-01-15T14:30:00Z',
-  },
-  {
-    id: '2',
-    name: 'Weekly Tips Series',
-    description: 'Share valuable tips with your audience',
-    content: '💡 [Industry] Tip of the Week!\n\nDid you know? [Interesting fact or tip]\n\n📌 Quick takeaway: [Key point]\n\n👇 Share your thoughts in the comments!\n\n#Tips #[Industry] #WeeklyWisdom',
-    category: 'educational',
-    platforms: ['instagram', 'linkedin', 'twitter'],
-    tags: ['tips', 'educational', 'engagement'],
-    isFavorite: true,
-    usageCount: 67,
-    createdAt: '2024-01-08T09:00:00Z',
-    updatedAt: '2024-01-14T11:20:00Z',
-  },
-  {
-    id: '3',
-    name: 'Customer Testimonial',
-    description: 'Showcase positive customer feedback',
-    content: '⭐️ Customer Love ⭐️\n\n"[Customer quote about your product/service]"\n\n— [Customer Name], [Title/Company]\n\nThank you for the kind words! We\'re so grateful for customers like you. 💜\n\n#CustomerLove #Testimonial #ThankYou',
-    category: 'social-proof',
-    platforms: ['instagram', 'facebook', 'linkedin'],
-    tags: ['testimonial', 'social-proof', 'customer'],
-    isFavorite: false,
-    usageCount: 32,
-    createdAt: '2024-01-05T15:00:00Z',
-    updatedAt: '2024-01-12T10:45:00Z',
-  },
-  {
-    id: '4',
-    name: 'Behind the Scenes',
-    description: 'Give a peek behind your business',
-    content: '📸 Behind the scenes at [Company Name]!\n\nEver wonder what happens behind closed doors? Here\'s a sneak peek into [what\'s happening].\n\n🎬 Swipe to see more!\n\n#BTS #BehindTheScenes #[Company]',
-    category: 'engagement',
-    platforms: ['instagram', 'tiktok'],
-    tags: ['bts', 'engagement', 'authentic'],
-    isFavorite: false,
-    usageCount: 28,
-    createdAt: '2024-01-03T12:00:00Z',
-    updatedAt: '2024-01-10T16:30:00Z',
-  },
-  {
-    id: '5',
-    name: 'Hiring Announcement',
-    description: 'Attract top talent to your team',
-    content: '🎯 We\'re Hiring!\n\n[Company Name] is looking for a [Position] to join our amazing team!\n\n✅ What we offer:\n• [Benefit 1]\n• [Benefit 2]\n• [Benefit 3]\n\n📧 Apply now: [Link]\n\nKnow someone perfect for this role? Tag them! 👇\n\n#Hiring #JobOpening #JoinOurTeam',
-    category: 'recruitment',
-    platforms: ['linkedin', 'twitter', 'facebook'],
-    tags: ['hiring', 'jobs', 'recruitment'],
-    isFavorite: true,
-    usageCount: 15,
-    createdAt: '2024-01-01T08:00:00Z',
-    updatedAt: '2024-01-08T09:15:00Z',
-  },
-  {
-    id: '6',
-    name: 'Flash Sale',
-    description: 'Create urgency with limited-time offers',
-    content: '⚡️ FLASH SALE ⚡️\n\n[X]% OFF everything for the next [time period]!\n\n🔥 Don\'t miss out on:\n• [Product/Category 1]\n• [Product/Category 2]\n• [Product/Category 3]\n\n⏰ Ends [Date/Time]\n\nShop now: [Link]\n\n#FlashSale #LimitedTime #Sale',
-    category: 'promotional',
-    platforms: ['instagram', 'facebook', 'twitter'],
-    tags: ['sale', 'promotion', 'urgency'],
-    isFavorite: false,
-    usageCount: 52,
-    createdAt: '2023-12-28T14:00:00Z',
-    updatedAt: '2024-01-05T11:30:00Z',
-  },
-]
-
-const CATEGORIES = [
+const DEFAULT_CATEGORIES = [
   { value: 'all', label: 'All Categories' },
+  { value: 'general', label: 'General' },
   { value: 'announcement', label: 'Announcements' },
   { value: 'educational', label: 'Educational' },
   { value: 'social-proof', label: 'Social Proof' },
@@ -155,7 +77,7 @@ const CATEGORIES = [
 ]
 
 const getPlatformIcon = (platform: string) => {
-  switch (platform) {
+  switch (platform.toLowerCase()) {
     case 'instagram':
       return <Instagram className="w-3 h-3" />
     case 'twitter':
@@ -172,57 +94,123 @@ const getPlatformIcon = (platform: string) => {
 }
 
 export function Templates() {
-  const [templates, setTemplates] = useState<Template[]>(MOCK_TEMPLATES)
+  const [templates, setTemplates] = useState<Template[]>([])
+  const [loading, setLoading] = useState(true)
+  const [saving, setSaving] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const [categoryFilter, setCategoryFilter] = useState('all')
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
-  const [activeTab, setActiveTab] = useState('all')
   const [selectedTemplate, setSelectedTemplate] = useState<Template | null>(null)
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
   const [isPreviewModalOpen, setIsPreviewModalOpen] = useState(false)
+  const [isEditMode, setIsEditMode] = useState(false)
 
-  // Create template form state
   const [newTemplate, setNewTemplate] = useState({
     name: '',
     description: '',
     content: '',
-    category: 'announcement',
+    category: 'general',
     platforms: [] as string[],
     tags: '',
+    isPublic: false,
   })
 
-  const filteredTemplates = templates.filter((template) => {
-    const matchesSearch =
-      template.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      template.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      template.tags.some((tag) => tag.toLowerCase().includes(searchQuery.toLowerCase()))
-    const matchesCategory = categoryFilter === 'all' || template.category === categoryFilter
-    const matchesTab = activeTab === 'all' || (activeTab === 'favorites' && template.isFavorite)
-    return matchesSearch && matchesCategory && matchesTab
-  })
+  const fetchTemplates = useCallback(async () => {
+    try {
+      setLoading(true)
+      const params: any = {}
+      if (categoryFilter !== 'all') params.category = categoryFilter
+      if (searchQuery.trim()) params.search = searchQuery.trim()
+      const res = await templatesApi.getAll(params)
+      setTemplates(res?.data?.templates || [])
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to load templates')
+    } finally {
+      setLoading(false)
+    }
+  }, [categoryFilter, searchQuery])
 
-  const toggleFavorite = (id: string) => {
-    setTemplates((prev) =>
-      prev.map((t) => (t.id === id ? { ...t, isFavorite: !t.isFavorite } : t))
-    )
-    toast.success('Template updated')
+  useEffect(() => {
+    const timer = setTimeout(() => fetchTemplates(), searchQuery ? 300 : 0)
+    return () => clearTimeout(timer)
+  }, [fetchTemplates])
+
+  const handleCreateTemplate = async () => {
+    if (!newTemplate.name.trim() || !newTemplate.content.trim()) {
+      toast.error('Please fill in name and content')
+      return
+    }
+    try {
+      setSaving(true)
+      const data = {
+        name: newTemplate.name,
+        description: newTemplate.description,
+        content: newTemplate.content,
+        category: newTemplate.category,
+        platforms: newTemplate.platforms,
+        tags: newTemplate.tags.split(',').map((t) => t.trim()).filter(Boolean),
+        isPublic: newTemplate.isPublic,
+      }
+
+      if (isEditMode && selectedTemplate) {
+        await templatesApi.update(selectedTemplate.id, data)
+        toast.success('Template updated!')
+      } else {
+        await templatesApi.create(data)
+        toast.success('Template created!')
+      }
+
+      setIsCreateModalOpen(false)
+      resetForm()
+      fetchTemplates()
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to save template')
+    } finally {
+      setSaving(false)
+    }
   }
 
-  const deleteTemplate = (id: string) => {
-    setTemplates((prev) => prev.filter((t) => t.id !== id))
-    toast.success('Template deleted')
+  const handleDeleteTemplate = async (id: string) => {
+    try {
+      await templatesApi.delete(id)
+      toast.success('Template deleted')
+      fetchTemplates()
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to delete template')
+    }
   }
 
-  const copyTemplate = (content: string) => {
-    navigator.clipboard.writeText(content)
-    toast.success('Template copied to clipboard')
+  const handleUseTemplate = async (template: Template) => {
+    try {
+      await templatesApi.use(template.id)
+      navigator.clipboard.writeText(template.content)
+      toast.success('Template copied to clipboard!')
+      fetchTemplates()
+    } catch {
+      navigator.clipboard.writeText(template.content)
+      toast.success('Template copied to clipboard!')
+    }
   }
 
-  const useTemplate = (template: Template) => {
-    setTemplates((prev) =>
-      prev.map((t) => (t.id === template.id ? { ...t, usageCount: t.usageCount + 1 } : t))
-    )
-    copyTemplate(template.content)
+  const openEditModal = (template: Template) => {
+    setSelectedTemplate(template)
+    setNewTemplate({
+      name: template.name,
+      description: template.description || '',
+      content: template.content,
+      category: template.category || 'general',
+      platforms: template.platforms || [],
+      tags: (template.tags || []).join(', '),
+      isPublic: template.isPublic || false,
+    })
+    setIsEditMode(true)
+    setIsCreateModalOpen(true)
+  }
+
+  const resetForm = () => {
+    setNewTemplate({ name: '', description: '', content: '', category: 'general', platforms: [], tags: '', isPublic: false })
+    setIsEditMode(false)
+    setSelectedTemplate(null)
   }
 
   const togglePlatform = (platform: string) => {
@@ -232,39 +220,6 @@ export function Templates() {
         ? prev.platforms.filter((p) => p !== platform)
         : [...prev.platforms, platform],
     }))
-  }
-
-  const handleCreateTemplate = () => {
-    if (!newTemplate.name.trim() || !newTemplate.content.trim()) {
-      toast.error('Please fill in all required fields')
-      return
-    }
-
-    const template: Template = {
-      id: Date.now().toString(),
-      name: newTemplate.name,
-      description: newTemplate.description,
-      content: newTemplate.content,
-      category: newTemplate.category,
-      platforms: newTemplate.platforms,
-      tags: newTemplate.tags.split(',').map((t) => t.trim()).filter(Boolean),
-      isFavorite: false,
-      usageCount: 0,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    }
-
-    setTemplates((prev) => [template, ...prev])
-    setIsCreateModalOpen(false)
-    setNewTemplate({
-      name: '',
-      description: '',
-      content: '',
-      category: 'announcement',
-      platforms: [],
-      tags: '',
-    })
-    toast.success('Template created!')
   }
 
   return (
@@ -286,22 +241,62 @@ export function Templates() {
             Save and reuse your best-performing content
           </p>
         </div>
-        <Button onClick={() => setIsCreateModalOpen(true)}>
-          <Plus className="w-4 h-4 mr-2" />
-          Create Template
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" onClick={fetchTemplates} disabled={loading}>
+            <RefreshCw className={`w-4 h-4 mr-1 ${loading ? 'animate-spin' : ''}`} />
+          </Button>
+          <Button onClick={() => { resetForm(); setIsCreateModalOpen(true) }}>
+            <Plus className="w-4 h-4 mr-2" />
+            Create Template
+          </Button>
+        </div>
       </div>
 
-      {/* Tabs */}
-      <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList>
-          <TabsTrigger value="all">All Templates</TabsTrigger>
-          <TabsTrigger value="favorites">
-            <Star className="w-4 h-4 mr-1" />
-            Favorites
-          </TabsTrigger>
-        </TabsList>
-      </Tabs>
+      {/* Stats */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <Card><CardContent className="p-4 flex items-center gap-3">
+          <div className="w-10 h-10 rounded-lg bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center">
+            <FileText className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+          </div>
+          <div>
+            <p className="text-2xl font-bold text-slate-900 dark:text-white">{templates.length}</p>
+            <p className="text-xs text-slate-500">Total Templates</p>
+          </div>
+        </CardContent></Card>
+        <Card><CardContent className="p-4 flex items-center gap-3">
+          <div className="w-10 h-10 rounded-lg bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center">
+            <TrendingUp className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+          </div>
+          <div>
+            <p className="text-2xl font-bold text-slate-900 dark:text-white">
+              {templates.reduce((sum, t) => sum + (t.usageCount || 0), 0)}
+            </p>
+            <p className="text-xs text-slate-500">Total Uses</p>
+          </div>
+        </CardContent></Card>
+        <Card><CardContent className="p-4 flex items-center gap-3">
+          <div className="w-10 h-10 rounded-lg bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center">
+            <Grid3X3 className="w-5 h-5 text-amber-600 dark:text-amber-400" />
+          </div>
+          <div>
+            <p className="text-2xl font-bold text-slate-900 dark:text-white">
+              {new Set(templates.map(t => t.category).filter(Boolean)).size}
+            </p>
+            <p className="text-xs text-slate-500">Categories</p>
+          </div>
+        </CardContent></Card>
+        <Card><CardContent className="p-4 flex items-center gap-3">
+          <div className="w-10 h-10 rounded-lg bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center">
+            <Copy className="w-5 h-5 text-purple-600 dark:text-purple-400" />
+          </div>
+          <div>
+            <p className="text-2xl font-bold text-slate-900 dark:text-white">
+              {templates.filter(t => t.isPublic).length}
+            </p>
+            <p className="text-xs text-slate-500">Public</p>
+          </div>
+        </CardContent></Card>
+      </div>
 
       {/* Toolbar */}
       <div className="flex items-center gap-4">
@@ -319,7 +314,7 @@ export function Templates() {
             <SelectValue placeholder="Category" />
           </SelectTrigger>
           <SelectContent>
-            {CATEGORIES.map((cat) => (
+            {DEFAULT_CATEGORIES.map((cat) => (
               <SelectItem key={cat.value} value={cat.value}>
                 {cat.label}
               </SelectItem>
@@ -352,15 +347,16 @@ export function Templates() {
         </div>
       </div>
 
-      {/* Templates Grid/List */}
-      {viewMode === 'grid' ? (
+      {/* Loading */}
+      {loading ? (
+        <div className="flex items-center justify-center py-20">
+          <Loader2 className="w-6 h-6 animate-spin text-indigo-500 mr-2" />
+          <span className="text-slate-500">Loading templates...</span>
+        </div>
+      ) : viewMode === 'grid' ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredTemplates.map((template) => (
-            <motion.div
-              key={template.id}
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-            >
+          {templates.map((template) => (
+            <motion.div key={template.id} initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}>
               <Card className="h-full hover:shadow-lg transition-shadow cursor-pointer group">
                 <CardContent className="p-5">
                   <div className="flex items-start justify-between mb-3">
@@ -372,30 +368,14 @@ export function Templates() {
                         {template.description}
                       </p>
                     </div>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        toggleFavorite(template.id)
-                      }}
-                      className="p-1"
-                    >
-                      <Star
-                        className={cn(
-                          'w-5 h-5 transition-colors',
-                          template.isFavorite
-                            ? 'text-amber-500 fill-amber-500'
-                            : 'text-slate-300 hover:text-amber-400'
-                        )}
-                      />
-                    </button>
+                    {template.isPublic && (
+                      <Badge variant="secondary" size="sm" className="ml-2 shrink-0">Public</Badge>
+                    )}
                   </div>
 
                   <div
                     className="p-3 bg-slate-50 dark:bg-slate-800/50 rounded-lg mb-4 cursor-pointer"
-                    onClick={() => {
-                      setSelectedTemplate(template)
-                      setIsPreviewModalOpen(true)
-                    }}
+                    onClick={() => { setSelectedTemplate(template); setIsPreviewModalOpen(true) }}
                   >
                     <p className="text-sm text-slate-600 dark:text-slate-400 line-clamp-4 whitespace-pre-wrap">
                       {template.content}
@@ -403,7 +383,7 @@ export function Templates() {
                   </div>
 
                   <div className="flex items-center gap-2 mb-4">
-                    {template.platforms.map((platform) => (
+                    {(template.platforms || []).map((platform) => (
                       <div
                         key={platform}
                         className="w-6 h-6 rounded-full flex items-center justify-center"
@@ -416,14 +396,10 @@ export function Templates() {
 
                   <div className="flex items-center justify-between">
                     <Badge variant="secondary" className="capitalize">
-                      {template.category.replace('-', ' ')}
+                      {(template.category || 'general').replace('-', ' ')}
                     </Badge>
                     <div className="flex items-center gap-2">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => useTemplate(template)}
-                      >
+                      <Button variant="ghost" size="sm" onClick={() => handleUseTemplate(template)}>
                         <Copy className="w-4 h-4" />
                       </Button>
                       <DropdownMenu>
@@ -433,22 +409,16 @@ export function Templates() {
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => {
-                            setSelectedTemplate(template)
-                            setIsPreviewModalOpen(true)
-                          }}>
+                          <DropdownMenuItem onClick={() => { setSelectedTemplate(template); setIsPreviewModalOpen(true) }}>
                             <Type className="w-4 h-4 mr-2" />
                             Preview
                           </DropdownMenuItem>
-                          <DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => openEditModal(template)}>
                             <Edit2 className="w-4 h-4 mr-2" />
                             Edit
                           </DropdownMenuItem>
                           <DropdownMenuSeparator />
-                          <DropdownMenuItem
-                            className="text-red-600"
-                            onClick={() => deleteTemplate(template.id)}
-                          >
+                          <DropdownMenuItem className="text-red-600" onClick={() => handleDeleteTemplate(template.id)}>
                             <Trash2 className="w-4 h-4 mr-2" />
                             Delete
                           </DropdownMenuItem>
@@ -458,12 +428,8 @@ export function Templates() {
                   </div>
 
                   <div className="flex items-center justify-between mt-4 pt-4 border-t border-slate-100 dark:border-slate-800">
-                    <span className="text-xs text-slate-500">
-                      Used {template.usageCount} times
-                    </span>
-                    <span className="text-xs text-slate-500">
-                      {template.tags.length} tags
-                    </span>
+                    <span className="text-xs text-slate-500">Used {template.usageCount || 0} times</span>
+                    <span className="text-xs text-slate-500">{(template.tags || []).length} tags</span>
                   </div>
                 </CardContent>
               </Card>
@@ -484,67 +450,40 @@ export function Templates() {
                 </tr>
               </thead>
               <tbody>
-                {filteredTemplates.map((template) => (
-                  <tr
-                    key={template.id}
-                    className="border-b border-slate-100 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/50"
-                  >
+                {templates.map((template) => (
+                  <tr key={template.id} className="border-b border-slate-100 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/50">
                     <td className="p-4">
-                      <div className="flex items-center gap-3">
-                        <button onClick={() => toggleFavorite(template.id)}>
-                          <Star
-                            className={cn(
-                              'w-4 h-4',
-                              template.isFavorite
-                                ? 'text-amber-500 fill-amber-500'
-                                : 'text-slate-300'
-                            )}
-                          />
-                        </button>
-                        <div>
-                          <p className="font-medium text-slate-900 dark:text-white">
-                            {template.name}
-                          </p>
-                          <p className="text-xs text-slate-500">{template.description}</p>
-                        </div>
+                      <div>
+                        <p className="font-medium text-slate-900 dark:text-white">{template.name}</p>
+                        <p className="text-xs text-slate-500">{template.description}</p>
                       </div>
                     </td>
                     <td className="p-4">
                       <Badge variant="secondary" className="capitalize">
-                        {template.category.replace('-', ' ')}
+                        {(template.category || 'general').replace('-', ' ')}
                       </Badge>
                     </td>
                     <td className="p-4">
                       <div className="flex items-center gap-1">
-                        {template.platforms.map((platform) => (
-                          <div
-                            key={platform}
-                            className="w-6 h-6 rounded-full flex items-center justify-center"
-                            style={{
-                              backgroundColor: `${getPlatformColor(platform)}20`,
-                              color: getPlatformColor(platform),
-                            }}
-                          >
+                        {(template.platforms || []).map((platform) => (
+                          <div key={platform} className="w-6 h-6 rounded-full flex items-center justify-center"
+                            style={{ backgroundColor: `${getPlatformColor(platform)}20`, color: getPlatformColor(platform) }}>
                             {getPlatformIcon(platform)}
                           </div>
                         ))}
                       </div>
                     </td>
-                    <td className="p-4 text-sm text-slate-500">{template.usageCount} times</td>
+                    <td className="p-4 text-sm text-slate-500">{template.usageCount || 0} times</td>
                     <td className="p-4">
                       <div className="flex items-center gap-2">
-                        <Button variant="ghost" size="sm" onClick={() => useTemplate(template)}>
+                        <Button variant="ghost" size="sm" onClick={() => handleUseTemplate(template)}>
                           <Copy className="w-4 h-4" />
                         </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => {
-                            setSelectedTemplate(template)
-                            setIsPreviewModalOpen(true)
-                          }}
-                        >
-                          <Type className="w-4 h-4" />
+                        <Button variant="ghost" size="sm" onClick={() => openEditModal(template)}>
+                          <Edit2 className="w-4 h-4" />
+                        </Button>
+                        <Button variant="ghost" size="sm" className="text-red-500" onClick={() => handleDeleteTemplate(template.id)}>
+                          <Trash2 className="w-4 h-4" />
                         </Button>
                       </div>
                     </td>
@@ -556,17 +495,15 @@ export function Templates() {
         </Card>
       )}
 
-      {filteredTemplates.length === 0 && (
+      {!loading && templates.length === 0 && (
         <div className="text-center py-12">
           <FileText className="w-12 h-12 text-slate-300 mx-auto mb-4" />
           <h3 className="text-lg font-medium text-slate-900 dark:text-white">No templates found</h3>
           <p className="text-slate-500 mt-1">
-            {searchQuery
-              ? 'Try adjusting your search'
-              : 'Create your first template to get started'}
+            {searchQuery ? 'Try adjusting your search' : 'Create your first template to get started'}
           </p>
           {!searchQuery && (
-            <Button className="mt-4" onClick={() => setIsCreateModalOpen(true)}>
+            <Button className="mt-4" onClick={() => { resetForm(); setIsCreateModalOpen(true) }}>
               <Plus className="w-4 h-4 mr-2" />
               Create Template
             </Button>
@@ -574,108 +511,67 @@ export function Templates() {
         </div>
       )}
 
-      {/* Create Template Modal */}
-      <Dialog open={isCreateModalOpen} onOpenChange={setIsCreateModalOpen}>
+      {/* Create / Edit Template Modal */}
+      <Dialog open={isCreateModalOpen} onOpenChange={(open) => { setIsCreateModalOpen(open); if (!open) resetForm() }}>
         <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Create New Template</DialogTitle>
+            <DialogTitle>{isEditMode ? 'Edit Template' : 'Create New Template'}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             <div>
-              <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
-                Template Name *
-              </label>
-              <Input
-                value={newTemplate.name}
-                onChange={(e) => setNewTemplate((prev) => ({ ...prev, name: e.target.value }))}
-                placeholder="e.g., Product Launch Announcement"
-                className="mt-1.5"
-              />
+              <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Template Name *</label>
+              <Input value={newTemplate.name} onChange={(e) => setNewTemplate((prev) => ({ ...prev, name: e.target.value }))}
+                placeholder="e.g., Product Launch Announcement" className="mt-1.5" />
             </div>
             <div>
-              <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
-                Description
-              </label>
-              <Input
-                value={newTemplate.description}
-                onChange={(e) =>
-                  setNewTemplate((prev) => ({ ...prev, description: e.target.value }))
-                }
-                placeholder="A brief description of when to use this template"
-                className="mt-1.5"
-              />
+              <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Description</label>
+              <Input value={newTemplate.description} onChange={(e) => setNewTemplate((prev) => ({ ...prev, description: e.target.value }))}
+                placeholder="A brief description of when to use this template" className="mt-1.5" />
             </div>
             <div>
-              <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
-                Template Content *
-              </label>
-              <Textarea
-                value={newTemplate.content}
-                onChange={(e) => setNewTemplate((prev) => ({ ...prev, content: e.target.value }))}
+              <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Template Content *</label>
+              <Textarea value={newTemplate.content} onChange={(e) => setNewTemplate((prev) => ({ ...prev, content: e.target.value }))}
                 placeholder="Enter your template content. Use placeholders like [Product Name] for variable content."
-                className="mt-1.5 min-h-50"
-              />
+                className="mt-1.5 min-h-50" />
             </div>
             <div>
-              <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
-                Category
-              </label>
-              <Select
-                value={newTemplate.category}
-                onValueChange={(v) => setNewTemplate((prev) => ({ ...prev, category: v }))}
-              >
-                <SelectTrigger className="mt-1.5">
-                  <SelectValue />
-                </SelectTrigger>
+              <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Category</label>
+              <Select value={newTemplate.category} onValueChange={(v) => setNewTemplate((prev) => ({ ...prev, category: v }))}>
+                <SelectTrigger className="mt-1.5"><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  {CATEGORIES.filter((c) => c.value !== 'all').map((cat) => (
-                    <SelectItem key={cat.value} value={cat.value}>
-                      {cat.label}
-                    </SelectItem>
+                  {DEFAULT_CATEGORIES.filter((c) => c.value !== 'all').map((cat) => (
+                    <SelectItem key={cat.value} value={cat.value}>{cat.label}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
             <div>
-              <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
-                Platforms
-              </label>
+              <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Platforms</label>
               <div className="flex flex-wrap gap-2 mt-1.5">
                 {PLATFORMS.map((platform) => (
-                  <button
-                    key={platform.id}
-                    onClick={() => togglePlatform(platform.id)}
+                  <button key={platform.id} onClick={() => togglePlatform(platform.id)}
                     className={cn(
                       'px-3 py-1.5 rounded-full text-sm font-medium transition-colors border',
                       newTemplate.platforms.includes(platform.id)
                         ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400'
                         : 'border-slate-200 dark:border-slate-700 hover:border-indigo-300'
-                    )}
-                  >
+                    )}>
                     {platform.name}
                   </button>
                 ))}
               </div>
             </div>
             <div>
-              <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
-                Tags (comma-separated)
-              </label>
-              <Input
-                value={newTemplate.tags}
-                onChange={(e) => setNewTemplate((prev) => ({ ...prev, tags: e.target.value }))}
-                placeholder="e.g., product, launch, announcement"
-                className="mt-1.5"
-              />
+              <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Tags (comma-separated)</label>
+              <Input value={newTemplate.tags} onChange={(e) => setNewTemplate((prev) => ({ ...prev, tags: e.target.value }))}
+                placeholder="e.g., product, launch, announcement" className="mt-1.5" />
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsCreateModalOpen(false)}>
-              Cancel
-            </Button>
-            <Button onClick={handleCreateTemplate}>
-              <Plus className="w-4 h-4 mr-2" />
-              Create Template
+            <Button variant="outline" onClick={() => setIsCreateModalOpen(false)}>Cancel</Button>
+            <Button onClick={handleCreateTemplate} disabled={saving}>
+              {saving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Plus className="w-4 h-4 mr-2" />}
+              {isEditMode ? 'Save Changes' : 'Create Template'}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -694,33 +590,26 @@ export function Templates() {
                 <p className="text-sm whitespace-pre-wrap">{selectedTemplate.content}</p>
               </div>
               <div className="flex items-center gap-2">
-                {selectedTemplate.platforms.map((platform) => (
-                  <div
-                    key={platform}
-                    className="w-8 h-8 rounded-full flex items-center justify-center"
-                    style={{
-                      backgroundColor: `${getPlatformColor(platform)}20`,
-                      color: getPlatformColor(platform),
-                    }}
-                  >
+                {(selectedTemplate.platforms || []).map((platform) => (
+                  <div key={platform} className="w-8 h-8 rounded-full flex items-center justify-center"
+                    style={{ backgroundColor: `${getPlatformColor(platform)}20`, color: getPlatformColor(platform) }}>
                     {getPlatformIcon(platform)}
                   </div>
                 ))}
               </div>
               <div className="flex flex-wrap gap-2">
-                {selectedTemplate.tags.map((tag) => (
-                  <Badge key={tag} variant="secondary">
-                    {tag}
-                  </Badge>
+                {(selectedTemplate.tags || []).map((tag) => (
+                  <Badge key={tag} variant="secondary">{tag}</Badge>
                 ))}
               </div>
+              {selectedTemplate.createdBy && (
+                <p className="text-xs text-slate-400">Created by {selectedTemplate.createdBy.name}</p>
+              )}
             </div>
           )}
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsPreviewModalOpen(false)}>
-              Close
-            </Button>
-            <Button onClick={() => selectedTemplate && useTemplate(selectedTemplate)}>
+            <Button variant="outline" onClick={() => setIsPreviewModalOpen(false)}>Close</Button>
+            <Button onClick={() => { if (selectedTemplate) handleUseTemplate(selectedTemplate); setIsPreviewModalOpen(false) }}>
               <Copy className="w-4 h-4 mr-2" />
               Use Template
             </Button>

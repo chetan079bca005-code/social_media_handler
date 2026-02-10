@@ -96,7 +96,10 @@ export function requireWorkspace(requiredRoles?: WorkspaceRole[]) {
       return sendUnauthorized(res);
     }
 
-    const workspaceId = req.params.workspaceId || req.body.workspaceId || req.query.workspaceId || req.headers['x-workspace-id'];
+    const workspaceId = req.params.workspaceId
+      || req.body?.workspaceId
+      || req.query?.workspaceId
+      || req.headers['x-workspace-id'];
     
     // Fallback to user's first workspace if no workspaceId provided
     if (!workspaceId) {

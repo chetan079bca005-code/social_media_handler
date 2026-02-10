@@ -4,6 +4,7 @@ import { AppError } from '../middleware/error';
 import { generateUniqueSlug } from '../utils/response';
 import { generateToken } from '../utils/encryption';
 import { createNotification } from './user.service';
+import { sendInvitationEmail } from '../utils/email';
 
 export interface CreateWorkspaceInput {
   name: string;
@@ -291,7 +292,19 @@ export async function inviteMember(
     });
   }
 
-  // TODO: Send email invitation
+  // Send email invitation
+  const inviter = await prisma.user.findUnique({ where: { id: invitedBy } });
+  const emailResult = await sendInvitationEmail({
+    to: data.email.toLowerCase(),
+    inviterName: inviter?.name || 'A team member',
+    workspaceName: workspace.name,
+    role: data.role,
+    inviteToken: invitation.token,
+  });
+
+  if (!emailResult.success) {
+    console.warn('Failed to send invitation email:', emailResult.error);
+  }
 
   return invitation;
 }

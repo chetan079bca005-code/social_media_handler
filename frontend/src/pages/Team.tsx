@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { motion } from 'framer-motion'
 import {
   Users,
@@ -12,6 +12,8 @@ import {
   Trash2,
   Check,
   Clock,
+  Loader2,
+  RefreshCw,
 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../components/ui/Card'
 import { Button } from '../components/ui/Button'
@@ -40,84 +42,38 @@ import {
   SelectValue,
 } from '../components/ui/Select'
 import toast from 'react-hot-toast'
+import { teamApi } from '../services/api'
+import { useWorkspaceStore } from '../store'
 
 interface TeamMember {
   id: string
-  name: string
-  email: string
-  avatar?: string
-  role: 'owner' | 'admin' | 'editor' | 'viewer'
-  status: 'active' | 'pending' | 'inactive'
+  userId: string
+  role: string
   joinedAt: string
-  lastActive?: string
+  user: {
+    id: string
+    name: string
+    email: string
+    avatarUrl?: string
+    lastLoginAt?: string
+  }
 }
-
-const MOCK_TEAM: TeamMember[] = [
-  {
-    id: '1',
-    name: 'John Smith',
-    email: 'john@company.com',
-    avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100',
-    role: 'owner',
-    status: 'active',
-    joinedAt: '2023-06-15T10:00:00Z',
-    lastActive: '2024-01-15T14:30:00Z',
-  },
-  {
-    id: '2',
-    name: 'Sarah Johnson',
-    email: 'sarah@company.com',
-    avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100',
-    role: 'admin',
-    status: 'active',
-    joinedAt: '2023-07-20T09:00:00Z',
-    lastActive: '2024-01-15T12:15:00Z',
-  },
-  {
-    id: '3',
-    name: 'Mike Chen',
-    email: 'mike@company.com',
-    avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100',
-    role: 'editor',
-    status: 'active',
-    joinedAt: '2023-09-10T11:00:00Z',
-    lastActive: '2024-01-14T16:45:00Z',
-  },
-  {
-    id: '4',
-    name: 'Emily Brown',
-    email: 'emily@company.com',
-    role: 'editor',
-    status: 'pending',
-    joinedAt: '2024-01-10T14:00:00Z',
-  },
-  {
-    id: '5',
-    name: 'David Lee',
-    email: 'david@company.com',
-    avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100',
-    role: 'viewer',
-    status: 'active',
-    joinedAt: '2023-11-25T08:00:00Z',
-    lastActive: '2024-01-13T10:30:00Z',
-  },
-]
 
 const ROLES = [
   {
-    value: 'admin',
+    value: 'ADMIN',
     label: 'Admin',
     description: 'Full access to all features, can manage team members',
     color: 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400',
   },
   {
-    value: 'editor',
+    value: 'EDITOR',
     label: 'Editor',
     description: 'Can create, edit, and publish content',
     color: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
   },
   {
-    value: 'viewer',
+    value: 'VIEWER',
     label: 'Viewer',
     description: 'Can view content and analytics, no editing rights',
     color: 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-400',
@@ -125,22 +81,23 @@ const ROLES = [
 ]
 
 const getRoleBadge = (role: string) => {
-  switch (role) {
-    case 'owner':
+  const r = role.toUpperCase()
+  switch (r) {
+    case 'OWNER':
       return (
         <Badge className="bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">
           <Crown className="w-3 h-3 mr-1" />
           Owner
         </Badge>
       )
-    case 'admin':
+    case 'ADMIN':
       return (
         <Badge className="bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400">
           <Shield className="w-3 h-3 mr-1" />
           Admin
         </Badge>
       )
-    case 'editor':
+    case 'EDITOR':
       return (
         <Badge className="bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400">
           <Edit2 className="w-3 h-3 mr-1" />
@@ -156,91 +113,95 @@ const getRoleBadge = (role: string) => {
   }
 }
 
-const getStatusBadge = (status: string) => {
-  switch (status) {
-    case 'active':
-      return (
-        <Badge className="bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400">
-          <span className="w-2 h-2 rounded-full bg-emerald-500 mr-1.5" />
-          Active
-        </Badge>
-      )
-    case 'pending':
-      return (
-        <Badge className="bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">
-          <Clock className="w-3 h-3 mr-1" />
-          Pending
-        </Badge>
-      )
-    default:
-      return (
-        <Badge variant="secondary">
-          Inactive
-        </Badge>
-      )
-  }
-}
-
 export function Team() {
-  const [team, setTeam] = useState<TeamMember[]>(MOCK_TEAM)
+  const { currentWorkspace } = useWorkspaceStore()
+  const [members, setMembers] = useState<TeamMember[]>([])
+  const [loading, setLoading] = useState(true)
+  const [inviting, setInviting] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false)
   const [inviteEmail, setInviteEmail] = useState('')
-  const [inviteRole, setInviteRole] = useState('editor')
+  const [inviteRole, setInviteRole] = useState('EDITOR')
   const [selectedMember, setSelectedMember] = useState<TeamMember | null>(null)
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
   const [editRole, setEditRole] = useState('')
 
-  const filteredTeam = team.filter(
-    (member) =>
-      member.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      member.email.toLowerCase().includes(searchQuery.toLowerCase())
+  const workspaceId = currentWorkspace?.id
+
+  const fetchMembers = useCallback(async () => {
+    if (!workspaceId) return
+    try {
+      setLoading(true)
+      const res = await teamApi.getMembers(workspaceId)
+      setMembers(res?.data?.members || [])
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to load team members')
+    } finally {
+      setLoading(false)
+    }
+  }, [workspaceId])
+
+  useEffect(() => {
+    fetchMembers()
+  }, [fetchMembers])
+
+  const filteredMembers = members.filter(
+    (m) =>
+      m.user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      m.user.email.toLowerCase().includes(searchQuery.toLowerCase())
   )
 
-  const handleInvite = () => {
+  const handleInvite = async () => {
     if (!inviteEmail.trim()) {
       toast.error('Please enter an email address')
       return
     }
-
-    const newMember: TeamMember = {
-      id: Date.now().toString(),
-      name: inviteEmail.split('@')[0],
-      email: inviteEmail,
-      role: inviteRole as any,
-      status: 'pending',
-      joinedAt: new Date().toISOString(),
+    if (!workspaceId) {
+      toast.error('No workspace selected')
+      return
     }
 
-    setTeam((prev) => [...prev, newMember])
-    setIsInviteModalOpen(false)
-    setInviteEmail('')
-    setInviteRole('editor')
-    toast.success(`Invitation sent to ${inviteEmail}`)
+    try {
+      setInviting(true)
+      await teamApi.invite(workspaceId, inviteEmail, inviteRole)
+      toast.success(`Invitation sent to ${inviteEmail}`)
+      setIsInviteModalOpen(false)
+      setInviteEmail('')
+      setInviteRole('EDITOR')
+      fetchMembers()
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to send invitation')
+    } finally {
+      setInviting(false)
+    }
   }
 
-  const handleRemoveMember = (id: string) => {
-    setTeam((prev) => prev.filter((m) => m.id !== id))
-    toast.success('Team member removed')
+  const handleRemoveMember = async (memberId: string) => {
+    if (!workspaceId) return
+    try {
+      await teamApi.removeMember(workspaceId, memberId)
+      toast.success('Team member removed')
+      fetchMembers()
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to remove member')
+    }
   }
 
-  const handleUpdateRole = () => {
-    if (!selectedMember) return
-
-    setTeam((prev) =>
-      prev.map((m) => (m.id === selectedMember.id ? { ...m, role: editRole as any } : m))
-    )
-    setIsEditModalOpen(false)
-    setSelectedMember(null)
-    toast.success('Role updated successfully')
+  const handleUpdateRole = async () => {
+    if (!selectedMember || !workspaceId) return
+    try {
+      await teamApi.updateRole(workspaceId, selectedMember.id, editRole)
+      toast.success('Role updated successfully')
+      setIsEditModalOpen(false)
+      setSelectedMember(null)
+      fetchMembers()
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to update role')
+    }
   }
 
-  const handleResendInvite = (email: string) => {
-    toast.success(`Invitation resent to ${email}`)
-  }
-
-  const activeCount = team.filter((m) => m.status === 'active').length
-  const pendingCount = team.filter((m) => m.status === 'pending').length
+  const activeCount = members.length
+  const adminCount = members.filter((m) => m.role === 'ADMIN' || m.role === 'OWNER').length
 
   return (
     <motion.div
@@ -261,10 +222,16 @@ export function Team() {
             Manage your team members and permissions
           </p>
         </div>
-        <Button onClick={() => setIsInviteModalOpen(true)}>
-          <UserPlus className="w-4 h-4 mr-2" />
-          Invite Member
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" onClick={fetchMembers} disabled={loading}>
+            <RefreshCw className={`w-4 h-4 mr-1 ${loading ? 'animate-spin' : ''}`} />
+            Refresh
+          </Button>
+          <Button onClick={() => setIsInviteModalOpen(true)}>
+            <UserPlus className="w-4 h-4 mr-2" />
+            Invite Member
+          </Button>
+        </div>
       </div>
 
       {/* Stats */}
@@ -276,7 +243,7 @@ export function Team() {
                 <Users className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
               </div>
               <div>
-                <p className="text-2xl font-bold text-slate-900 dark:text-white">{team.length}</p>
+                <p className="text-2xl font-bold text-slate-900 dark:text-white">{members.length}</p>
                 <p className="text-sm text-slate-500">Total Members</p>
               </div>
             </div>
@@ -298,12 +265,12 @@ export function Team() {
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center">
-                <Clock className="w-5 h-5 text-amber-600 dark:text-amber-400" />
+              <div className="w-10 h-10 rounded-lg bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center">
+                <Shield className="w-5 h-5 text-purple-600 dark:text-purple-400" />
               </div>
               <div>
-                <p className="text-2xl font-bold text-slate-900 dark:text-white">{pendingCount}</p>
-                <p className="text-sm text-slate-500">Pending Invites</p>
+                <p className="text-2xl font-bold text-slate-900 dark:text-white">{adminCount}</p>
+                <p className="text-sm text-slate-500">Admins & Owners</p>
               </div>
             </div>
           </CardContent>
@@ -330,76 +297,79 @@ export function Team() {
           </CardDescription>
         </CardHeader>
         <CardContent className="p-0">
-          <div className="divide-y divide-slate-100 dark:divide-slate-800">
-            {filteredTeam.map((member) => (
-              <div
-                key={member.id}
-                className="flex items-center justify-between p-4 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors"
-              >
-                <div className="flex items-center gap-4">
-                  <Avatar
-                    src={member.avatar}
-                    alt={member.name}
-                    fallback={member.name.split(' ').map((n) => n[0]).join('')}
-                    size="md"
-                  />
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <p className="font-medium text-slate-900 dark:text-white">{member.name}</p>
-                      {member.role === 'owner' && (
-                        <Crown className="w-4 h-4 text-amber-500" />
-                      )}
+          {loading ? (
+            <div className="flex items-center justify-center py-16">
+              <Loader2 className="w-6 h-6 animate-spin text-indigo-500 mr-2" />
+              <span className="text-slate-500">Loading team members...</span>
+            </div>
+          ) : (
+            <div className="divide-y divide-slate-100 dark:divide-slate-800">
+              {filteredMembers.map((member) => (
+                <div
+                  key={member.id}
+                  className="flex items-center justify-between p-4 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors"
+                >
+                  <div className="flex items-center gap-4">
+                    <Avatar
+                      src={member.user.avatarUrl}
+                      alt={member.user.name}
+                      fallback={member.user.name.split(' ').map((n) => n[0]).join('')}
+                      size="md"
+                    />
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <p className="font-medium text-slate-900 dark:text-white">{member.user.name}</p>
+                        {member.role === 'OWNER' && (
+                          <Crown className="w-4 h-4 text-amber-500" />
+                        )}
+                      </div>
+                      <p className="text-sm text-slate-500">{member.user.email}</p>
+                      <p className="text-xs text-slate-400 mt-0.5">
+                        Joined {new Date(member.joinedAt).toLocaleDateString()}
+                      </p>
                     </div>
-                    <p className="text-sm text-slate-500">{member.email}</p>
+                  </div>
+
+                  <div className="flex items-center gap-4">
+                    {getRoleBadge(member.role)}
+                    {member.role !== 'OWNER' && (
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="sm">
+                            <MoreVertical className="w-4 h-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem
+                            onClick={() => {
+                              setSelectedMember(member)
+                              setEditRole(member.role)
+                              setIsEditModalOpen(true)
+                            }}
+                          >
+                            <Shield className="w-4 h-4 mr-2" />
+                            Change Role
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem
+                            className="text-red-600"
+                            onClick={() => handleRemoveMember(member.id)}
+                          >
+                            <Trash2 className="w-4 h-4 mr-2" />
+                            Remove
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    )}
                   </div>
                 </div>
-
-                <div className="flex items-center gap-4">
-                  {getRoleBadge(member.role)}
-                  {getStatusBadge(member.status)}
-                  {member.role !== 'owner' && (
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="sm">
-                          <MoreVertical className="w-4 h-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem
-                          onClick={() => {
-                            setSelectedMember(member)
-                            setEditRole(member.role)
-                            setIsEditModalOpen(true)
-                          }}
-                        >
-                          <Shield className="w-4 h-4 mr-2" />
-                          Change Role
-                        </DropdownMenuItem>
-                        {member.status === 'pending' && (
-                          <DropdownMenuItem onClick={() => handleResendInvite(member.email)}>
-                            <Mail className="w-4 h-4 mr-2" />
-                            Resend Invite
-                          </DropdownMenuItem>
-                        )}
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem
-                          className="text-red-600"
-                          onClick={() => handleRemoveMember(member.id)}
-                        >
-                          <Trash2 className="w-4 h-4 mr-2" />
-                          Remove
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </CardContent>
       </Card>
 
-      {filteredTeam.length === 0 && (
+      {!loading && filteredMembers.length === 0 && (
         <div className="text-center py-12">
           <Users className="w-12 h-12 text-slate-300 mx-auto mb-4" />
           <h3 className="text-lg font-medium text-slate-900 dark:text-white">No team members found</h3>
@@ -450,6 +420,9 @@ export function Team() {
                 placeholder="colleague@company.com"
                 className="mt-1.5"
               />
+              <p className="text-xs text-slate-400 mt-1">
+                An invitation email will be sent to this address.
+              </p>
             </div>
             <div>
               <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
@@ -476,9 +449,13 @@ export function Team() {
             <Button variant="outline" onClick={() => setIsInviteModalOpen(false)}>
               Cancel
             </Button>
-            <Button onClick={handleInvite}>
-              <Mail className="w-4 h-4 mr-2" />
-              Send Invitation
+            <Button onClick={handleInvite} disabled={inviting}>
+              {inviting ? (
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              ) : (
+                <Mail className="w-4 h-4 mr-2" />
+              )}
+              {inviting ? 'Sending...' : 'Send Invitation'}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -494,15 +471,15 @@ export function Team() {
             <div className="space-y-4">
               <div className="flex items-center gap-3 p-3 bg-slate-50 dark:bg-slate-800 rounded-lg">
                 <Avatar
-                  src={selectedMember.avatar}
-                  alt={selectedMember.name}
-                  fallback={selectedMember.name.split(' ').map((n) => n[0]).join('')}
+                  src={selectedMember.user.avatarUrl}
+                  alt={selectedMember.user.name}
+                  fallback={selectedMember.user.name.split(' ').map((n) => n[0]).join('')}
                 />
                 <div>
                   <p className="font-medium text-slate-900 dark:text-white">
-                    {selectedMember.name}
+                    {selectedMember.user.name}
                   </p>
-                  <p className="text-sm text-slate-500">{selectedMember.email}</p>
+                  <p className="text-sm text-slate-500">{selectedMember.user.email}</p>
                 </div>
               </div>
               <div>

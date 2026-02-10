@@ -7,6 +7,7 @@ import postRoutes from './post.routes';
 import aiRoutes from './ai.routes';
 import mediaRoutes from './media.routes';
 import analyticsRoutes from './analytics.routes';
+import templateRoutes from './template.routes';
 
 const router = Router();
 
@@ -24,5 +25,6 @@ router.use('/posts', postRoutes);
 router.use('/ai', aiRoutes);
 router.use('/media', mediaRoutes);
 router.use('/analytics', analyticsRoutes);
+router.use('/templates', templateRoutes);
 
 export default router;

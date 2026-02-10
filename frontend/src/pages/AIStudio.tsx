@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
 import {
   Sparkles,
@@ -32,6 +32,9 @@ import {
   generateContentIdeas,
   translateContent,
   rewriteCaption,
+  generateImage,
+  getImageHistory,
+  type GeneratedImageHistoryItem,
 } from '../services/ai'
 import toast from 'react-hot-toast'
 
@@ -108,6 +111,7 @@ const LANGUAGES = [
 ]
 
 export function AIStudio() {
+  const sampleImageUrl = 'https://static.apifree.ai/static/i/20260118/1768735837887497024_1.jpg'
   const [activeTool, setActiveTool] = useState('text-generator')
   const [isGenerating, setIsGenerating] = useState(false)
   const [copiedIndex, setCopiedIndex] = useState<number | null>(null)
@@ -121,6 +125,15 @@ export function AIStudio() {
   const [includeEmojis, setIncludeEmojis] = useState(true)
   const [includeCTA, setIncludeCTA] = useState(false)
   const [generatedCaptions, setGeneratedCaptions] = useState<string[]>([])
+
+  // Image Generator State
+  const [imagePrompt, setImagePrompt] = useState('')
+  const [imageUrl, setImageUrl] = useState('')
+  const [useSampleImage, setUseSampleImage] = useState(true)
+  const [imageAspectRatio, setImageAspectRatio] = useState<'1:1' | '2:3' | '3:2' | '3:4' | '4:3' | '4:5' | '5:4' | '9:16' | '16:9' | '21:9'>('1:1')
+  const [imageResolution, setImageResolution] = useState<'1K' | '2K' | '4K'>('1K')
+  const [generatedImages, setGeneratedImages] = useState<string[]>([])
+  const [imageHistory, setImageHistory] = useState<GeneratedImageHistoryItem[]>([])
 
   // Hashtag Generator State
   const [hashtagTopic, setHashtagTopic] = useState('')
@@ -201,6 +214,67 @@ export function AIStudio() {
       setIsGenerating(false)
     }
   }
+
+  const handleGenerateImages = async () => {
+    if (!imagePrompt.trim()) {
+      toast.error('Please enter an image edit prompt')
+      return
+    }
+
+    const imageToUse = useSampleImage ? sampleImageUrl : imageUrl
+
+    if (!imageToUse.trim()) {
+      toast.error('Please enter a valid image URL')
+      return
+    }
+
+    setIsGenerating(true)
+    setGeneratedImages([]) // Clear previous images
+    try {
+      console.log('Starting image generation with prompt:', imagePrompt)
+      const images = await generateImage({
+        prompt: imagePrompt,
+        imageUrl: imageToUse,
+        aspectRatio: imageAspectRatio,
+        resolution: imageResolution,
+      })
+      console.log('Generated images received:', images)
+      
+      if (images.length > 0) {
+        setGeneratedImages(images)
+        toast.success('Image generated successfully!')
+      } else {
+        // No images returned, try fetching from history after a delay
+        toast.loading('Fetching generated images...')
+        await new Promise((resolve) => setTimeout(resolve, 2000))
+      }
+      
+      // Always refresh history after generation attempt
+      const history = await getImageHistory()
+      console.log('Image history fetched:', history)
+      setImageHistory(history)
+      
+      // Fallback: if no images returned but history has new items, use those
+      if (images.length === 0 && history.length > 0) {
+        const latestImages = history.slice(0, 2).map((item) => item.url)
+        setGeneratedImages(latestImages)
+        toast.success('Image generated! (loaded from history)')
+      } else if (images.length === 0) {
+        toast.error('No images were generated. Please try again.')
+      }
+    } catch (error) {
+      console.error('Image generation error:', error)
+      toast.error('Failed to generate image')
+    } finally {
+      setIsGenerating(false)
+    }
+  }
+
+  useEffect(() => {
+    if (activeTool === 'image-generator') {
+      getImageHistory().then(setImageHistory)
+    }
+  }, [activeTool])
 
   const handleRewrite = async () => {
     if (!originalCaption.trim()) {
@@ -467,6 +541,169 @@ export function AIStudio() {
                     >
                       #{hashtag}
                     </Badge>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )
+
+      case 'image-generator':
+        return (
+          <div className="space-y-6">
+            <div className="flex items-center justify-between rounded-lg border border-slate-200 dark:border-slate-700 p-3">
+              <div>
+                <p className="text-sm font-medium text-slate-700 dark:text-slate-300">Use sample image</p>
+                <p className="text-xs text-slate-500 dark:text-slate-400">Quick test without providing your own URL</p>
+              </div>
+              <Switch checked={useSampleImage} onCheckedChange={setUseSampleImage} />
+            </div>
+
+            {!useSampleImage && (
+              <div>
+                <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                  Image URL
+                </label>
+                <Input
+                  value={imageUrl}
+                  onChange={(e) => setImageUrl(e.target.value)}
+                  placeholder="https://example.com/your-image.jpg"
+                  className="mt-1.5"
+                />
+              </div>
+            )}
+
+            <div>
+              <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                Edit Prompt
+              </label>
+              <Textarea
+                value={imagePrompt}
+                onChange={(e) => setImagePrompt(e.target.value)}
+                placeholder="Describe how you want to edit the image"
+                className="mt-1.5 min-h-32"
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                  Aspect Ratio
+                </label>
+                <Select value={imageAspectRatio} onValueChange={(v) => setImageAspectRatio(v as typeof imageAspectRatio)}>
+                  <SelectTrigger className="mt-1.5">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {['1:1', '2:3', '3:2', '3:4', '4:3', '4:5', '5:4', '9:16', '16:9', '21:9'].map((ratio) => (
+                      <SelectItem key={ratio} value={ratio}>
+                        {ratio}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                  Resolution
+                </label>
+                <Select value={imageResolution} onValueChange={(v) => setImageResolution(v as typeof imageResolution)}>
+                  <SelectTrigger className="mt-1.5">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {['1K', '2K', '4K'].map((res) => (
+                      <SelectItem key={res} value={res}>
+                        {res}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <Button
+              onClick={handleGenerateImages}
+              disabled={isGenerating || !imagePrompt.trim() || (!useSampleImage && !imageUrl.trim())}
+              className="w-full"
+            >
+              {isGenerating ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Generating...
+                </>
+              ) : (
+                <>
+                  <Image className="w-4 h-4 mr-2" />
+                  Generate Image
+                </>
+              )}
+            </Button>
+
+            {generatedImages.length > 0 && (
+              <div className="space-y-4">
+                <h3 className="font-semibold text-slate-900 dark:text-white">
+                  Generated Images
+                </h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {generatedImages.map((img, index) => (
+                    <div
+                      key={`${img}-${index}`}
+                      className="rounded-lg border border-slate-200 dark:border-slate-700 overflow-hidden bg-white dark:bg-slate-800"
+                    >
+                      <img src={img} alt={`Generated ${index + 1}`} className="w-full h-auto" />
+                      <div className="flex items-center justify-between p-3 border-t border-slate-200 dark:border-slate-700">
+                        <span className="text-xs text-slate-500 truncate">{img}</span>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => copyToClipboard(img, index)}
+                        >
+                          {copiedIndex === index ? (
+                            <>
+                              <Check className="w-4 h-4 mr-1" />
+                              Copied!
+                            </>
+                          ) : (
+                            <>
+                              <Copy className="w-4 h-4 mr-1" />
+                              Copy
+                            </>
+                          )}
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {imageHistory.length > 0 && (
+              <div className="space-y-4">
+                <h3 className="font-semibold text-slate-900 dark:text-white">
+                  Generated Images History
+                </h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {imageHistory.map((item) => (
+                    <div
+                      key={item.id}
+                      className="rounded-lg border border-slate-200 dark:border-slate-700 overflow-hidden bg-white dark:bg-slate-800"
+                    >
+                      <img src={item.url} alt="Generated" className="w-full h-auto" />
+                      <div className="flex items-center justify-between p-3 border-t border-slate-200 dark:border-slate-700">
+                        <span className="text-xs text-slate-500 truncate">
+                          {new Date(item.createdAt).toLocaleString()}
+                        </span>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => copyToClipboard(item.url)}
+                        >
+                          <Copy className="w-4 h-4 mr-1" />
+                          Copy
+                        </Button>
+                      </div>
+                    </div>
                   ))}
                 </div>
               </div>
@@ -762,7 +999,7 @@ export function AIStudio() {
             {AI_TOOLS.map((tool) => {
               const Icon = tool.icon
               const isActive = activeTool === tool.id
-              const isAvailable = ['text-generator', 'hashtag-generator', 'content-ideas', 'caption-rewriter', 'translator'].includes(tool.id)
+              const isAvailable = ['text-generator', 'image-generator', 'hashtag-generator', 'content-ideas', 'caption-rewriter', 'translator'].includes(tool.id)
 
               return (
                 <button
