@@ -13,15 +13,6 @@ async function getTransporter(): Promise<nodemailer.Transporter> {
   const smtpPass = process.env.SMTP_PASS;
   const smtpFrom = process.env.SMTP_FROM || 'SocialHub <noreply@socialhub.app>';
 
-  if (smtpHost && smtpUser && smtpPass) {
-    transporter = nodemailer.createTransport({
-      host: smtpHost,
-      port: smtpPort,
-      secure: smtpPort === 465,
-      auth: {
-        user: smtpUser,
-        pass: smtpPass,
-      },
     });
   } else {
     // Use Ethereal for dev/testing — emails are captured at https://ethereal.email
