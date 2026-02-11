@@ -606,16 +606,16 @@ export function Templates() {
                 <p className="text-xs text-slate-400">Created by {selectedTemplate.createdBy.name}</p>
               )}
             </div>
-    //       )}
-    //       <DialogFooter>
-    //         <Button variant="outline" onClick={() => setIsPreviewModalOpen(false)}>Close</Button>
-    //         <Button onClick={() => { if (selectedTemplate) handleUseTemplate(selectedTemplate); setIsPreviewModalOpen(false) }}>
-    //           <Copy className="w-4 h-4 mr-2" />
-    //           Use Template
-    //         </Button>
-    //       </DialogFooter>
-    //     </DialogContent>
-    //   </Dialog>
-    // </motion.div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsPreviewModalOpen(false)}>Close</Button>
+            <Button onClick={() => { if (selectedTemplate) handleUseTemplate(selectedTemplate); setIsPreviewModalOpen(false) }}>
+              <Copy className="w-4 h-4 mr-2" />
+              Use Template
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </motion.div>
   )
 }
