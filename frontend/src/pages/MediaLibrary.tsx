@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react'
+import { useState, useCallback } from 'react'
 import { motion } from 'framer-motion'
 import { useDropzone } from 'react-dropzone'
 import {
@@ -51,7 +51,10 @@ import {
 import { cn, formatFileSize, formatDate } from '../lib/utils'
 import { mediaApi } from '../services/api'
 import { useWorkspaceStore } from '../store'
+import { useDataCache, invalidateCache } from '../lib/useDataCache'
 import toast from 'react-hot-toast'
+
+const API_BASE = import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://localhost:5000'
 
 interface MediaFile {
   id: string
@@ -76,18 +79,9 @@ interface Folder {
   itemCount: number
 }
 
-const MOCK_FOLDERS: Folder[] = [
-  { id: '1', name: 'Products', color: '#6366F1', itemCount: 24 },
-  { id: '2', name: 'Team', color: '#8B5CF6', itemCount: 12 },
-  { id: '3', name: 'Videos', color: '#EC4899', itemCount: 8 },
-  { id: '4', name: 'Campaigns', color: '#F59E0B', itemCount: 36 },
-  { id: '5', name: 'Branding', color: '#10B981', itemCount: 15 },
-]
-
 export function MediaLibrary() {
   const { currentWorkspace } = useWorkspaceStore()
-  const [media, setMedia] = useState<MediaFile[]>([])
-  const [folders] = useState<Folder[]>(MOCK_FOLDERS)
+  const wsId = currentWorkspace?.id
   const [selectedFolder, setSelectedFolder] = useState<string | null>(null)
   const [selectedMedia, setSelectedMedia] = useState<Set<string>>(new Set())
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
@@ -97,7 +91,6 @@ export function MediaLibrary() {
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false)
   const [isUploading, setIsUploading] = useState(false)
   const [uploadProgress, setUploadProgress] = useState(0)
-  const [isLoadingMedia, setIsLoadingMedia] = useState(false)
 
   const mapMediaFile = (item: any): MediaFile => {
     const mimeType = item.mimeType || 'application/octet-stream'
@@ -107,11 +100,18 @@ export function MediaLibrary() {
         ? 'video'
         : 'document'
 
+    // Resolve URLs - prefix relative paths with API base
+    const resolveUrl = (u: string | undefined): string => {
+      if (!u) return ''
+      if (u.startsWith('http://') || u.startsWith('https://')) return u
+      return `${API_BASE}${u.startsWith('/') ? '' : '/'}${u}`
+    }
+
     return {
       id: item.id,
       name: item.originalName || item.filename || 'Untitled',
-      url: item.url,
-      thumbnailUrl: item.thumbnailUrl || item.url,
+      url: resolveUrl(item.url),
+      thumbnailUrl: resolveUrl(item.thumbnailUrl || item.url),
       type,
       mimeType,
       size: item.size || 0,
@@ -124,33 +124,45 @@ export function MediaLibrary() {
     }
   }
 
-  const loadMedia = useCallback(async () => {
-    if (!currentWorkspace?.id) {
-      return
-    }
+  const { data: mediaData, isLoading: isLoadingMedia, isRefreshing, refetch: refetchMedia } = useDataCache<{ media: MediaFile[], folders: Folder[] }>(
+    `media:${wsId}:${typeFilter}:${searchQuery}:${selectedFolder}`,
+    async () => {
+      if (!wsId) return { media: [], folders: [] }
+      const [mediaRes, foldersRes] = await Promise.allSettled([
+        mediaApi.getAll(wsId, {
+          type: (typeFilter === 'all' || typeFilter === 'ai-generated') ? undefined : typeFilter,
+          search: searchQuery || undefined,
+          folderId: selectedFolder || undefined,
+          page: 1,
+          limit: 200,
+        }),
+        mediaApi.getFolders(wsId),
+      ])
 
-    setIsLoadingMedia(true)
-    try {
-      const response = await mediaApi.getAll(currentWorkspace.id, {
-        type: typeFilter === 'all' ? undefined : typeFilter,
-        search: searchQuery || undefined,
-        folderId: selectedFolder || undefined,
-        page: 1,
-        limit: 200,
-      })
+      let media: MediaFile[] = []
+      let folders: Folder[] = []
 
-      const items = Array.isArray(response.data) ? response.data.map(mapMediaFile) : []
-      setMedia(items)
-    } catch (error) {
-      toast.error('Failed to load media library')
-    } finally {
-      setIsLoadingMedia(false)
-    }
-  }, [currentWorkspace?.id, searchQuery, selectedFolder, typeFilter])
+      if (mediaRes.status === 'fulfilled') {
+        const items = Array.isArray(mediaRes.value.data) ? mediaRes.value.data.map(mapMediaFile) : []
+        media = items
+      }
+      if (foldersRes.status === 'fulfilled') {
+        const data = foldersRes.value.data?.data?.folders || []
+        folders = data.map((f: any) => ({
+          id: f.id,
+          name: f.name,
+          color: f.color || '#6366F1',
+          itemCount: f.itemCount || 0,
+        }))
+      }
 
-  useEffect(() => {
-    loadMedia()
-  }, [loadMedia])
+      return { media, folders }
+    },
+    { enabled: !!wsId }
+  )
+
+  const media = mediaData?.media || []
+  const folders = mediaData?.folders || []
 
   const filteredMedia = media.filter((item) => {
     const matchesSearch =
@@ -169,25 +181,33 @@ export function MediaLibrary() {
     return matchesSearch && matchesType && matchesFolder
   })
 
-  const onDrop = useCallback((acceptedFiles: File[]) => {
+  const onDrop = useCallback(async (acceptedFiles: File[]) => {
+    if (!currentWorkspace?.id || acceptedFiles.length === 0) return
     setIsUploading(true)
     setUploadProgress(0)
 
-    // Simulate upload progress
-    const interval = setInterval(() => {
-      setUploadProgress((prev) => {
-        if (prev >= 100) {
-          clearInterval(interval)
-          setIsUploading(false)
-          setIsUploadModalOpen(false)
-          toast.success(`${acceptedFiles.length} file(s) uploaded successfully!`)
-          loadMedia()
-          return 0
-        }
-        return prev + 10
-      })
-    }, 200)
-  }, [loadMedia])
+    let uploaded = 0
+    for (const file of acceptedFiles) {
+      try {
+        await mediaApi.upload(currentWorkspace.id, file, (progress) => {
+          const totalProgress = Math.round(((uploaded * 100) + progress) / acceptedFiles.length)
+          setUploadProgress(totalProgress)
+        })
+        uploaded++
+      } catch {
+        toast.error(`Failed to upload ${file.name}`)
+      }
+    }
+
+    setIsUploading(false)
+    setUploadProgress(0)
+    setIsUploadModalOpen(false)
+    if (uploaded > 0) {
+      toast.success(`${uploaded} file(s) uploaded successfully!`)
+      invalidateCache('media:*')
+      refetchMedia()
+    }
+  }, [currentWorkspace?.id])
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
@@ -215,10 +235,21 @@ export function MediaLibrary() {
     }
   }
 
-  const deleteSelected = () => {
-    setMedia((prev) => prev.filter((m) => !selectedMedia.has(m.id)))
-    toast.success(`${selectedMedia.size} item(s) deleted`)
+  const deleteSelected = async () => {
+    const ids = Array.from(selectedMedia)
+    let deleted = 0
+    for (const id of ids) {
+      try {
+        await mediaApi.delete(id)
+        deleted++
+      } catch {
+        // continue
+      }
+    }
+    toast.success(`${deleted} item(s) deleted`)
     setSelectedMedia(new Set())
+    invalidateCache('media:*')
+    refetchMedia()
   }
 
   const copyUrl = (url: string) => {
@@ -287,13 +318,6 @@ export function MediaLibrary() {
               <span className="text-sm font-medium">All Files</span>
               <span className="ml-auto text-xs text-slate-500">{media.length}</span>
             </button>
-            <Button variant="outline" size="sm" onClick={loadMedia} disabled={isLoadingMedia}>
-              {isLoadingMedia ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
-              ) : (
-                'Refresh'
-              )}
-            </Button>
             {folders.map((folder) => (
               <button
                 key={folder.id}
@@ -397,7 +421,13 @@ export function MediaLibrary() {
           )}
 
           {/* Media Grid */}
-          {viewMode === 'grid' ? (
+          {isLoadingMedia ? (
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+              {Array.from({ length: 8 }).map((_, i) => (
+                <div key={i} className="aspect-square rounded-xl bg-slate-200 dark:bg-slate-700 animate-pulse" />
+              ))}
+            </div>
+          ) : viewMode === 'grid' ? (
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
               {filteredMedia.map((item) => (
                 <motion.div
@@ -416,6 +446,9 @@ export function MediaLibrary() {
                     src={item.thumbnailUrl}
                     alt={item.name}
                     className="w-full h-full object-cover"
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).src = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200"><rect fill="%23f1f5f9" width="200" height="200"/><text x="50%" y="50%" text-anchor="middle" dy=".3em" fill="%2394a3b8" font-size="14">No preview</text></svg>'
+                    }}
                   />
                   <div className="absolute inset-0 bg-linear-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
                   
@@ -587,13 +620,25 @@ export function MediaLibrary() {
             </Card>
           )}
 
-          {filteredMedia.length === 0 && (
-            <div className="text-center py-12">
-              <ImageIcon className="w-12 h-12 text-slate-300 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-slate-900 dark:text-white">No media found</h3>
-              <p className="text-slate-500 mt-1">
-                {searchQuery ? 'Try adjusting your search' : 'Upload some files to get started'}
+          {filteredMedia.length === 0 && !isLoadingMedia && (
+            <div className="text-center py-16">
+              <div className="w-16 h-16 rounded-2xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center mx-auto mb-4">
+                <ImageIcon className="w-8 h-8 text-slate-400" />
+              </div>
+              <h3 className="text-lg font-semibold text-slate-900 dark:text-white">
+                {searchQuery ? 'No results found' : 'No media files yet'}
+              </h3>
+              <p className="text-slate-500 mt-2 max-w-sm mx-auto">
+                {searchQuery
+                  ? 'Try adjusting your search or filter criteria'
+                  : 'Upload images, videos, and documents to build your media library'}
               </p>
+              {!searchQuery && (
+                <Button onClick={() => setIsUploadModalOpen(true)} className="mt-4">
+                  <Upload className="w-4 h-4 mr-2" />
+                  Upload Your First File
+                </Button>
+              )}
             </div>
           )}
         </div>
@@ -657,14 +702,19 @@ export function MediaLibrary() {
             <div className="space-y-4">
               <div className="relative aspect-video rounded-lg overflow-hidden bg-slate-100 dark:bg-slate-800">
                 {previewMedia.type === 'video' ? (
-                  <div className="w-full h-full flex items-center justify-center">
-                    <Play className="w-16 h-16 text-slate-400" />
-                  </div>
+                  <video
+                    src={previewMedia.url}
+                    controls
+                    className="w-full h-full object-contain"
+                  />
                 ) : (
                   <img
                     src={previewMedia.url}
                     alt={previewMedia.name}
                     className="w-full h-full object-contain"
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).src = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100"><rect fill="%23f1f5f9" width="100" height="100"/><text x="50%" y="50%" text-anchor="middle" dy=".3em" fill="%2394a3b8" font-size="14">No preview</text></svg>'
+                    }}
                   />
                 )}
               </div>

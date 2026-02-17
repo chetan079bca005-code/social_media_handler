@@ -10,6 +10,25 @@ import { generateUniqueSlug } from '../utils/response';
 
 const SALT_ROUNDS = 12;
 
+// Password strength validation
+function validatePassword(password: string): void {
+  if (!password || password.length < 8) {
+    throw new AppError('Password must be at least 8 characters long', 400);
+  }
+  if (password.length > 128) {
+    throw new AppError('Password must not exceed 128 characters', 400);
+  }
+  if (!/[A-Z]/.test(password)) {
+    throw new AppError('Password must contain at least one uppercase letter', 400);
+  }
+  if (!/[a-z]/.test(password)) {
+    throw new AppError('Password must contain at least one lowercase letter', 400);
+  }
+  if (!/[0-9]/.test(password)) {
+    throw new AppError('Password must contain at least one number', 400);
+  }
+}
+
 export interface RegisterInput {
   email: string;
   password: string;
@@ -33,6 +52,9 @@ export async function registerUser(input: RegisterInput): Promise<{ user: User; 
   if (existingUser) {
     throw new AppError('Email already registered', 409);
   }
+
+  // Validate password strength
+  validatePassword(password);
 
   // Hash password
   const passwordHash = await bcrypt.hash(password, SALT_ROUNDS);
@@ -247,6 +269,9 @@ export async function changePassword(
     throw new AppError('Current password is incorrect', 401);
   }
 
+  // Validate new password strength
+  validatePassword(newPassword);
+
   // Hash new password
   const passwordHash = await bcrypt.hash(newPassword, SALT_ROUNDS);
 
@@ -302,6 +327,9 @@ export async function resetPassword(token: string, newPassword: string): Promise
   if (!user) {
     throw new AppError('Invalid or expired reset token', 400);
   }
+
+  // Validate new password strength
+  validatePassword(newPassword);
 
   // Hash new password
   const passwordHash = await bcrypt.hash(newPassword, SALT_ROUNDS);

@@ -12,7 +12,6 @@ import {
   Users,
   TrendingUp,
   Loader2,
-  Info,
 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../components/ui/Card'
 import { Button } from '../components/ui/Button'
@@ -34,60 +33,10 @@ import {
   DropdownMenuTrigger,
 } from '../components/ui/DropdownMenu'
 import { getPlatformColor, formatNumber, PLATFORMS } from '../lib/utils'
+import { socialAccountsApi } from '../services/api'
+import { useWorkspaceStore } from '../store'
+import { useDataCache, invalidateCache } from '../lib/useDataCache'
 import toast from 'react-hot-toast'
-
-// Mock connected accounts
-const mockAccounts = [
-  {
-    id: '1',
-    platform: 'instagram',
-    accountName: '@socialhub_official',
-    accountId: '123456789',
-    profileImageUrl: 'https://picsum.photos/seed/ig/200/200',
-    followerCount: 24500,
-    engagementRate: 5.2,
-    isActive: true,
-    lastSyncedAt: '2026-01-31T10:00:00Z',
-    connectedAt: '2025-06-15T10:00:00Z',
-  },
-  {
-    id: '2',
-    platform: 'twitter',
-    accountName: '@socialhub',
-    accountId: '987654321',
-    profileImageUrl: 'https://picsum.photos/seed/tw/200/200',
-    followerCount: 12300,
-    engagementRate: 3.8,
-    isActive: true,
-    lastSyncedAt: '2026-01-31T09:30:00Z',
-    connectedAt: '2025-07-20T10:00:00Z',
-  },
-  {
-    id: '3',
-    platform: 'linkedin',
-    accountName: 'SocialHub Inc.',
-    accountId: '456789123',
-    profileImageUrl: 'https://picsum.photos/seed/li/200/200',
-    followerCount: 8200,
-    engagementRate: 4.5,
-    isActive: true,
-    lastSyncedAt: '2026-01-31T08:00:00Z',
-    connectedAt: '2025-08-10T10:00:00Z',
-  },
-  {
-    id: '4',
-    platform: 'facebook',
-    accountName: 'SocialHub',
-    accountId: '789123456',
-    profileImageUrl: 'https://picsum.photos/seed/fb/200/200',
-    followerCount: 5600,
-    engagementRate: 2.9,
-    isActive: false,
-    lastSyncedAt: '2026-01-20T10:00:00Z',
-    connectedAt: '2025-05-01T10:00:00Z',
-    error: 'Token expired. Please reconnect.',
-  },
-]
 
 const platformInfo = {
   facebook: {
@@ -136,9 +85,22 @@ export function SocialAccounts() {
   const [isConnectModalOpen, setIsConnectModalOpen] = useState(false)
   const [selectedPlatform, setSelectedPlatform] = useState<string | null>(null)
   const [isConnecting, setIsConnecting] = useState(false)
-  const [accounts, setAccounts] = useState(mockAccounts)
+  const { currentWorkspace } = useWorkspaceStore()
+  const wsId = currentWorkspace?.id
 
-  const connectedPlatforms = accounts.map((a) => a.platform)
+  const { data: accountsData, isLoading, refetch } = useDataCache<any[]>(
+    `social-accounts:${wsId}`,
+    async () => {
+      if (!wsId) return []
+      const res = await socialAccountsApi.getAll(wsId)
+      const resData = res.data as any
+      return resData?.data?.accounts || resData?.accounts || []
+    },
+    { enabled: !!wsId }
+  )
+  const accounts = accountsData ?? []
+
+  const connectedPlatforms = (accounts || []).map((a: any) => a.platform)
 
   const handleConnect = (platform: string) => {
     setSelectedPlatform(platform)
@@ -146,51 +108,62 @@ export function SocialAccounts() {
   }
 
   const handleConfirmConnect = async () => {
-    if (!selectedPlatform) return
+    if (!selectedPlatform || !currentWorkspace) return
 
     setIsConnecting(true)
-    // Simulate OAuth flow
-    await new Promise((resolve) => setTimeout(resolve, 2000))
-
-    // Mock new account
-    const newAccount = {
-      id: `new-${Date.now()}`,
-      platform: selectedPlatform,
-      accountName: `@new_${selectedPlatform}_account`,
-      accountId: `${Date.now()}`,
-      profileImageUrl: `https://picsum.photos/seed/${selectedPlatform}new/200/200`,
-      followerCount: Math.floor(Math.random() * 10000),
-      engagementRate: Number((Math.random() * 5 + 1).toFixed(1)),
-      isActive: true,
-      lastSyncedAt: new Date().toISOString(),
-      connectedAt: new Date().toISOString(),
+    try {
+      await socialAccountsApi.connect(currentWorkspace.id, {
+        platform: selectedPlatform,
+        accessToken: 'demo-token',
+        accountName: `@${selectedPlatform}_account`,
+        platformAccountId: `${Date.now()}`,
+      })
+      // Account created on server — refetch to update list
+      setIsConnectModalOpen(false)
+      invalidateCache('social-accounts:*')
+      refetch()
+      toast.success(`${platformInfo[selectedPlatform as keyof typeof platformInfo]?.name} account connected!`)
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to connect account')
+    } finally {
+      setIsConnecting(false)
     }
-
-    setAccounts([...accounts, newAccount])
-    setIsConnecting(false)
-    setIsConnectModalOpen(false)
-    toast.success(`${platformInfo[selectedPlatform as keyof typeof platformInfo]?.name} account connected!`)
   }
 
-  const handleDisconnect = (accountId: string) => {
-    setAccounts(accounts.filter((a) => a.id !== accountId))
-    toast.success('Account disconnected')
+  const handleDisconnect = async (accountId: string) => {
+    try {
+      await socialAccountsApi.disconnect(accountId)
+      invalidateCache('social-accounts:*')
+      refetch()
+      toast.success('Account disconnected')
+    } catch {
+      toast.error('Failed to disconnect account')
+    }
   }
 
-  const handleRefresh = async (_accountId: string) => {
-    toast.success('Account synced successfully')
+  const handleRefresh = async (accountId: string) => {
+    try {
+      await socialAccountsApi.refresh(accountId)
+      invalidateCache('social-accounts:*')
+      refetch()
+      toast.success('Account synced successfully')
+    } catch {
+      toast.error('Failed to sync account')
+    }
   }
 
   const handleReconnect = async (accountId: string) => {
-    setAccounts(
-      accounts.map((a) =>
-        a.id === accountId ? { ...a, isActive: true, error: undefined } : a
-      )
-    )
-    toast.success('Account reconnected')
+    try {
+      await socialAccountsApi.refresh(accountId)
+      invalidateCache('social-accounts:*')
+      refetch()
+      toast.success('Account reconnected')
+    } catch {
+      toast.error('Failed to reconnect account')
+    }
   }
 
-  const getStatusBadge = (account: typeof mockAccounts[0]) => {
+  const getStatusBadge = (account: any) => {
     if (account.error) {
       return (
         <Badge variant="destructive" size="sm" className="gap-1">
@@ -215,26 +188,25 @@ export function SocialAccounts() {
     )
   }
 
+  if (isLoading) {
+    return (
+      <div className="space-y-4 sm:space-y-6 animate-pulse">
+        <div className="h-10 bg-slate-200 dark:bg-slate-700 rounded-lg w-56" />
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <div key={i} className="h-48 bg-slate-200 dark:bg-slate-700 rounded-xl" />
+          ))}
+        </div>
+      </div>
+    )
+  }
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       className="space-y-4 sm:space-y-6"
     >
-      {/* Info Banner */}
-      <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3 sm:p-4">
-        <div className="flex gap-3">
-          <Info className="w-5 h-5 text-blue-600 dark:text-blue-400 shrink-0 mt-0.5" />
-          <div className="text-sm">
-            <p className="font-medium text-blue-900 dark:text-blue-100">Demo Mode</p>
-            <p className="text-blue-700 dark:text-blue-300 mt-1">
-              The accounts shown below are simulated for demonstration. To connect real social media accounts, 
-              you'll need to set up OAuth credentials (Client ID & Secret) for each platform in the backend <code className="bg-blue-100 dark:bg-blue-800 px-1 rounded">.env</code> file.
-            </p>
-          </div>
-        </div>
-      </div>
-
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
         <div>
@@ -343,7 +315,7 @@ export function SocialAccounts() {
                   <div className="flex items-center justify-center gap-1">
                     <TrendingUp className="w-4 h-4 text-slate-400" />
                     <span className="text-lg font-semibold text-slate-900 dark:text-white">
-                      {account.engagementRate}%
+                      {account.engagementRate ?? '0.0'}%
                     </span>
                   </div>
                   <span className="text-xs text-slate-500">Engagement</span>
@@ -351,7 +323,7 @@ export function SocialAccounts() {
                 <div className="text-center">
                   <span className="text-xs text-slate-500">Last synced</span>
                   <p className="text-sm text-slate-700 dark:text-slate-300">
-                    {new Date(account.lastSyncedAt).toLocaleDateString()}
+                    {account.lastSyncedAt ? new Date(account.lastSyncedAt).toLocaleDateString() : 'Never'}
                   </p>
                 </div>
               </div>

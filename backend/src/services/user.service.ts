@@ -1,6 +1,7 @@
 import prisma from '../config/database';
 import { User } from '@prisma/client';
 import { AppError } from '../middleware/error';
+import { cacheGet, cacheSet, cacheDel, CacheKeys, CacheTTL } from '../config/redis';
 
 export interface UpdateUserInput {
   name?: string;
@@ -12,9 +13,16 @@ export interface UpdateUserInput {
 
 // Get user by ID
 export async function getUserById(userId: string): Promise<User | null> {
-  return prisma.user.findUnique({
+  const cacheKey = CacheKeys.userProfile(userId);
+  const cached = await cacheGet<User>(cacheKey);
+  if (cached) return cached;
+
+  const user = await prisma.user.findUnique({
     where: { id: userId },
   });
+
+  if (user) await cacheSet(cacheKey, user, CacheTTL.DEFAULT);
+  return user;
 }
 
 // Get user by email
@@ -58,10 +66,13 @@ export async function updateUser(userId: string, data: UpdateUserInput): Promise
     updateData.preferences = { ...currentPrefs, ...data.preferences };
   }
 
-  return prisma.user.update({
+  const updated = await prisma.user.update({
     where: { id: userId },
     data: updateData,
   });
+
+  await cacheDel(CacheKeys.userProfile(userId));
+  return updated;
 }
 
 // Update user preferences
@@ -79,12 +90,15 @@ export async function updateUserPreferences(
 
   const currentPrefs = (user.preferences as Record<string, unknown>) || {};
 
-  return prisma.user.update({
+  const updated = await prisma.user.update({
     where: { id: userId },
     data: {
       preferences: { ...currentPrefs, ...preferences } as object,
     },
   });
+
+  await cacheDel(CacheKeys.userProfile(userId));
+  return updated;
 }
 
 // Delete user account
@@ -141,6 +155,10 @@ export async function getUserNotifications(
 ) {
   const { unreadOnly = false, limit = 20, offset = 0 } = options;
 
+  const cacheKey = `${CacheKeys.userNotifications(userId)}:${unreadOnly}:${limit}:${offset}`;
+  const cached = await cacheGet<{ notifications: any[]; total: number }>(cacheKey);
+  if (cached) return cached;
+
   const where = {
     userId,
     ...(unreadOnly && { isRead: false }),
@@ -156,7 +174,9 @@ export async function getUserNotifications(
     prisma.notification.count({ where }),
   ]);
 
-  return { notifications, total };
+  const result = { notifications, total };
+  await cacheSet(cacheKey, result, CacheTTL.SHORT);
+  return result;
 }
 
 // Mark notification as read
@@ -174,6 +194,8 @@ export async function markNotificationRead(
       readAt: new Date(),
     },
   });
+
+  await cacheDel(`${CacheKeys.userNotifications(userId)}:*`);
 }
 
 // Mark all notifications as read
@@ -188,6 +210,8 @@ export async function markAllNotificationsRead(userId: string): Promise<void> {
       readAt: new Date(),
     },
   });
+
+  await cacheDel(`${CacheKeys.userNotifications(userId)}:*`);
 }
 
 // Create notification
@@ -206,5 +230,8 @@ export async function createNotification(data: {
       message: data.message,
       data: (data.data || {}) as object,
     },
+  }).then(async (notification) => {
+    await cacheDel(`${CacheKeys.userNotifications(data.userId)}:*`);
+    return notification;
   });
 }

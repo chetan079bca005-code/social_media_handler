@@ -40,11 +40,14 @@ export const useAuthStore = create<AuthState>()(
         if (!state) {
           return
         }
-        if (state.user) {
-          state.setUser(state.user)
-        } else if (state.token) {
-          state.setToken(state.token)
+        // If there's a stored token, keep isLoading=true so route guards
+        // wait for initializeAuth to verify the token with the server.
+        // Do NOT set isAuthenticated here — stale tokens must be verified first.
+        if (state.token) {
+          // Keep isLoading = true (default) — initializeAuth will set it false
+          return
         }
+        // No token → definitely not authenticated
         state.setLoading(false)
       },
     }
@@ -237,12 +240,16 @@ export const useNotificationsStore = create<NotificationsState>((set) => ({
       unreadCount: state.unreadCount + (notification.read ? 0 : 1),
     })),
   markAsRead: (id) =>
-    set((state) => ({
-      notifications: state.notifications.map((n) =>
-        n.id === id ? { ...n, read: true } : n
-      ),
-      unreadCount: Math.max(0, state.unreadCount - 1),
-    })),
+    set((state) => {
+      const notification = state.notifications.find((n) => n.id === id)
+      const wasUnread = notification && !notification.read
+      return {
+        notifications: state.notifications.map((n) =>
+          n.id === id ? { ...n, read: true } : n
+        ),
+        unreadCount: wasUnread ? Math.max(0, state.unreadCount - 1) : state.unreadCount,
+      }
+    }),
   markAllAsRead: () =>
     set((state) => ({
       notifications: state.notifications.map((n) => ({ ...n, read: true })),

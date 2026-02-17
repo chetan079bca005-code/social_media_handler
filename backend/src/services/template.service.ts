@@ -1,6 +1,7 @@
 import prisma from '../config/database';
 import { SocialPlatform } from '@prisma/client';
 import { AppError } from '../middleware/error';
+import { cacheGet, cacheSet, cacheDel, CacheKeys, CacheTTL } from '../config/redis';
 
 export interface CreateTemplateInput {
   name: string;
@@ -28,6 +29,11 @@ export async function getTemplates(
   workspaceId: string,
   filters?: { category?: string; search?: string; isPublic?: boolean }
 ) {
+  const queryKey = JSON.stringify(filters || {});
+  const cacheKey = CacheKeys.workspaceTemplates(workspaceId, queryKey);
+  const cached = await cacheGet<any[]>(cacheKey);
+  if (cached) return cached;
+
   const where: any = {
     OR: [
       { workspaceId },
@@ -52,7 +58,7 @@ export async function getTemplates(
     ];
   }
 
-  return prisma.template.findMany({
+  const templates = await prisma.template.findMany({
     where,
     include: {
       createdBy: {
@@ -68,10 +74,17 @@ export async function getTemplates(
       { updatedAt: 'desc' },
     ],
   });
+
+  await cacheSet(cacheKey, templates, CacheTTL.DEFAULT);
+  return templates;
 }
 
 export async function getTemplateById(id: string) {
-  return prisma.template.findUnique({
+  const cacheKey = CacheKeys.template(id);
+  const cached = await cacheGet<any>(cacheKey);
+  if (cached) return cached;
+
+  const template = await prisma.template.findUnique({
     where: { id },
     include: {
       createdBy: {
@@ -83,6 +96,9 @@ export async function getTemplateById(id: string) {
       },
     },
   });
+
+  if (template) await cacheSet(cacheKey, template, CacheTTL.DEFAULT);
+  return template;
 }
 
 export async function createTemplate(
@@ -90,7 +106,7 @@ export async function createTemplate(
   userId: string,
   data: CreateTemplateInput
 ) {
-  return prisma.template.create({
+  const created = await prisma.template.create({
     data: {
       workspaceId,
       createdById: userId,
@@ -113,6 +129,9 @@ export async function createTemplate(
       },
     },
   });
+
+  await cacheDel(`templates:workspace:${workspaceId}:*`);
+  return created;
 }
 
 export async function updateTemplate(
@@ -128,7 +147,7 @@ export async function updateTemplate(
     throw new AppError('Template not found', 404);
   }
 
-  return prisma.template.update({
+  const updated = await prisma.template.update({
     where: { id },
     data: {
       ...(data.name !== undefined && { name: data.name }),
@@ -150,6 +169,10 @@ export async function updateTemplate(
       },
     },
   });
+
+  await cacheDel(CacheKeys.template(id));
+  await cacheDel(`templates:workspace:${workspaceId}:*`);
+  return updated;
 }
 
 export async function deleteTemplate(id: string, workspaceId: string) {
@@ -162,6 +185,8 @@ export async function deleteTemplate(id: string, workspaceId: string) {
   }
 
   await prisma.template.delete({ where: { id } });
+  await cacheDel(CacheKeys.template(id));
+  await cacheDel(`templates:workspace:${workspaceId}:*`);
 }
 
 export async function incrementUsageCount(id: string) {

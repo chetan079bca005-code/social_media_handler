@@ -1,15 +1,31 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { Mail, Loader2, ArrowLeft, CheckCircle } from 'lucide-react'
+import { Mail, Loader2, ArrowLeft, CheckCircle, Wifi, WifiOff } from 'lucide-react'
 import { Button } from '../../components/ui/Button'
 import { Input } from '../../components/ui/Input'
 import toast from 'react-hot-toast'
+import { authApi, warmupBackend, getBackendStatus } from '../../services/api'
 
 export function ForgotPassword() {
   const [email, setEmail] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [isSubmitted, setIsSubmitted] = useState(false)
+  const [serverStatus, setServerStatus] = useState<'checking' | 'ready' | 'offline'>('checking')
+
+  useEffect(() => {
+    const checkServer = async () => {
+      const status = getBackendStatus()
+      if (status === 'ready') {
+        setServerStatus('ready')
+        return
+      }
+      setServerStatus('checking')
+      const ok = await warmupBackend()
+      setServerStatus(ok ? 'ready' : 'offline')
+    }
+    checkServer()
+  }, [])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -19,13 +35,35 @@ export function ForgotPassword() {
       return
     }
 
+    if (serverStatus === 'offline') {
+      toast.error('Server is unreachable. Please try again later.')
+      return
+    }
+
+    if (serverStatus !== 'ready') {
+      toast.loading('Connecting to server, please wait...', { duration: 3000 })
+      const ok = await warmupBackend()
+      setServerStatus(ok ? 'ready' : 'offline')
+      if (!ok) {
+        toast.error('Server is unreachable. Please try again later.')
+        return
+      }
+    }
+
     setIsLoading(true)
 
-    // Simulate API call
-    setTimeout(() => {
-      setIsLoading(false)
+    try {
+      await authApi.forgotPassword(email.trim())
       setIsSubmitted(true)
-    }, 1500)
+    } catch (err: any) {
+      const message = err.message || 'Failed to send reset email'
+      if (message.includes('long to respond') || message.includes('Unable to reach')) {
+        setServerStatus('offline')
+      }
+      toast.error(message)
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   if (isSubmitted) {
@@ -87,6 +125,39 @@ export function ForgotPassword() {
           No worries, we'll send you reset instructions.
         </p>
       </div>
+
+      {/* Server Status */}
+      {serverStatus === 'checking' && (
+        <div className="flex items-center gap-2 p-3 rounded-lg bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-300 text-sm mb-4">
+          <Loader2 className="w-4 h-4 animate-spin" />
+          Connecting to server...
+        </div>
+      )}
+      {serverStatus === 'offline' && (
+        <div className="flex items-center justify-between p-3 rounded-lg bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300 text-sm mb-4">
+          <div className="flex items-center gap-2">
+            <WifiOff className="w-4 h-4" />
+            Server is unreachable
+          </div>
+          <button
+            type="button"
+            onClick={async () => {
+              setServerStatus('checking')
+              const ok = await warmupBackend()
+              setServerStatus(ok ? 'ready' : 'offline')
+            }}
+            className="text-xs font-medium underline hover:no-underline"
+          >
+            Retry
+          </button>
+        </div>
+      )}
+      {serverStatus === 'ready' && (
+        <div className="flex items-center gap-2 p-3 rounded-lg bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-300 text-sm mb-4 animate-in fade-in">
+          <Wifi className="w-4 h-4" />
+          Server connected
+        </div>
+      )}
 
       {/* Form */}
       <form onSubmit={handleSubmit} className="space-y-5">

@@ -1,4 +1,4 @@
-﻿import { useState, useEffect, useMemo, useCallback } from 'react'
+﻿import { useState, useMemo } from 'react'
 import { motion } from 'framer-motion'
 import FullCalendar from '@fullcalendar/react'
 import dayGridPlugin from '@fullcalendar/daygrid'
@@ -51,6 +51,7 @@ import { getPlatformColor, PLATFORMS, POST_STATUS, cn } from '../lib/utils'
 import { Link } from 'react-router-dom'
 import { postsApi } from '../services/api'
 import { useWorkspaceStore } from '../store'
+import { useDataCache, invalidateCache } from '../lib/useDataCache'
 
 interface CalendarPost {
   id: string
@@ -70,34 +71,22 @@ interface CalendarPost {
 export function ContentCalendar() {
   const navigate = useNavigate()
   const { currentWorkspace } = useWorkspaceStore()
-  const [posts, setPosts] = useState<CalendarPost[]>([])
-  const [loading, setLoading] = useState(true)
+  const wsId = currentWorkspace?.id
   const [selectedPost, setSelectedPost] = useState<CalendarPost | null>(null)
   const [isPostModalOpen, setIsPostModalOpen] = useState(false)
   const [filterPlatform, setFilterPlatform] = useState<string>('all')
   const [filterStatus, setFilterStatus] = useState<string>('all')
 
-  const fetchPosts = useCallback(async () => {
-    if (!currentWorkspace?.id) {
-      setLoading(false)
-      return
-    }
-    try {
-      setLoading(true)
+  const { data: posts = [], isLoading: loading, isRefreshing, refetch } = useDataCache<CalendarPost[]>(
+    `calendar:${wsId}`,
+    async () => {
+      if (!wsId) return []
       const res = await postsApi.getAll({ limit: 200 })
       const d = res?.data || res
-      const list = Array.isArray(d) ? d : d?.posts || []
-      setPosts(list)
-    } catch (err) {
-      console.error('Calendar fetch error:', err)
-    } finally {
-      setLoading(false)
-    }
-  }, [currentWorkspace?.id])
-
-  useEffect(() => {
-    fetchPosts()
-  }, [fetchPosts])
+      return Array.isArray(d) ? d : d?.posts || []
+    },
+    { enabled: !!wsId }
+  )
 
   const filteredPosts = useMemo(() => {
     return posts.filter((post) => {
@@ -141,7 +130,8 @@ export function ContentCalendar() {
   const handleDeletePost = async (id: string) => {
     try {
       await postsApi.delete(id)
-      setPosts(prev => prev.filter(p => p.id !== id))
+      invalidateCache('calendar:*')
+      refetch()
       setIsPostModalOpen(false)
     } catch (err) {
       console.error('Delete error:', err)
@@ -151,7 +141,8 @@ export function ContentCalendar() {
   const handleDuplicatePost = async (id: string) => {
     try {
       await postsApi.duplicate(id)
-      fetchPosts()
+      invalidateCache('calendar:*')
+      refetch()
     } catch (err) {
       console.error('Duplicate error:', err)
     }
@@ -198,9 +189,17 @@ export function ContentCalendar() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-40">
-        <Loader2 className="w-8 h-8 animate-spin text-indigo-500 mr-3" />
-        <span className="text-slate-500 text-lg">Loading calendar...</span>
+      <div className="space-y-4 sm:space-y-6 animate-pulse">
+        <div className="flex justify-between items-center">
+          <div className="h-10 bg-slate-200 dark:bg-slate-700 rounded-lg w-56" />
+          <div className="h-10 bg-slate-200 dark:bg-slate-700 rounded-lg w-32" />
+        </div>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className="h-20 bg-slate-200 dark:bg-slate-700 rounded-xl" />
+          ))}
+        </div>
+        <div className="h-125 bg-slate-200 dark:bg-slate-700 rounded-xl" />
       </div>
     )
   }
@@ -214,14 +213,19 @@ export function ContentCalendar() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white">Content Calendar</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-linear-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg shadow-indigo-500/20">
+              <CalendarIcon className="w-5 h-5 text-white" />
+            </div>
+            Content Calendar
+          </h1>
           <p className="text-sm sm:text-base text-slate-500 dark:text-slate-400 mt-1">
             Plan and manage your content schedule
           </p>
         </div>
         <div className="flex items-center gap-3 w-full sm:w-auto">
-          <Button variant="outline" size="sm" onClick={fetchPosts}>
-            <RefreshCw className="w-4 h-4 mr-2" />Refresh
+          <Button variant="outline" size="sm" onClick={refetch}>
+            <RefreshCw className={cn('w-4 h-4 mr-2', isRefreshing && 'animate-spin')} />Refresh
           </Button>
           <Button asChild className="w-full sm:w-auto">
             <Link to="/create"><Plus className="w-4 h-4 mr-2" />Create Post</Link>
@@ -232,19 +236,20 @@ export function ContentCalendar() {
       {/* Status Summary */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {[
-          { label: 'Scheduled', key: 'scheduled', color: 'text-blue-600 bg-blue-50 dark:bg-blue-900/20', icon: Clock },
-          { label: 'Published', key: 'published', color: 'text-green-600 bg-green-50 dark:bg-green-900/20', icon: CheckCircle2 },
-          { label: 'Draft', key: 'draft', color: 'text-gray-600 bg-gray-50 dark:bg-gray-900/20', icon: AlertCircle },
-          { label: 'Failed', key: 'failed', color: 'text-red-600 bg-red-50 dark:bg-red-900/20', icon: XCircle },
-        ].map(({ label, key, color, icon: Icon }) => (
-          <Card key={key}>
-            <CardContent className="p-4 flex items-center gap-3">
-              <div className={cn('w-10 h-10 rounded-lg flex items-center justify-center', color)}>
-                <Icon className="w-5 h-5" />
+          { label: 'Scheduled', key: 'scheduled', gradient: 'from-blue-500 to-blue-600', icon: Clock, bg: 'bg-blue-500/10' },
+          { label: 'Published', key: 'published', gradient: 'from-emerald-500 to-emerald-600', icon: CheckCircle2, bg: 'bg-emerald-500/10' },
+          { label: 'Draft', key: 'draft', gradient: 'from-slate-400 to-slate-500', icon: AlertCircle, bg: 'bg-slate-400/10' },
+          { label: 'Failed', key: 'failed', gradient: 'from-red-500 to-red-600', icon: XCircle, bg: 'bg-red-500/10' },
+        ].map(({ label, key, gradient, icon: Icon, bg }) => (
+          <Card key={key} className="group hover:shadow-md transition-all duration-200 border-0 shadow-sm overflow-hidden relative">
+            <div className={cn('absolute inset-0 bg-linear-to-br opacity-[0.03]', gradient)} />
+            <CardContent className="p-4 flex items-center gap-3 relative">
+              <div className={cn('w-11 h-11 rounded-xl flex items-center justify-center', bg)}>
+                <Icon className={cn('w-5 h-5', key === 'scheduled' ? 'text-blue-500' : key === 'published' ? 'text-emerald-500' : key === 'failed' ? 'text-red-500' : 'text-slate-400')} />
               </div>
               <div>
-                <p className="text-2xl font-bold text-slate-900 dark:text-white">{statusCounts[key] || 0}</p>
-                <p className="text-xs text-slate-500">{label}</p>
+                <p className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">{statusCounts[key] || 0}</p>
+                <p className="text-xs font-medium text-slate-500 dark:text-slate-400">{label}</p>
               </div>
             </CardContent>
           </Card>
@@ -252,7 +257,7 @@ export function ContentCalendar() {
       </div>
 
       {/* Filters */}
-      <Card>
+      <Card className="border-0 shadow-sm">
         <CardContent className="p-3 sm:p-4">
           <div className="flex flex-col sm:flex-row flex-wrap items-start sm:items-center gap-3 sm:gap-4">
             <div className="flex items-center gap-2">
@@ -292,9 +297,9 @@ export function ContentCalendar() {
       </Card>
 
       {/* Calendar */}
-      <Card>
-        <CardContent className="p-4">
-          <div className="calendar-container">
+      <Card className="border-0 shadow-sm overflow-hidden">
+        <CardContent className="p-0">
+          <div className="calendar-container p-4 sm:p-6">
             <style>{`
               .fc {
                 --fc-border-color: #e2e8f0;
@@ -304,25 +309,104 @@ export function ContentCalendar() {
                 --fc-button-hover-border-color: #4f46e5;
                 --fc-button-active-bg-color: #4338ca;
                 --fc-button-active-border-color: #4338ca;
-                --fc-today-bg-color: rgba(99, 102, 241, 0.08);
+                --fc-today-bg-color: rgba(99, 102, 241, 0.06);
                 font-family: 'Inter', system-ui, sans-serif;
               }
               .dark .fc {
-                --fc-border-color: #334155;
-                --fc-page-bg-color: #0f172a;
+                --fc-border-color: #1e293b;
+                --fc-page-bg-color: transparent;
                 --fc-neutral-bg-color: #1e293b;
+                --fc-today-bg-color: rgba(99, 102, 241, 0.08);
               }
-              .fc .fc-button { font-weight: 500; border-radius: 8px; padding: 8px 16px; }
-              .fc .fc-button-group .fc-button { border-radius: 0; }
-              .fc .fc-button-group .fc-button:first-child { border-radius: 8px 0 0 8px; }
-              .fc .fc-button-group .fc-button:last-child { border-radius: 0 8px 8px 0; }
-              .fc-event { border-radius: 6px; padding: 2px 6px; font-size: 12px; cursor: pointer; }
-              .fc-daygrid-day-number { padding: 8px; color: #64748b; }
+              .fc .fc-toolbar { 
+                margin-bottom: 1.5rem !important;
+                flex-wrap: wrap;
+                gap: 8px;
+              }
+              .fc .fc-toolbar-title {
+                font-size: 1.25rem !important;
+                font-weight: 700 !important;
+                color: #1e293b;
+              }
+              .dark .fc .fc-toolbar-title { color: #f1f5f9; }
+              .fc .fc-button {
+                font-weight: 500;
+                font-size: 13px;
+                border-radius: 8px !important;
+                padding: 6px 14px;
+                box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+                transition: all 0.15s ease;
+              }
+              .fc .fc-button:focus { box-shadow: 0 0 0 2px rgba(99,102,241,0.3) !important; }
+              .fc .fc-button-group .fc-button { border-radius: 0 !important; }
+              .fc .fc-button-group .fc-button:first-child { border-radius: 8px 0 0 8px !important; }
+              .fc .fc-button-group .fc-button:last-child { border-radius: 0 8px 8px 0 !important; }
+              .fc-event {
+                border-radius: 6px !important;
+                padding: 3px 8px;
+                font-size: 11px;
+                font-weight: 500;
+                cursor: pointer;
+                border: none !important;
+                box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+                transition: transform 0.1s ease, box-shadow 0.1s ease;
+              }
+              .fc-event:hover {
+                transform: translateY(-1px);
+                box-shadow: 0 4px 6px rgba(0,0,0,0.12);
+              }
+              .fc-daygrid-day {
+                transition: background-color 0.15s ease;
+              }
+              .fc-daygrid-day:hover {
+                background-color: rgba(99, 102, 241, 0.03);
+              }
+              .fc-daygrid-day-number {
+                padding: 8px 10px;
+                font-size: 13px;
+                font-weight: 500;
+                color: #64748b;
+              }
+              .fc-day-today .fc-daygrid-day-number {
+                background: #6366f1;
+                color: white !important;
+                border-radius: 8px;
+                width: 28px;
+                height: 28px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                margin: 4px;
+              }
               .dark .fc-daygrid-day-number { color: #94a3b8; }
-              .fc-col-header-cell-cushion { padding: 10px; font-weight: 600; color: #475569; }
-              .dark .fc-col-header-cell-cushion { color: #cbd5e1; }
-              .fc-toolbar-title { font-size: 1.5rem !important; font-weight: 700 !important; }
+              .fc-col-header-cell {
+                border-bottom: 2px solid #e2e8f0 !important;
+              }
+              .dark .fc-col-header-cell { border-bottom-color: #1e293b !important; }
+              .fc-col-header-cell-cushion {
+                padding: 12px 8px;
+                font-weight: 600;
+                font-size: 12px;
+                text-transform: uppercase;
+                letter-spacing: 0.05em;
+                color: #64748b;
+              }
+              .dark .fc-col-header-cell-cushion { color: #94a3b8; }
               .fc-daygrid-event-dot { display: none; }
+              .fc-daygrid-more-link {
+                font-size: 11px;
+                font-weight: 600;
+                color: #6366f1;
+                padding: 2px 6px;
+                border-radius: 4px;
+              }
+              .fc-daygrid-more-link:hover { background: rgba(99,102,241,0.1); }
+              .fc-list-event { cursor: pointer; }
+              .fc-list-event:hover td { background: rgba(99,102,241,0.03) !important; }
+              .fc th, .fc td { border-color: #f1f5f9 !important; }
+              .dark .fc th, .dark .fc td { border-color: #1e293b !important; }
+              .fc .fc-scrollgrid { border: none !important; }
+              .fc .fc-scrollgrid td:last-of-type { border-right: none !important; }
             `}</style>
             <FullCalendar
               plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin, listPlugin]}
@@ -346,34 +430,52 @@ export function ContentCalendar() {
       </Card>
 
       {/* Upcoming Posts */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Upcoming Scheduled Posts</CardTitle>
-          <CardDescription>Your next scheduled content</CardDescription>
+      <Card className="border-0 shadow-sm">
+        <CardHeader className="pb-2">
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-lg bg-blue-500/10 flex items-center justify-center">
+                  <Clock className="w-4 h-4 text-blue-500" />
+                </div>
+                Upcoming Scheduled Posts
+              </CardTitle>
+              <CardDescription className="mt-1">Your next scheduled content</CardDescription>
+            </div>
+            {scheduledPosts.length > 0 && (
+              <Badge variant="secondary" className="text-xs">{scheduledPosts.length} upcoming</Badge>
+            )}
+          </div>
         </CardHeader>
         <CardContent>
           {scheduledPosts.length > 0 ? (
-            <div className="space-y-3">
-              {scheduledPosts.slice(0, 10).map((post) => {
+            <div className="space-y-2">
+              {scheduledPosts.slice(0, 10).map((post, index) => {
                 const platform = post.platforms?.[0] || post.platform || ''
+                const platformColor = getPlatformColor(platform.toLowerCase())
                 return (
                   <div key={post.id}
-                    className="flex items-center gap-4 p-4 rounded-lg border border-slate-200 dark:border-slate-700 hover:border-indigo-300 dark:hover:border-indigo-700 transition-colors">
-                    <div className="w-16 h-16 rounded-lg bg-linear-to-br from-slate-100 to-slate-200 dark:from-slate-700 dark:to-slate-800 flex items-center justify-center">
-                      <CalendarIcon className="w-6 h-6 text-slate-400" />
+                    className="flex items-center gap-4 p-3 sm:p-4 rounded-xl border border-slate-100 dark:border-slate-800 hover:border-indigo-200 dark:hover:border-indigo-800 hover:shadow-sm transition-all duration-200 group">
+                    <div className="hidden sm:flex items-center justify-center w-8 text-xs font-bold text-slate-400">
+                      {String(index + 1).padStart(2, '0')}
+                    </div>
+                    <div className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0"
+                      style={{ backgroundColor: `${platformColor}15` }}>
+                      <CalendarIcon className="w-5 h-5" style={{ color: platformColor }} />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-slate-900 dark:text-white truncate">
+                      <p className="text-sm font-medium text-slate-900 dark:text-white truncate group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
                         {post.content || post.caption || 'Untitled post'}
                       </p>
-                      <div className="flex items-center gap-3 mt-2">
+                      <div className="flex items-center gap-2 mt-1.5">
                         {platform && (
-                          <Badge variant="secondary" size="sm"
-                            style={{ backgroundColor: `${getPlatformColor(platform.toLowerCase())}20`, color: getPlatformColor(platform.toLowerCase()) }}>
+                          <Badge variant="secondary" size="sm" className="text-[10px] font-semibold"
+                            style={{ backgroundColor: `${platformColor}15`, color: platformColor }}>
                             {platform}
                           </Badge>
                         )}
-                        <span className="text-xs text-slate-500">
+                        <span className="text-xs text-slate-400 flex items-center gap-1">
+                          <Clock className="w-3 h-3" />
                           {post.scheduledAt ? new Date(post.scheduledAt).toLocaleDateString('en-US', {
                             weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit',
                           }) : ''}
@@ -384,7 +486,7 @@ export function ContentCalendar() {
                       {getStatusIcon(post.status)}
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon-sm"><MoreHorizontal className="w-4 h-4" /></Button>
+                          <Button variant="ghost" size="icon-sm" className="opacity-0 group-hover:opacity-100 transition-opacity"><MoreHorizontal className="w-4 h-4" /></Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
                           <DropdownMenuItem onClick={() => { setSelectedPost(post); setIsPostModalOpen(true); }}>
@@ -408,10 +510,13 @@ export function ContentCalendar() {
               })}
             </div>
           ) : (
-            <div className="text-center py-8 text-slate-400">
-              <CalendarIcon className="w-12 h-12 mx-auto mb-3 opacity-50" />
-              <p className="text-sm">No scheduled posts. Create and schedule content to see it here.</p>
-              <Button variant="outline" size="sm" className="mt-4" asChild>
+            <div className="text-center py-12">
+              <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center">
+                <CalendarIcon className="w-8 h-8 text-slate-300 dark:text-slate-600" />
+              </div>
+              <h3 className="text-sm font-medium text-slate-900 dark:text-white mb-1">No scheduled posts</h3>
+              <p className="text-sm text-slate-400 mb-4">Create and schedule content to see it here.</p>
+              <Button variant="outline" size="sm" asChild>
                 <Link to="/create"><Plus className="w-4 h-4 mr-2" />Create Post</Link>
               </Button>
             </div>

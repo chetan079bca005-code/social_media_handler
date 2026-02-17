@@ -168,6 +168,22 @@ export const publishPost = asyncHandler(async (req: AuthRequest, res: Response) 
   sendSuccess(res, { results }, 'Post publishing initiated');
 });
 
+export const schedulePost = asyncHandler(async (req: AuthRequest, res: Response) => {
+  const postId = req.params.postId as string;
+  const { scheduledAt } = req.body;
+
+  if (!scheduledAt) {
+    return sendError(res, 'scheduledAt is required', 400);
+  }
+
+  const post = await postService.updatePost(postId, {
+    scheduledAt: new Date(scheduledAt),
+  });
+
+  // updatePost already sets status to 'SCHEDULED' when scheduledAt is provided
+  sendSuccess(res, { post }, 'Post scheduled');
+});
+
 export const duplicatePost = asyncHandler(async (req: AuthRequest, res: Response) => {
   if (!req.user) {
     return sendError(res, 'Unauthorized', 401);

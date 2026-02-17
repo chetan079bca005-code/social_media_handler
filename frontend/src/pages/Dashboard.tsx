@@ -1,4 +1,4 @@
-﻿import { useState, useEffect } from 'react'
+﻿import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import {
@@ -34,6 +34,7 @@ import { Badge } from '../components/ui/Badge'
 import { formatNumber, getPlatformColor } from '../lib/utils'
 import { analyticsApi, postsApi } from '../services/api'
 import { useWorkspaceStore, useAuthStore } from '../store'
+import { useDataCache, invalidateCache } from '../lib/useDataCache'
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -50,47 +51,44 @@ const itemVariants = {
 export function Dashboard() {
   const { currentWorkspace } = useWorkspaceStore()
   const { user } = useAuthStore()
-  const [loading, setLoading] = useState(true)
-  const [analytics, setAnalytics] = useState<any>(null)
-  const [topPosts, setTopPosts] = useState<any[]>([])
-  const [upcomingPosts, setUpcomingPosts] = useState<any[]>([])
+  const wsId = currentWorkspace?.id
 
-  useEffect(() => {
-    async function fetchDashboard() {
-      if (!currentWorkspace?.id) {
-        setLoading(false)
-        return
-      }
-      try {
-        setLoading(true)
-        const [analyticsRes, scheduledRes, publishedRes] = await Promise.allSettled([
-          analyticsApi.getWorkspaceAnalytics(currentWorkspace.id, {
-            startDate: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
-            endDate: new Date().toISOString(),
-          }),
-          postsApi.getAll({ status: 'SCHEDULED', limit: 5 }),
-          postsApi.getAll({ status: 'PUBLISHED', limit: 5, sortBy: 'engagement' }),
-        ])
+  const { data: dashboardData, isLoading: loading, isRefreshing } = useDataCache(
+    `dashboard:${wsId}`,
+    async () => {
+      if (!wsId) return { analytics: null, topPosts: [], upcomingPosts: [] }
+      const [analyticsRes, scheduledRes, publishedRes] = await Promise.allSettled([
+        analyticsApi.getWorkspaceAnalytics(wsId, {
+          startDate: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
+          endDate: new Date().toISOString(),
+        }),
+        postsApi.getAll({ status: 'SCHEDULED', limit: 5 }),
+        postsApi.getAll({ status: 'PUBLISHED', limit: 5, sortBy: 'engagement' }),
+      ])
 
-        if (analyticsRes.status === 'fulfilled') {
-          setAnalytics(analyticsRes.value?.data?.analytics || null)
-        }
-        if (scheduledRes.status === 'fulfilled') {
-          const d = scheduledRes.value?.data || scheduledRes.value
-          setUpcomingPosts(Array.isArray(d) ? d : d?.posts || [])
-        }
-        if (publishedRes.status === 'fulfilled') {
-          const d = publishedRes.value?.data || publishedRes.value
-          setTopPosts(Array.isArray(d) ? d : d?.posts || [])
-        }
-      } catch (err) {
-        console.error('Dashboard fetch error:', err)
-      } finally {
-        setLoading(false)
+      let analytics = null
+      let upcomingPosts: any[] = []
+      let topPosts: any[] = []
+
+      if (analyticsRes.status === 'fulfilled') {
+        analytics = analyticsRes.value?.data?.analytics || null
       }
-    }
-    fetchDashboard()
-  }, [currentWorkspace?.id])
+      if (scheduledRes.status === 'fulfilled') {
+        const d = scheduledRes.value?.data || scheduledRes.value
+        upcomingPosts = Array.isArray(d) ? d : d?.posts || []
+      }
+      if (publishedRes.status === 'fulfilled') {
+        const d = publishedRes.value?.data || publishedRes.value
+        topPosts = Array.isArray(d) ? d : d?.posts || []
+      }
+      return { analytics, topPosts, upcomingPosts }
+    },
+    { enabled: !!wsId }
+  )
+
+  const analytics = dashboardData?.analytics || null
+  const topPosts = dashboardData?.topPosts || []
+  const upcomingPosts = dashboardData?.upcomingPosts || []
 
   const stats = [
     {
@@ -139,9 +137,14 @@ export function Dashboard() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-40">
-        <Loader2 className="w-8 h-8 animate-spin text-indigo-500 mr-3" />
-        <span className="text-slate-500 text-lg">Loading dashboard...</span>
+      <div className="space-y-6">
+        <div className="h-10 w-64 bg-slate-200 dark:bg-slate-700 rounded-lg animate-pulse" />
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {[1,2,3,4].map(i => (
+            <div key={i} className="h-28 bg-slate-200 dark:bg-slate-700 rounded-xl animate-pulse" />
+          ))}
+        </div>
+        <div className="h-64 bg-slate-200 dark:bg-slate-700 rounded-xl animate-pulse" />
       </div>
     )
   }
@@ -170,6 +173,14 @@ export function Dashboard() {
         {stats.map((stat, index) => {
           const Icon = stat.icon
           const isPositive = stat.change >= 0
+          // Static color map — Tailwind JIT can't detect dynamic classes like `bg-${color}-100`
+          const colorMap: Record<string, { bg: string; darkBg: string; text: string }> = {
+            indigo: { bg: 'bg-indigo-100', darkBg: 'dark:bg-indigo-900/20', text: 'text-indigo-500' },
+            pink: { bg: 'bg-pink-100', darkBg: 'dark:bg-pink-900/20', text: 'text-pink-500' },
+            purple: { bg: 'bg-purple-100', darkBg: 'dark:bg-purple-900/20', text: 'text-purple-500' },
+            amber: { bg: 'bg-amber-100', darkBg: 'dark:bg-amber-900/20', text: 'text-amber-500' },
+          }
+          const colors = colorMap[stat.color] || colorMap.indigo
           return (
             <Card key={index} hover className="overflow-hidden">
               <CardContent className="p-3 sm:p-6">
@@ -188,8 +199,8 @@ export function Dashboard() {
                       </div>
                     )}
                   </div>
-                  <div className={`w-8 h-8 sm:w-12 sm:h-12 rounded-xl bg-${stat.color}-100 dark:bg-${stat.color}-900/20 flex items-center justify-center shrink-0`}>
-                    <Icon className={`w-4 h-4 sm:w-6 sm:h-6 text-${stat.color}-500`} />
+                  <div className={`w-8 h-8 sm:w-12 sm:h-12 rounded-xl ${colors.bg} ${colors.darkBg} flex items-center justify-center shrink-0`}>
+                    <Icon className={`w-4 h-4 sm:w-6 sm:h-6 ${colors.text}`} />
                   </div>
                 </div>
               </CardContent>

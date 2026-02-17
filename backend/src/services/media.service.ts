@@ -5,6 +5,7 @@ import { v4 as uuidv4 } from 'uuid';
 import path from 'path';
 import fs from 'fs/promises';
 import { config } from '../config';
+import { cacheGet, cacheSet, cacheDel, CacheKeys, CacheTTL } from '../config/redis';
 
 export interface UploadedFile {
   fieldname: string;
@@ -68,6 +69,7 @@ export async function uploadFile(
     },
   });
   
+  await cacheDel(`media:workspace:${workspaceId}:*`);
   return media;
 }
 
@@ -80,7 +82,7 @@ export async function createMediaFromUrl(
   const ext = path.extname(data.url) || '.png';
   const filename = `${uuidv4()}${ext}`;
   
-  return prisma.mediaFile.create({
+  const media = await prisma.mediaFile.create({
     data: {
       workspaceId,
       uploadedById: uploadedBy,
@@ -96,6 +98,9 @@ export async function createMediaFromUrl(
       folderId: data.folderId,
     },
   });
+
+  await cacheDel(`media:workspace:${workspaceId}:*`);
+  return media;
 }
 
 // Get media file by ID
@@ -123,6 +128,11 @@ export async function getWorkspaceMedia(
   page: number = 1,
   limit: number = 20
 ) {
+  const queryKey = JSON.stringify({ filters, page, limit });
+  const cacheKey = CacheKeys.workspaceMedia(workspaceId, queryKey);
+  const cached = await cacheGet<{ files: any[]; total: number }>(cacheKey);
+  if (cached) return cached;
+
   const where: Record<string, unknown> = { workspaceId };
   
   if (filters.type) {
@@ -173,7 +183,9 @@ export async function getWorkspaceMedia(
     prisma.mediaFile.count({ where }),
   ]);
   
-  return { files, total };
+  const result = { files, total };
+  await cacheSet(cacheKey, result, CacheTTL.SHORT);
+  return result;
 }
 
 // Update media file
@@ -223,6 +235,11 @@ export async function deleteMediaFile(mediaId: string): Promise<void> {
   await prisma.mediaFile.delete({
     where: { id: mediaId },
   });
+
+  // Invalidate cache — use URL to get workspaceId from the media record
+  if (media.workspaceId) {
+    await cacheDel(`media:workspace:${media.workspaceId}:*`);
+  }
 }
 
 // Create folder

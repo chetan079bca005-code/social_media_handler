@@ -2,6 +2,7 @@ import axios from 'axios';
 import { config } from '../config';
 import prisma from '../config/database';
 import { AppError } from '../middleware/error';
+import { cacheDel } from '../config/redis';
 
 export interface TextGenerationRequest {
   prompt: string;
@@ -465,6 +466,9 @@ export async function saveGeneratedImages(params: {
       });
     })
   );
+
+  // Invalidate media cache so generated images appear immediately
+  await cacheDel(`media:workspace:${workspaceId}:*`);
 }
 
 // Generate content calendar

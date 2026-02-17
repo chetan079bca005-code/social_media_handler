@@ -99,7 +99,7 @@ export function getPlatformColor(platform: string): string {
     instagram: '#E4405F',
     twitter: '#000000',
     linkedin: '#0A66C2',
-    tiktok: '#000000',
+    tiktok: '#00F2EA',
     youtube: '#FF0000',
     pinterest: '#E60023',
     threads: '#000000',

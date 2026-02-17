@@ -1,11 +1,11 @@
-import { useState, type FormEvent } from 'react'
+import { useState, useEffect, type FormEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { Eye, EyeOff, Mail, Lock, Loader2, ArrowRight } from 'lucide-react'
+import { Eye, EyeOff, Mail, Lock, Loader2, ArrowRight, Wifi, WifiOff } from 'lucide-react'
 import { Button } from '../../components/ui/Button'
 import { Input } from '../../components/ui/Input'
 import { useAuthStore, useWorkspaceStore } from '../../store'
-import { authApi } from '../../services/api'
+import { authApi, warmupBackend, getBackendStatus } from '../../services/api'
 import toast from 'react-hot-toast'
 
 export function Login() {
@@ -13,9 +13,27 @@ export function Login() {
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
+  const [serverStatus, setServerStatus] = useState<'checking' | 'ready' | 'offline'>('checking')
   const { login } = useAuthStore()
   const { setCurrentWorkspace, setWorkspaces } = useWorkspaceStore()
   const navigate = useNavigate()
+
+  // Warm up backend when login page loads
+  useEffect(() => {
+    let mounted = true
+    const checkServer = async () => {
+      const status = getBackendStatus()
+      if (status === 'ready') {
+        if (mounted) setServerStatus('ready')
+        return
+      }
+      if (mounted) setServerStatus('checking')
+      const ok = await warmupBackend()
+      if (mounted) setServerStatus(ok ? 'ready' : 'offline')
+    }
+    checkServer()
+    return () => { mounted = false }
+  }, [])
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
@@ -26,6 +44,19 @@ export function Login() {
     }
 
     setIsLoading(true)
+
+    // If server was offline, try warming up first
+    if (serverStatus !== 'ready') {
+      toast.loading('Connecting to server...', { id: 'server-warmup' })
+      const ok = await warmupBackend()
+      toast.dismiss('server-warmup')
+      if (!ok) {
+        toast.error('Server is unavailable. Please make sure the backend is running and try again.')
+        setIsLoading(false)
+        return
+      }
+      setServerStatus('ready')
+    }
 
     try {
       const response = await authApi.login(email, password)
@@ -44,7 +75,14 @@ export function Login() {
       navigate('/dashboard')
     } catch (error: any) {
       console.error('Login error:', error)
-      toast.error(error.message || 'Invalid email or password')
+      const msg = error.message || 'Invalid email or password'
+      
+      // If it was a timeout/network error, mark server as potentially offline
+      if (msg.includes('taking too long') || msg.includes('Unable to reach') || msg.includes('Connection failed')) {
+        setServerStatus('offline')
+      }
+      
+      toast.error(msg)
     } finally {
       setIsLoading(false)
     }
@@ -66,6 +104,37 @@ export function Login() {
           Sign in to your account to continue
         </p>
       </div>
+
+      {/* Server status banner */}
+      {serverStatus === 'checking' && (
+        <div className="mb-4 flex items-center gap-2 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 px-4 py-3 text-sm text-amber-700 dark:text-amber-300">
+          <Loader2 className="w-4 h-4 animate-spin shrink-0" />
+          <span>Connecting to server...</span>
+        </div>
+      )}
+      {serverStatus === 'offline' && (
+        <div className="mb-4 flex items-center gap-2 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 px-4 py-3 text-sm text-red-700 dark:text-red-300">
+          <WifiOff className="w-4 h-4 shrink-0" />
+          <span>Server is unreachable. Check if the backend is running.</span>
+          <button
+            type="button"
+            onClick={async () => {
+              setServerStatus('checking')
+              const ok = await warmupBackend()
+              setServerStatus(ok ? 'ready' : 'offline')
+            }}
+            className="ml-auto text-xs font-medium underline hover:no-underline"
+          >
+            Retry
+          </button>
+        </div>
+      )}
+      {serverStatus === 'ready' && (
+        <div className="mb-4 flex items-center gap-2 rounded-lg bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 px-4 py-3 text-sm text-emerald-700 dark:text-emerald-300 animate-in fade-in duration-300">
+          <Wifi className="w-4 h-4 shrink-0" />
+          <span>Server connected</span>
+        </div>
+      )}
 
       {/* Form */}
       <form onSubmit={handleSubmit} className="space-y-5">

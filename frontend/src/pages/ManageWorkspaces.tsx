@@ -1,9 +1,10 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card'
 import { Button } from '../components/ui/Button'
 import { Input } from '../components/ui/Input'
 import { useWorkspaceStore } from '../store'
 import { workspacesApi } from '../services/api'
+import { useDataCache, invalidateCache } from '../lib/useDataCache'
 import toast from 'react-hot-toast'
 
 export function ManageWorkspaces() {
@@ -12,26 +13,21 @@ export function ManageWorkspaces() {
   const [newName, setNewName] = useState('')
   const [createName, setCreateName] = useState('')
 
-  const load = async () => {
-    setIsLoading(true)
-    try {
+  useDataCache(
+    'workspaces',
+    async () => {
       const response = await workspacesApi.getAll()
-      const list = response.workspaces || []
-      setWorkspaces(list)
-      if (!currentWorkspace && list.length > 0) {
-        setCurrentWorkspace(list[0])
-      }
-    } catch (error: any) {
-      toast.error(error.message || 'Failed to load workspaces')
-    } finally {
-      setIsLoading(false)
+      return response.workspaces || []
+    },
+    {
+      onSuccess: (list: any[]) => {
+        setWorkspaces(list)
+        if (!currentWorkspace && list.length > 0) {
+          setCurrentWorkspace(list[0])
+        }
+      },
     }
-  }
-
-  useEffect(() => {
-    load()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  )
 
   const handleUpdate = async () => {
     if (!currentWorkspace) {
@@ -50,6 +46,7 @@ export function ManageWorkspaces() {
       setWorkspaces(workspaces.map((w) => (w.id === updated.id ? updated : w)))
       setCurrentWorkspace(updated)
       setNewName('')
+      invalidateCache('workspaces')
       toast.success('Workspace updated')
     } catch (error: any) {
       toast.error(error.message || 'Failed to update workspace')
@@ -71,6 +68,7 @@ export function ManageWorkspaces() {
       setWorkspaces([...workspaces, workspace])
       setCurrentWorkspace(workspace)
       setCreateName('')
+      invalidateCache('workspaces')
       toast.success('Workspace created')
     } catch (error: any) {
       toast.error(error.message || 'Failed to create workspace')

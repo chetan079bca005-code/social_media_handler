@@ -15,6 +15,7 @@ import {
   Sun,
   Monitor,
   ChevronRight,
+  Loader2,
 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../components/ui/Card'
 import { Button } from '../components/ui/Button'
@@ -39,7 +40,9 @@ import {
 } from '../components/ui/Dialog'
 import { cn } from '../lib/utils'
 import toast from 'react-hot-toast'
-import { useUIStore } from '../store'
+import { useUIStore, useAuthStore } from '../store'
+import { userApi, authApi } from '../services/api'
+import { useDataCache, invalidateCache } from '../lib/useDataCache'
 
 const TIMEZONES = [
   { value: 'America/New_York', label: 'Eastern Time (US & Canada)' },
@@ -67,17 +70,22 @@ export function SettingsPage() {
   const [activeTab, setActiveTab] = useState('profile')
   const [isDirty, setIsDirty] = useState(false)
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
+  const [isSaving, setIsSaving] = useState(false)
+  const [deleteConfirm, setDeleteConfirm] = useState('')
+  const [passwordData, setPasswordData] = useState({ currentPassword: '', newPassword: '', confirmPassword: '' })
+  const [isChangingPassword, setIsChangingPassword] = useState(false)
   const { theme: storeTheme, setTheme: setStoreTheme } = useUIStore()
+  const { user, updateUser, logout } = useAuthStore()
 
   // Profile settings
   const [profile, setProfile] = useState({
-    name: 'John Smith',
-    email: 'john@company.com',
-    bio: 'Social media manager passionate about creating engaging content.',
-    avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=200',
-    phone: '+1 (555) 123-4567',
-    company: 'Acme Inc.',
-    website: 'https://example.com',
+    name: '',
+    email: '',
+    bio: '',
+    avatar: '',
+    phone: '',
+    company: '',
+    website: '',
   })
 
   // Notification settings
@@ -101,42 +109,136 @@ export function SettingsPage() {
     timeFormat: '12h',
   })
 
-  // Sync appearance.theme with store
-  useEffect(() => {
-    setAppearance(prev => ({ ...prev, theme: storeTheme }))
-  }, [storeTheme])
-
   // Security settings
   const [security, setSecurity] = useState({
     twoFactorEnabled: false,
     sessionTimeout: '30',
   })
 
+  // Load profile using SWR cache for instant revisit
+  const { data: profileData, isLoading } = useDataCache(
+    'settings:profile',
+    async () => {
+      const res = await userApi.getProfile()
+      return res.data.data
+    }
+  )
+
+  // Populate form fields when profileData arrives
+  useEffect(() => {
+    if (!profileData) return
+    const u = profileData
+    setProfile({
+      name: u.name || '',
+      email: u.email || '',
+      bio: u.bio || '',
+      avatar: u.avatarUrl || '',
+      phone: u.phone || '',
+      company: u.company || '',
+      website: u.website || '',
+    })
+    if (u.preferences) {
+      const p = u.preferences
+      setNotifications({
+        emailNewComments: p.emailNewComments ?? true,
+        emailPostPublished: p.emailPostPublished ?? true,
+        emailTeamActivity: p.emailTeamActivity ?? false,
+        emailWeeklyReport: p.emailWeeklyReport ?? true,
+        pushNewComments: p.pushNewComments ?? true,
+        pushPostPublished: p.pushPostPublished ?? true,
+        pushTeamActivity: p.pushTeamActivity ?? true,
+        pushWeeklyReport: p.pushWeeklyReport ?? false,
+      })
+      if (p.theme) {
+        setStoreTheme(p.theme)
+      }
+      setAppearance({
+        theme: p.theme || storeTheme,
+        language: p.language || 'en',
+        timezone: p.timezone || 'America/New_York',
+        dateFormat: p.dateFormat || 'MM/DD/YYYY',
+        timeFormat: p.timeFormat || '12h',
+      })
+    }
+  }, [profileData])
+
+  // Sync appearance.theme with store
+  useEffect(() => {
+    setAppearance(prev => ({ ...prev, theme: storeTheme }))
+  }, [storeTheme])
+
   const handleProfileChange = (field: string, value: string) => {
     setProfile((prev) => ({ ...prev, [field]: value }))
     setIsDirty(true)
   }
 
-  const handleSaveProfile = () => {
-    toast.success('Profile updated successfully')
-    setIsDirty(false)
+  const handleSaveProfile = async () => {
+    setIsSaving(true)
+    try {
+      await userApi.updateProfile({
+        name: profile.name,
+        bio: profile.bio,
+        avatarUrl: profile.avatar,
+        phone: profile.phone,
+        company: profile.company,
+        website: profile.website,
+      })
+      updateUser({ name: profile.name, avatarUrl: profile.avatar })
+      invalidateCache('settings:*')
+      toast.success('Profile updated successfully')
+      setIsDirty(false)
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to update profile')
+    } finally {
+      setIsSaving(false)
+    }
   }
 
-  const handleNotificationChange = (field: string, value: boolean) => {
-    setNotifications((prev) => ({ ...prev, [field]: value }))
-    toast.success('Notification preferences updated')
+  const handleNotificationChange = async (field: string, value: boolean) => {
+    const updated = { ...notifications, [field]: value }
+    setNotifications(updated)
+    try {
+      await userApi.updatePreferences(updated)
+      toast.success('Notification preferences updated')
+    } catch {
+      setNotifications(notifications) // revert
+      toast.error('Failed to update notification preferences')
+    }
   }
 
-  const handleAppearanceChange = (field: string, value: string) => {
-    setAppearance((prev) => ({ ...prev, [field]: value }))
+  const handleAppearanceChange = async (field: string, value: string) => {
+    const updated = { ...appearance, [field]: value }
+    setAppearance(updated)
     if (field === 'theme') {
       setStoreTheme(value as 'light' | 'dark' | 'system')
     }
-    toast.success('Appearance settings updated')
+    try {
+      await userApi.updatePreferences(updated)
+      toast.success('Appearance settings updated')
+    } catch {
+      toast.error('Failed to update appearance settings')
+    }
   }
 
-  const handleChangePassword = () => {
-    toast.success('Password change email sent')
+  const handleChangePassword = async () => {
+    if (passwordData.newPassword !== passwordData.confirmPassword) {
+      toast.error('Passwords do not match')
+      return
+    }
+    if (passwordData.newPassword.length < 8) {
+      toast.error('Password must be at least 8 characters')
+      return
+    }
+    setIsChangingPassword(true)
+    try {
+      await authApi.changePassword(passwordData.currentPassword, passwordData.newPassword)
+      toast.success('Password changed successfully')
+      setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' })
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to change password')
+    } finally {
+      setIsChangingPassword(false)
+    }
   }
 
   const handleEnable2FA = () => {
@@ -144,9 +246,39 @@ export function SettingsPage() {
     toast.success(security.twoFactorEnabled ? '2FA disabled' : '2FA enabled')
   }
 
-  const handleDeleteAccount = () => {
-    toast.success('Account deletion initiated')
-    setIsDeleteModalOpen(false)
+  const handleDeleteAccount = async () => {
+    if (deleteConfirm !== 'DELETE') {
+      toast.error('Please type DELETE to confirm')
+      return
+    }
+    try {
+      await userApi.deleteAccount()
+      toast.success('Account deleted')
+      setIsDeleteModalOpen(false)
+      logout()
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to delete account')
+    }
+  }
+
+  if (isLoading) {
+    return (
+      <div className="space-y-6 animate-pulse">
+        <div className="h-10 bg-slate-200 dark:bg-slate-700 rounded-lg w-40" />
+        <div className="flex gap-6">
+          <div className="w-48 space-y-3">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <div key={i} className="h-10 bg-slate-200 dark:bg-slate-700 rounded-lg" />
+            ))}
+          </div>
+          <div className="flex-1 space-y-4">
+            <div className="h-20 bg-slate-200 dark:bg-slate-700 rounded-xl" />
+            <div className="h-12 bg-slate-200 dark:bg-slate-700 rounded-xl" />
+            <div className="h-12 bg-slate-200 dark:bg-slate-700 rounded-xl" />
+          </div>
+        </div>
+      </div>
+    )
   }
 
   const renderTabContent = () => {
@@ -243,9 +375,9 @@ export function SettingsPage() {
 
             {isDirty && (
               <div className="flex justify-end">
-                <Button onClick={handleSaveProfile}>
-                  <Save className="w-4 h-4 mr-2" />
-                  Save Changes
+                <Button onClick={handleSaveProfile} disabled={isSaving}>
+                  {isSaving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
+                  {isSaving ? 'Saving...' : 'Save Changes'}
                 </Button>
               </div>
             )}
@@ -427,19 +559,34 @@ export function SettingsPage() {
           <div className="space-y-6">
             {/* Password */}
             <Card>
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-lg bg-slate-100 dark:bg-slate-800 flex items-center justify-center">
-                      <Key className="w-5 h-5 text-slate-600 dark:text-slate-400" />
-                    </div>
-                    <div>
-                      <p className="font-medium text-slate-900 dark:text-white">Password</p>
-                      <p className="text-sm text-slate-500">Last changed 30 days ago</p>
-                    </div>
+              <CardContent className="p-4 space-y-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-lg bg-slate-100 dark:bg-slate-800 flex items-center justify-center">
+                    <Key className="w-5 h-5 text-slate-600 dark:text-slate-400" />
                   </div>
-                  <Button variant="outline" onClick={handleChangePassword}>
-                    Change Password
+                  <div>
+                    <p className="font-medium text-slate-900 dark:text-white">Change Password</p>
+                    <p className="text-sm text-slate-500">Update your account password</p>
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Current Password</label>
+                    <Input type="password" value={passwordData.currentPassword} onChange={(e) => setPasswordData(prev => ({ ...prev, currentPassword: e.target.value }))} className="mt-1.5" placeholder="Current password" />
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-slate-700 dark:text-slate-300">New Password</label>
+                    <Input type="password" value={passwordData.newPassword} onChange={(e) => setPasswordData(prev => ({ ...prev, newPassword: e.target.value }))} className="mt-1.5" placeholder="New password" />
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Confirm Password</label>
+                    <Input type="password" value={passwordData.confirmPassword} onChange={(e) => setPasswordData(prev => ({ ...prev, confirmPassword: e.target.value }))} className="mt-1.5" placeholder="Confirm password" />
+                  </div>
+                </div>
+                <div className="flex justify-end">
+                  <Button onClick={handleChangePassword} disabled={isChangingPassword || !passwordData.currentPassword || !passwordData.newPassword}>
+                    {isChangingPassword ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Key className="w-4 h-4 mr-2" />}
+                    {isChangingPassword ? 'Changing...' : 'Change Password'}
                   </Button>
                 </div>
               </CardContent>
@@ -723,7 +870,7 @@ export function SettingsPage() {
               <li>Team members and workspaces</li>
               <li>Media library contents</li>
             </ul>
-            <Input placeholder="Type 'DELETE' to confirm" className="mt-4" />
+            <Input placeholder="Type 'DELETE' to confirm" className="mt-4" value={deleteConfirm} onChange={(e) => setDeleteConfirm(e.target.value)} />
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsDeleteModalOpen(false)}>

@@ -54,6 +54,9 @@ router.patch('/:postId', validateBody(updatePostSchema), postController.updatePo
 router.delete('/:postId', postController.deletePost);
 router.post('/:postId/duplicate', postController.duplicatePost);
 
+// Schedule endpoint
+router.post('/:postId/schedule', postController.schedulePost);
+
 // Platform-specific routes
 router.patch('/platforms/:platformId', validateBody(updatePlatformSchema), postController.updatePostPlatform);
 router.get('/platforms/:platformId/analytics', postController.getPostAnalytics);

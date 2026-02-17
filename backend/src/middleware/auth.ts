@@ -5,6 +5,7 @@ import { sendUnauthorized, sendForbidden } from '../utils/response';
 import prisma from '../config/database';
 import { WorkspaceRole } from '@prisma/client';
 import { generateUniqueSlug } from '../utils/response';
+import { cacheGet, cacheSet, CacheKeys, CacheTTL } from '../config/redis';
 
 // Authenticate user from JWT token
 export async function authenticate(
@@ -27,17 +28,26 @@ export async function authenticate(
       return sendUnauthorized(res, 'Invalid or expired token');
     }
 
-    // Get user from database
-    const user = await prisma.user.findUnique({
-      where: { id: payload.userId },
-      include: {
-        workspaceMembers: {
-          include: {
-            workspace: true,
+    // Get user - try cache first, then database
+    const userCacheKey = CacheKeys.userProfile(payload.userId) + ':auth';
+    let user = await cacheGet<any>(userCacheKey);
+
+    if (!user) {
+      user = await prisma.user.findUnique({
+        where: { id: payload.userId },
+        include: {
+          workspaceMembers: {
+            include: {
+              workspace: true,
+            },
           },
         },
-      },
-    });
+      });
+
+      if (user) {
+        await cacheSet(userCacheKey, user, CacheTTL.SHORT);
+      }
+    }
 
     if (!user) {
       return sendUnauthorized(res, 'User not found');
@@ -46,7 +56,7 @@ export async function authenticate(
     // Attach user to request
     req.user = {
       ...user,
-      workspaces: user.workspaceMembers.map(m => ({
+      workspaces: user.workspaceMembers.map((m: any) => ({
         workspace: m.workspace,
         role: m.role,
       })),

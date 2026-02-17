@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState } from 'react'
 import { motion } from 'framer-motion'
 import {
   Users,
@@ -43,6 +43,7 @@ import {
 import toast from 'react-hot-toast'
 import { teamApi } from '../services/api'
 import { useWorkspaceStore } from '../store'
+import { useDataCache, invalidateCache } from '../lib/useDataCache'
 
 interface TeamMember {
   id: string
@@ -114,8 +115,6 @@ const getRoleBadge = (role: string) => {
 
 export function Team() {
   const { currentWorkspace } = useWorkspaceStore()
-  const [members, setMembers] = useState<TeamMember[]>([])
-  const [loading, setLoading] = useState(true)
   const [inviting, setInviting] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false)
@@ -127,22 +126,16 @@ export function Team() {
 
   const workspaceId = currentWorkspace?.id
 
-  const fetchMembers = useCallback(async () => {
-    if (!workspaceId) return
-    try {
-      setLoading(true)
+  const { data: membersData, isLoading: loading, isRefreshing, refetch } = useDataCache<TeamMember[]>(
+    `team:${workspaceId}`,
+    async () => {
+      if (!workspaceId) return []
       const res = await teamApi.getMembers(workspaceId)
-      setMembers(res?.data?.members || [])
-    } catch (err: any) {
-      toast.error(err.message || 'Failed to load team members')
-    } finally {
-      setLoading(false)
-    }
-  }, [workspaceId])
-
-  useEffect(() => {
-    fetchMembers()
-  }, [fetchMembers])
+      return res?.data?.members || []
+    },
+    { enabled: !!workspaceId }
+  )
+  const members = membersData ?? []
 
   const filteredMembers = members.filter(
     (m) =>
@@ -167,7 +160,8 @@ export function Team() {
       setIsInviteModalOpen(false)
       setInviteEmail('')
       setInviteRole('EDITOR')
-      fetchMembers()
+      invalidateCache('team:*')
+      refetch()
     } catch (err: any) {
       toast.error(err.message || 'Failed to send invitation')
     } finally {
@@ -180,7 +174,8 @@ export function Team() {
     try {
       await teamApi.removeMember(workspaceId, memberId)
       toast.success('Team member removed')
-      fetchMembers()
+      invalidateCache('team:*')
+      refetch()
     } catch (err: any) {
       toast.error(err.message || 'Failed to remove member')
     }
@@ -193,7 +188,8 @@ export function Team() {
       toast.success('Role updated successfully')
       setIsEditModalOpen(false)
       setSelectedMember(null)
-      fetchMembers()
+      invalidateCache('team:*')
+      refetch()
     } catch (err: any) {
       toast.error(err.message || 'Failed to update role')
     }
@@ -222,8 +218,8 @@ export function Team() {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" onClick={fetchMembers} disabled={loading}>
-            <RefreshCw className={`w-4 h-4 mr-1 ${loading ? 'animate-spin' : ''}`} />
+          <Button variant="outline" size="sm" onClick={() => refetch()} disabled={loading}>
+            <RefreshCw className={`w-4 h-4 mr-1 ${isRefreshing ? 'animate-spin' : ''}`} />
             Refresh
           </Button>
           <Button onClick={() => setIsInviteModalOpen(true)}>
@@ -297,9 +293,16 @@ export function Team() {
         </CardHeader>
         <CardContent className="p-0">
           {loading ? (
-            <div className="flex items-center justify-center py-16">
-              <Loader2 className="w-6 h-6 animate-spin text-indigo-500 mr-2" />
-              <span className="text-slate-500">Loading team members...</span>
+            <div className="p-6 space-y-4 animate-pulse">
+              {Array.from({ length: 3 }).map((_, i) => (
+                <div key={i} className="flex items-center gap-4">
+                  <div className="w-10 h-10 bg-slate-200 dark:bg-slate-700 rounded-full" />
+                  <div className="flex-1 space-y-2">
+                    <div className="h-4 bg-slate-200 dark:bg-slate-700 rounded w-1/3" />
+                    <div className="h-3 bg-slate-200 dark:bg-slate-700 rounded w-1/4" />
+                  </div>
+                </div>
+              ))}
             </div>
           ) : (
             <div className="divide-y divide-slate-100 dark:divide-slate-800">

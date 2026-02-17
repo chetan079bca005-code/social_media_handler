@@ -1,4 +1,4 @@
-﻿import { useState, useEffect, useCallback } from 'react'
+﻿import { useState } from 'react'
 import { motion } from 'framer-motion'
 import {
   FileText,
@@ -49,6 +49,7 @@ import {
 import { cn, PLATFORMS, getPlatformColor } from '../lib/utils'
 import toast from 'react-hot-toast'
 import { templatesApi } from '../services/api'
+import { useDataCache, invalidateCache } from '../lib/useDataCache'
 
 interface Template {
   id: string
@@ -94,8 +95,6 @@ const getPlatformIcon = (platform: string) => {
 }
 
 export function Templates() {
-  const [templates, setTemplates] = useState<Template[]>([])
-  const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const [categoryFilter, setCategoryFilter] = useState('all')
@@ -115,25 +114,18 @@ export function Templates() {
     isPublic: false,
   })
 
-  const fetchTemplates = useCallback(async () => {
-    try {
-      setLoading(true)
+  const { data: templatesData, isLoading: loading, isRefreshing, refetch } = useDataCache<Template[]>(
+    `templates:${categoryFilter}:${searchQuery}`,
+    async () => {
       const params: any = {}
       if (categoryFilter !== 'all') params.category = categoryFilter
       if (searchQuery.trim()) params.search = searchQuery.trim()
       const res = await templatesApi.getAll(params)
-      setTemplates(res?.data?.templates || [])
-    } catch (err: any) {
-      toast.error(err.message || 'Failed to load templates')
-    } finally {
-      setLoading(false)
-    }
-  }, [categoryFilter, searchQuery])
-
-  useEffect(() => {
-    const timer = setTimeout(() => fetchTemplates(), searchQuery ? 300 : 0)
-    return () => clearTimeout(timer)
-  }, [fetchTemplates])
+      return res?.data?.templates || []
+    },
+    { staleTime: 60 * 1000 }
+  )
+  const templates = templatesData ?? []
 
   const handleCreateTemplate = async () => {
     if (!newTemplate.name.trim() || !newTemplate.content.trim()) {
@@ -162,7 +154,8 @@ export function Templates() {
 
       setIsCreateModalOpen(false)
       resetForm()
-      fetchTemplates()
+      invalidateCache('templates:*')
+      refetch()
     } catch (err: any) {
       toast.error(err.message || 'Failed to save template')
     } finally {
@@ -174,7 +167,8 @@ export function Templates() {
     try {
       await templatesApi.delete(id)
       toast.success('Template deleted')
-      fetchTemplates()
+      invalidateCache('templates:*')
+      refetch()
     } catch (err: any) {
       toast.error(err.message || 'Failed to delete template')
     }
@@ -185,7 +179,8 @@ export function Templates() {
       await templatesApi.use(template.id)
       navigator.clipboard.writeText(template.content)
       toast.success('Template copied to clipboard!')
-      fetchTemplates()
+      invalidateCache('templates:*')
+      refetch()
     } catch {
       navigator.clipboard.writeText(template.content)
       toast.success('Template copied to clipboard!')
@@ -242,8 +237,8 @@ export function Templates() {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" onClick={fetchTemplates} disabled={loading}>
-            <RefreshCw className={`w-4 h-4 mr-1 ${loading ? 'animate-spin' : ''}`} />
+          <Button variant="outline" size="sm" onClick={() => refetch()} disabled={loading}>
+            <RefreshCw className={`w-4 h-4 mr-1 ${isRefreshing ? 'animate-spin' : ''}`} />
           </Button>
           <Button onClick={() => { resetForm(); setIsCreateModalOpen(true) }}>
             <Plus className="w-4 h-4 mr-2" />
@@ -349,9 +344,10 @@ export function Templates() {
 
       {/* Loading */}
       {loading ? (
-        <div className="flex items-center justify-center py-20">
-          <Loader2 className="w-6 h-6 animate-spin text-indigo-500 mr-2" />
-          <span className="text-slate-500">Loading templates...</span>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-pulse">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <div key={i} className="h-52 bg-slate-200 dark:bg-slate-700 rounded-xl" />
+          ))}
         </div>
       ) : viewMode === 'grid' ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

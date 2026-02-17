@@ -4,6 +4,7 @@ import { AppError } from '../middleware/error';
 import { encrypt, decrypt } from '../utils/encryption';
 import axios from 'axios';
 import { config } from '../config';
+import { cacheGet, cacheSet, cacheDel, CacheKeys, CacheTTL } from '../config/redis';
 
 export interface ConnectAccountInput {
   platform: SocialPlatform;
@@ -55,7 +56,7 @@ export async function connectSocialAccount(
   }
 
   // Create new connection
-  return prisma.socialAccount.create({
+  const account = await prisma.socialAccount.create({
     data: {
       workspaceId,
       platform: data.platform,
@@ -68,11 +69,19 @@ export async function connectSocialAccount(
       profileImageUrl: data.profileImageUrl,
     },
   });
+
+  // Invalidate workspace social accounts cache
+  await cacheDel(CacheKeys.workspaceSocialAccounts(workspaceId));
+  return account;
 }
 
 // Get social accounts for workspace
 export async function getWorkspaceSocialAccounts(workspaceId: string) {
-  return prisma.socialAccount.findMany({
+  const cacheKey = CacheKeys.workspaceSocialAccounts(workspaceId);
+  const cached = await cacheGet<any[]>(cacheKey);
+  if (cached) return cached;
+
+  const accounts = await prisma.socialAccount.findMany({
     where: { workspaceId },
     include: {
       _count: {
@@ -85,6 +94,9 @@ export async function getWorkspaceSocialAccounts(workspaceId: string) {
     },
     orderBy: { createdAt: 'desc' },
   });
+
+  await cacheSet(cacheKey, accounts, CacheTTL.DEFAULT);
+  return accounts;
 }
 
 // Get social account by ID
@@ -116,6 +128,8 @@ export async function disconnectSocialAccount(accountId: string): Promise<void> 
     where: { id: accountId },
     data: { isActive: false },
   });
+
+  await cacheDel(CacheKeys.workspaceSocialAccounts(account.workspaceId));
 }
 
 // Permanently delete social account
@@ -131,6 +145,8 @@ export async function deleteSocialAccount(accountId: string): Promise<void> {
   await prisma.socialAccount.delete({
     where: { id: accountId },
   });
+
+  await cacheDel(CacheKeys.workspaceSocialAccounts(account.workspaceId));
 }
 
 // Refresh account tokens

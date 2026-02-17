@@ -96,6 +96,8 @@ import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '../com
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '../components/ui/Dialog'
 import { Switch } from '../components/ui/Switch'
 import { postsApi, socialAccountsApi, mediaApi } from '../services/api'
+import { useDataCache } from '../lib/useDataCache'
+import { useWorkspaceStore } from '../store'
 import { generateText, generateImage } from '../services/ai'
 import toast from 'react-hot-toast'
 
@@ -560,20 +562,22 @@ export function DesignStudio() {
   const [pages, setPages] = useState<PageData[]>([{ id: '1', name: 'Page 1', canvasJSON: '' }])
   const [currentPageIndex, setCurrentPageIndex] = useState(0)
 
-  // ============ Fetch Social Accounts ============
-  useEffect(() => {
-    const fetchAccounts = async () => {
-      try {
-        const response = await socialAccountsApi.getAll()
-        if (Array.isArray(response)) {
-          setSocialAccounts(response)
-        }
-      } catch (error) {
-        console.error('Error fetching social accounts:', error)
-      }
+  // ============ Fetch Social Accounts (cached) ============
+  const { currentWorkspace: dsWorkspace } = useWorkspaceStore()
+  const dsWsId = dsWorkspace?.id
+  useDataCache<any[]>(
+    `design-social-accounts:${dsWsId}`,
+    async () => {
+      if (!dsWsId) return []
+      const response = await socialAccountsApi.getAll(dsWsId)
+      const resData = (response as any)?.data ?? response
+      return Array.isArray(resData) ? resData : resData?.accounts ?? []
+    },
+    {
+      enabled: !!dsWsId,
+      onSuccess: (data) => setSocialAccounts(data),
     }
-    fetchAccounts()
-  }, [])
+  )
 
   // ============ Update Layers ============
   const updateLayers = useCallback(() => {

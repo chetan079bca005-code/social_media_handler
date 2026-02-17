@@ -2,6 +2,7 @@ import prisma from '../config/database';
 import { SocialPlatform } from '@prisma/client';
 import { decrypt } from '../utils/encryption';
 import axios from 'axios';
+import { cacheGet, cacheSet, cacheDel, CacheKeys, CacheTTL } from '../config/redis';
 
 export interface AnalyticsTimeframe {
   startDate: Date;
@@ -64,6 +65,15 @@ export async function getWorkspaceAnalytics(
   workspaceId: string,
   timeframe: AnalyticsTimeframe
 ): Promise<AggregatedAnalytics> {
+  // Check cache first
+  const cacheKey = CacheKeys.workspaceAnalytics(
+    workspaceId,
+    timeframe.startDate.toISOString(),
+    timeframe.endDate.toISOString()
+  );
+  const cached = await cacheGet<AggregatedAnalytics>(cacheKey);
+  if (cached) return cached;
+
   // Get all social accounts
   const accounts = await prisma.socialAccount.findMany({
     where: { workspaceId, isActive: true },
@@ -147,7 +157,7 @@ export async function getWorkspaceAnalytics(
     engagement: 0, // Would come from platform analytics
   }));
 
-  return {
+  const result: AggregatedAnalytics = {
     totalFollowers,
     totalPosts: posts.length,
     totalEngagement,
@@ -159,6 +169,11 @@ export async function getWorkspaceAnalytics(
     byPlatform,
     trend,
   };
+
+  // Cache the result
+  await cacheSet(cacheKey, result, CacheTTL.DEFAULT);
+
+  return result;
 }
 
 // Get analytics for specific account
@@ -166,6 +181,14 @@ export async function getAccountAnalytics(
   accountId: string,
   timeframe: AnalyticsTimeframe
 ): Promise<AccountAnalytics | null> {
+  const cacheKey = CacheKeys.accountAnalytics(
+    accountId,
+    timeframe.startDate.toISOString(),
+    timeframe.endDate.toISOString()
+  );
+  const cached = await cacheGet<AccountAnalytics>(cacheKey);
+  if (cached) return cached;
+
   const account = await prisma.socialAccount.findUnique({
     where: { id: accountId },
     include: {
@@ -200,7 +223,7 @@ export async function getAccountAnalytics(
     };
   }
 
-  return {
+  const result: AccountAnalytics = {
     followers: latest.followers || 0,
     following: latest.following || 0,
     posts: latest.posts || 0,
@@ -212,6 +235,9 @@ export async function getAccountAnalytics(
       engagement: earliest ? (latest.engagement || 0) - (earliest.engagement || 0) : 0,
     },
   };
+
+  await cacheSet(cacheKey, result, CacheTTL.DEFAULT);
+  return result;
 }
 
 // Fetch and store analytics from platforms
@@ -430,6 +456,10 @@ export async function getPostPerformanceAnalytics(
   workspaceId: string,
   timeframe: AnalyticsTimeframe
 ) {
+  const cacheKey = `analytics:posts:${workspaceId}:${timeframe.startDate.toISOString()}:${timeframe.endDate.toISOString()}`;
+  const cached = await cacheGet<any>(cacheKey);
+  if (cached) return cached;
+
   const posts = await prisma.post.findMany({
     where: {
       workspaceId,
@@ -475,7 +505,7 @@ export async function getPostPerformanceAnalytics(
     }
   }
 
-  return {
+  const result = {
     totalPosts: posts.length,
     byType,
     byPlatform,
@@ -489,6 +519,9 @@ export async function getPostPerformanceAnalytics(
       platforms: post.platforms.map(p => p.socialAccount.platform),
     })),
   };
+
+  await cacheSet(cacheKey, result, CacheTTL.DEFAULT);
+  return result;
 }
 
 // Create analytics snapshot for historical data
@@ -533,7 +566,11 @@ export async function getAnalyticsSnapshots(
   workspaceId: string,
   timeframe: AnalyticsTimeframe
 ) {
-  return prisma.analyticsSnapshot.findMany({
+  const cacheKey = `analytics:snapshots:${workspaceId}:${timeframe.startDate.toISOString()}:${timeframe.endDate.toISOString()}`;
+  const cached = await cacheGet<any[]>(cacheKey);
+  if (cached) return cached;
+
+  const snapshots = await prisma.analyticsSnapshot.findMany({
     where: {
       workspaceId,
       createdAt: {
@@ -543,10 +580,17 @@ export async function getAnalyticsSnapshots(
     },
     orderBy: { createdAt: 'asc' },
   });
+
+  await cacheSet(cacheKey, snapshots, CacheTTL.DEFAULT);
+  return snapshots;
 }
 
 // Best times to post analysis
 export async function getBestTimesToPost(workspaceId: string) {
+  const cacheKey = `analytics:best-times:${workspaceId}`;
+  const cached = await cacheGet<any>(cacheKey);
+  if (cached) return cached;
+
   const posts = await prisma.post.findMany({
     where: {
       workspaceId,
@@ -606,9 +650,12 @@ export async function getBestTimesToPost(workspaceId: string) {
     }))
     .sort((a, b) => b.count - a.count);
 
-  return {
+  const result = {
     bestHours,
     bestDays,
     totalAnalyzed: posts.length,
   };
+
+  await cacheSet(cacheKey, result, CacheTTL.LONG);
+  return result;
 }

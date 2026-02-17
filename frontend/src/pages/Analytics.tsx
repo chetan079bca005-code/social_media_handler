@@ -1,4 +1,4 @@
-﻿import { useState, useEffect } from 'react'
+﻿import { useState } from 'react'
 import { motion } from 'framer-motion'
 import {
   XAxis,
@@ -41,9 +41,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from '../components/ui/Select'
-import { formatNumber, getPlatformColor, PLATFORMS } from '../lib/utils'
+import { formatNumber, getPlatformColor, PLATFORMS, cn } from '../lib/utils'
 import { analyticsApi } from '../services/api'
 import { useWorkspaceStore } from '../store'
+import { useDataCache } from '../lib/useDataCache'
 
 const COLORS = ['#6366F1', '#EC4899', '#8B5CF6', '#10B981', '#F59E0B']
 
@@ -51,34 +52,22 @@ export function Analytics() {
   const { currentWorkspace } = useWorkspaceStore()
   const [dateRange, setDateRange] = useState('30')
   const [selectedPlatform, setSelectedPlatform] = useState('all')
-  const [loading, setLoading] = useState(true)
-  const [analytics, setAnalytics] = useState<any>(null)
+  const wsId = currentWorkspace?.id
 
-  async function fetchAnalytics() {
-    if (!currentWorkspace?.id) {
-      setLoading(false)
-      return
-    }
-    try {
-      setLoading(true)
+  const { data: analytics, isLoading: loading, isRefreshing, refetch } = useDataCache(
+    `analytics:${wsId}:${dateRange}:${selectedPlatform}`,
+    async () => {
+      if (!wsId) return null
       const days = parseInt(dateRange) || 30
       const startDate = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString()
       const endDate = new Date().toISOString()
       const params: any = { startDate, endDate }
       if (selectedPlatform !== 'all') params.platform = selectedPlatform
-
-      const res = await analyticsApi.getWorkspaceAnalytics(currentWorkspace.id, params)
-      setAnalytics(res?.data?.analytics || res?.data || null)
-    } catch (err) {
-      console.error('Analytics fetch error:', err)
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  useEffect(() => {
-    fetchAnalytics()
-  }, [currentWorkspace?.id, dateRange, selectedPlatform])
+      const res = await analyticsApi.getWorkspaceAnalytics(wsId, params)
+      return res?.data?.analytics || res?.data || null
+    },
+    { enabled: !!wsId }
+  )
 
   const overviewStats = [
     { title: 'Total Impressions', value: analytics?.totalImpressions || 0, change: 0, icon: Eye },
@@ -109,9 +98,14 @@ export function Analytics() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-40">
-        <Loader2 className="w-8 h-8 animate-spin text-indigo-500 mr-3" />
-        <span className="text-slate-500 text-lg">Loading analytics...</span>
+      <div className="space-y-4 sm:space-y-6 animate-pulse">
+        <div className="h-10 bg-slate-200 dark:bg-slate-700 rounded-lg w-48" />
+        <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <div key={i} className="h-24 bg-slate-200 dark:bg-slate-700 rounded-xl" />
+          ))}
+        </div>
+        <div className="h-80 bg-slate-200 dark:bg-slate-700 rounded-xl" />
       </div>
     )
   }
@@ -151,8 +145,8 @@ export function Analytics() {
               ))}
             </SelectContent>
           </Select>
-          <Button variant="outline" className="w-full sm:w-auto" onClick={fetchAnalytics}>
-            <RefreshCw className="w-4 h-4 mr-2" />Refresh
+          <Button variant="outline" className="w-full sm:w-auto" onClick={refetch}>
+            <RefreshCw className={cn('w-4 h-4 mr-2', isRefreshing && 'animate-spin')} />Refresh
           </Button>
           <Button variant="outline" className="w-full sm:w-auto">
             <Download className="w-4 h-4 mr-2" />Export

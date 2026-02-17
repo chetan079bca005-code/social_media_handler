@@ -25,7 +25,7 @@ import {
   ForgotPassword,
 } from './pages'
 import { useAuthStore, useUIStore } from './store'
-import { authApi } from './services/api'
+import { authApi, warmupBackend } from './services/api'
 
 // Create a client
 const queryClient = new QueryClient({
@@ -39,13 +39,14 @@ const queryClient = new QueryClient({
 
 // Protected Route wrapper
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
-  const { isAuthenticated, isLoading, token } = useAuthStore()
+  const { isAuthenticated, isLoading } = useAuthStore()
   
   if (isLoading) {
     return null
   }
   
-  if (!isAuthenticated && !token) {
+  // Only allow access when fully authenticated (token verified by initializeAuth)
+  if (!isAuthenticated) {
     return <Navigate to="/auth/login" replace />
   }
   
@@ -54,13 +55,14 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
 // Public Route wrapper (redirects if authenticated)
 function PublicRoute({ children }: { children: React.ReactNode }) {
-  const { isAuthenticated, isLoading, token } = useAuthStore()
+  const { isAuthenticated, isLoading } = useAuthStore()
   
   if (isLoading) {
     return null
   }
   
-  if (isAuthenticated || token) {
+  // Only redirect when fully authenticated, not just because a stale token exists
+  if (isAuthenticated) {
     return <Navigate to="/dashboard" replace />
   }
   
@@ -68,7 +70,7 @@ function PublicRoute({ children }: { children: React.ReactNode }) {
 }
 
 function App() {
-  const { token, user, setUser, logout, setLoading } = useAuthStore()
+  const { token, login, logout, setLoading } = useAuthStore()
   const { theme } = useUIStore()
 
   // Apply theme to document
@@ -99,6 +101,9 @@ function App() {
     let isMounted = true
 
     const initializeAuth = async () => {
+      // Warm up backend connection (fires DB ping to prevent cold-start timeout on first real request)
+      warmupBackend()
+
       if (!token) {
         if (isMounted) {
           setLoading(false)
@@ -106,12 +111,13 @@ function App() {
         return
       }
 
+      // ALWAYS verify the token with the server before granting access.
+      // This prevents stale/expired tokens from bypassing auth.
       try {
-        if (!user) {
-          const response = await authApi.me()
-          if (isMounted) {
-            setUser(response.data.user)
-          }
+        const response = await authApi.me()
+        if (isMounted) {
+          // Token is valid — set user + isAuthenticated
+          login(response.data.user, token)
         }
       } catch (error) {
         if (isMounted) {
@@ -129,7 +135,7 @@ function App() {
     return () => {
       isMounted = false
     }
-  }, [token, user, setUser, logout, setLoading])
+  }, [token, login, logout, setLoading])
 
   return (
     <QueryClientProvider client={queryClient}>

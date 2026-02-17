@@ -44,6 +44,8 @@ import {
 import { Switch } from '../components/ui/Switch'
 import { cn, getCharacterLimit, getPlatformColor, PLATFORMS } from '../lib/utils'
 import { generateText, generateHashtags } from '../services/ai'
+import { postsApi, mediaApi } from '../services/api'
+import { useWorkspaceStore } from '../store'
 import toast from 'react-hot-toast'
 
 const TONES = [
@@ -62,6 +64,7 @@ const LENGTHS = [
 
 export function CreatePost() {
   const navigate = useNavigate()
+  const { currentWorkspace } = useWorkspaceStore()
   const [caption, setCaption] = useState('')
   const [selectedPlatforms, setSelectedPlatforms] = useState<string[]>(['instagram'])
   const [mediaFiles, setMediaFiles] = useState<File[]>([])
@@ -80,6 +83,9 @@ export function CreatePost() {
   const [includeHashtags, setIncludeHashtags] = useState(true)
   const [includeEmojis, setIncludeEmojis] = useState(true)
   const [includeCTA, setIncludeCTA] = useState(false)
+  const [isSavingDraft, setIsSavingDraft] = useState(false)
+  const [isPublishing, setIsPublishing] = useState(false)
+  const [isScheduling, setIsScheduling] = useState(false)
 
   // File drop handler
   const onDrop = useCallback((acceptedFiles: File[]) => {
@@ -176,25 +182,98 @@ export function CreatePost() {
     toast.success('Caption applied!')
   }
 
-  const handleSaveDraft = () => {
-    toast.success('Post saved as draft!')
+  const uploadMediaFiles = async (): Promise<string[]> => {
+    if (!currentWorkspace || mediaFiles.length === 0) return []
+    const mediaIds: string[] = []
+    for (const file of mediaFiles) {
+      try {
+        const res = await mediaApi.upload(currentWorkspace.id, file)
+        if (res.data?.data?.id) mediaIds.push(res.data.data.id)
+      } catch {
+        // continue with other files
+      }
+    }
+    return mediaIds
+  }
+
+  const buildPostData = (mediaIds: string[]) => ({
+    content: caption,
+    type: mediaFiles.length > 0 ? (mediaFiles[0]?.type?.startsWith('video') ? 'VIDEO' : 'IMAGE') : 'TEXT' as const,
+    platforms: selectedPlatforms.map((p) => ({ socialAccountId: p })),
+    hashtags,
+    ...(mediaIds.length > 0 && { mediaIds }),
+  })
+
+  const handleSaveDraft = async () => {
+    if (!caption.trim()) {
+      toast.error('Please write some content')
+      return
+    }
+    setIsSavingDraft(true)
+    try {
+      const mediaIds = await uploadMediaFiles()
+      await postsApi.create(buildPostData(mediaIds))
+      toast.success('Post saved as draft!')
+      navigate('/scheduled')
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to save draft')
+    } finally {
+      setIsSavingDraft(false)
+    }
   }
 
   const handleSchedulePost = () => {
     setIsScheduleModalOpen(true)
   }
 
-  const handlePublishNow = () => {
-    toast.success('Post published!')
+  const handlePublishNow = async () => {
+    if (!caption.trim()) {
+      toast.error('Please write some content')
+      return
+    }
+    setIsPublishing(true)
+    try {
+      const mediaIds = await uploadMediaFiles()
+      const res = await postsApi.create(buildPostData(mediaIds))
+      const postId = res.data?.data?.id || res.data?.id
+      if (postId) {
+        await postsApi.publish(postId)
+      }
+      toast.success('Post published!')
+      navigate('/published')
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to publish post')
+    } finally {
+      setIsPublishing(false)
+    }
   }
 
-  const confirmSchedule = () => {
+  const confirmSchedule = async () => {
     if (!scheduledDate || !scheduledTime) {
       toast.error('Please select date and time')
       return
     }
-    toast.success('Post scheduled!')
-    setIsScheduleModalOpen(false)
+    if (!caption.trim()) {
+      toast.error('Please write some content')
+      return
+    }
+    setIsScheduling(true)
+    try {
+      const mediaIds = await uploadMediaFiles()
+      const scheduledAt = new Date(`${scheduledDate}T${scheduledTime}`).toISOString()
+      const res = await postsApi.create(buildPostData(mediaIds))
+      const postId = res.data?.data?.id || res.data?.id
+      if (postId) {
+        await postsApi.schedule(postId, scheduledAt)
+      }
+      toast.success('Post scheduled!')
+      setIsScheduleModalOpen(false)
+      navigate('/scheduled')
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to schedule post')
+    } finally {
+      setIsScheduling(false)
+    }
   }
 
   const currentPlatform = selectedPlatforms[0] || 'instagram'
@@ -218,17 +297,17 @@ export function CreatePost() {
           </p>
         </div>
         <div className="flex items-center gap-2 sm:gap-3">
-          <Button variant="outline" onClick={handleSaveDraft} size="sm" className="sm:size-default">
-            <Save className="w-4 h-4 sm:mr-2" />
-            <span className="hidden sm:inline">Save Draft</span>
+          <Button variant="outline" onClick={handleSaveDraft} size="sm" className="sm:size-default" disabled={isSavingDraft}>
+            {isSavingDraft ? <Loader2 className="w-4 h-4 sm:mr-2 animate-spin" /> : <Save className="w-4 h-4 sm:mr-2" />}
+            <span className="hidden sm:inline">{isSavingDraft ? 'Saving...' : 'Save Draft'}</span>
           </Button>
           <Button variant="outline" onClick={handleSchedulePost} size="sm" className="sm:size-default">
             <Calendar className="w-4 h-4 sm:mr-2" />
             <span className="hidden sm:inline">Schedule</span>
           </Button>
-          <Button onClick={handlePublishNow} size="sm" className="sm:size-default">
-            <Send className="w-4 h-4 sm:mr-2" />
-            <span className="hidden sm:inline">Publish Now</span>
+          <Button onClick={handlePublishNow} size="sm" className="sm:size-default" disabled={isPublishing}>
+            {isPublishing ? <Loader2 className="w-4 h-4 sm:mr-2 animate-spin" /> : <Send className="w-4 h-4 sm:mr-2" />}
+            <span className="hidden sm:inline">{isPublishing ? 'Publishing...' : 'Publish Now'}</span>
           </Button>
         </div>
       </div>
@@ -685,9 +764,9 @@ export function CreatePost() {
             <Button variant="outline" onClick={() => setIsScheduleModalOpen(false)}>
               Cancel
             </Button>
-            <Button onClick={confirmSchedule}>
-              <Calendar className="w-4 h-4 mr-2" />
-              Schedule Post
+            <Button onClick={confirmSchedule} disabled={isScheduling}>
+              {isScheduling ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Calendar className="w-4 h-4 mr-2" />}
+              {isScheduling ? 'Scheduling...' : 'Schedule Post'}
             </Button>
           </DialogFooter>
         </DialogContent>

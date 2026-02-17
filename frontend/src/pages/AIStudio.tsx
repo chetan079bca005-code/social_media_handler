@@ -245,7 +245,7 @@ export function AIStudio() {
         toast.success('Image generated successfully!')
       } else {
         // No images returned, try fetching from history after a delay
-        toast.loading('Fetching generated images...')
+        toast.loading('Fetching generated images...', { id: 'fetch-images' })
         await new Promise((resolve) => setTimeout(resolve, 2000))
       }
       
@@ -253,6 +253,7 @@ export function AIStudio() {
       const history = await getImageHistory()
       console.log('Image history fetched:', history)
       setImageHistory(history)
+      toast.dismiss('fetch-images')
       
       // Fallback: if no images returned but history has new items, use those
       if (images.length === 0 && history.length > 0) {
@@ -272,7 +273,7 @@ export function AIStudio() {
 
   useEffect(() => {
     if (activeTool === 'image-generator') {
-      getImageHistory().then(setImageHistory)
+      getImageHistory().then(setImageHistory).catch(() => {})
     }
   }, [activeTool])
 

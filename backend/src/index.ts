@@ -10,17 +10,18 @@ import { config, validateConfig } from './config';
 import routes from './routes';
 import { errorHandler, notFoundHandler } from './middleware/error';
 import prisma from './config/database';
-import { connectMongo, disconnectMongo } from './config/mongoose';
+import { getRedisClient, disconnectRedis } from './config/redis';
 
 // Validate config
 validateConfig();
 
-// Connect MongoDB (Mongoose)
-connectMongo().catch((error) => {
-  console.error('MongoDB connection error:', error);
-});
+// Initialize Redis (non-blocking)
+getRedisClient();
 
 const app = express();
+
+// Track database readiness
+let dbReady = false;
 
 // Trust proxy for rate limiting behind reverse proxy
 app.set('trust proxy', 1);
@@ -64,10 +65,26 @@ if (config.nodeEnv !== 'test') {
   app.use(morgan(config.nodeEnv === 'development' ? 'dev' : 'combined'));
 }
 
+// ============ Request timeout middleware ============
+// Prevents requests from hanging forever if DB is slow
+app.use((req, res, next) => {
+  // 30s timeout for all API requests (Express level)
+  req.setTimeout(30000);
+  res.setTimeout(30000, () => {
+    if (!res.headersSent) {
+      res.status(504).json({
+        success: false,
+        error: 'Request timed out. The database may be waking up — please try again.',
+      });
+    }
+  });
+  next();
+});
+
 // Rate limiting
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // Limit each IP to 100 requests per windowMs
+  max: 200, // Limit each IP to 200 requests per windowMs
   message: {
     success: false,
     error: 'Too many requests, please try again later.',
@@ -81,14 +98,46 @@ app.use('/api', limiter);
 // Stricter rate limit for auth routes
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 20,
+  max: 30,
   message: {
     success: false,
     error: 'Too many authentication attempts, please try again later.',
   },
 });
 
+// Stricter limiter for login/register to prevent brute force
+const loginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  message: {
+    success: false,
+    error: 'Too many login attempts, please try again in 15 minutes.',
+  },
+  skipSuccessfulRequests: true,
+});
+
 app.use('/api/auth', authLimiter);
+app.use('/api/auth/login', loginLimiter);
+app.use('/api/auth/register', loginLimiter);
+
+// Health check endpoint (no auth, no rate limit, fast response)
+app.get('/api/health', async (_req, res) => {
+  if (dbReady) {
+    return res.json({ status: 'ok', db: 'connected', timestamp: Date.now() });
+  }
+  // If DB not ready, try a quick ping with timeout
+  try {
+    const pingPromise = prisma.$runCommandRaw({ ping: 1 });
+    const timeoutPromise = new Promise((_, reject) =>
+      setTimeout(() => reject(new Error('DB ping timeout')), 3000)
+    );
+    await Promise.race([pingPromise, timeoutPromise]);
+    dbReady = true;
+    return res.json({ status: 'ok', db: 'connected', timestamp: Date.now() });
+  } catch {
+    return res.status(503).json({ status: 'warming', db: 'connecting', timestamp: Date.now() });
+  }
+});
 
 // Static files for uploads
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
@@ -107,7 +156,7 @@ const gracefulShutdown = async () => {
   console.log('Received shutdown signal. Closing connections...');
   
   await prisma.$disconnect();
-  await disconnectMongo();
+  await disconnectRedis();
   
   process.exit(0);
 };
@@ -115,16 +164,49 @@ const gracefulShutdown = async () => {
 process.on('SIGTERM', gracefulShutdown);
 process.on('SIGINT', gracefulShutdown);
 
-// Start server
-const PORT = config.port;
+// ============ DB keep-alive (prevents Atlas from sleeping) ============
+function startKeepAlive() {
+  setInterval(async () => {
+    try {
+      await prisma.$runCommandRaw({ ping: 1 });
+      if (!dbReady) {
+        dbReady = true;
+        console.log('✅ Database connection restored');
+      }
+    } catch {
+      dbReady = false;
+    }
+  }, 4 * 60 * 1000); // Ping every 4 minutes
+}
 
-const server = app.listen(PORT, () => {
-  console.log(`
+// Warm up database connection, then start server
+async function startServer() {
+  const PORT = config.port;
+
+  // Start listening IMMEDIATELY so frontend requests don't get ECONNREFUSED
+  app.listen(PORT, () => {
+    console.log(`
 🚀 Server running on port ${PORT}
 📝 Environment: ${config.nodeEnv}
 🌐 Frontend URL: ${config.frontendUrl}
-  `);
-});
+    `);
+  });
+
+  // Warm up DB in background (don't block server startup)
+  try {
+    console.log('⏳ Warming up database connection...');
+    await prisma.$connect();
+    dbReady = true;
+    console.log('✅ Prisma connected to MongoDB');
+  } catch (err: any) {
+    console.error('⚠️ Database warmup failed (will retry on first request):', err.message);
+  }
+
+  // Start keep-alive pings
+  startKeepAlive();
+}
+
+startServer();
 
 // Handle unhandled rejections
 process.on('unhandledRejection', (reason, promise) => {

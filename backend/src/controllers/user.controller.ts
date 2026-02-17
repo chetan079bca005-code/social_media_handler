@@ -94,7 +94,7 @@ export const markNotificationRead = asyncHandler(async (req: AuthRequest, res: R
 
   const notificationId = req.params.notificationId as string;
 
-  await userService.markNotificationRead(notificationId, req.user.id);
+  await userService.markNotificationRead(req.user.id, notificationId);
 
   sendSuccess(res, null, 'Notification marked as read');
 });

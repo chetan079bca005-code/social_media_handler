@@ -3,6 +3,7 @@ import { Post, PostStatus, PostType, SocialPlatform } from '@prisma/client';
 import { AppError } from '../middleware/error';
 import { decrypt } from '../utils/encryption';
 import axios from 'axios';
+import { cacheGet, cacheSet, cacheDel, cacheDelMultiple, CacheKeys, CacheTTL } from '../config/redis';
 
 export interface CreatePostInput {
   content: string;
@@ -122,15 +123,29 @@ export async function createPost(
     include: postIncludes,
   });
 
+  // Invalidate related caches
+  await cacheDelMultiple([
+    `posts:workspace:${workspaceId}:*`,
+    CacheKeys.scheduledPosts(workspaceId),
+    `analytics:workspace:${workspaceId}:*`,
+  ]);
+
   return post;
 }
 
 // Get post by ID
 export async function getPostById(postId: string) {
-  return prisma.post.findUnique({
+  const cacheKey = CacheKeys.post(postId);
+  const cached = await cacheGet(cacheKey);
+  if (cached) return cached;
+
+  const post = await prisma.post.findUnique({
     where: { id: postId },
     include: postIncludes,
   });
+
+  if (post) await cacheSet(cacheKey, post, CacheTTL.DEFAULT);
+  return post;
 }
 
 // Get posts for workspace
@@ -140,6 +155,12 @@ export async function getWorkspacePosts(
   page: number = 1,
   limit: number = 20
 ) {
+  // Build cache key from filters
+  const filterKey = JSON.stringify({ ...filters, page, limit });
+  const cacheKey = CacheKeys.workspacePosts(workspaceId, filterKey);
+  const cached = await cacheGet<{ posts: any[]; total: number }>(cacheKey);
+  if (cached) return cached;
+
   const where: Record<string, unknown> = { workspaceId };
 
   if (filters.status) {
@@ -181,12 +202,18 @@ export async function getWorkspacePosts(
     prisma.post.count({ where }),
   ]);
 
-  return { posts, total };
+  const result = { posts, total };
+  await cacheSet(cacheKey, result, CacheTTL.SHORT);
+  return result;
 }
 
 // Get scheduled posts
 export async function getScheduledPosts(workspaceId: string) {
-  return prisma.post.findMany({
+  const cacheKey = CacheKeys.scheduledPosts(workspaceId);
+  const cached = await cacheGet(cacheKey);
+  if (cached) return cached;
+
+  const posts = await prisma.post.findMany({
     where: {
       workspaceId,
       status: 'SCHEDULED',
@@ -195,6 +222,9 @@ export async function getScheduledPosts(workspaceId: string) {
     include: postIncludes,
     orderBy: { scheduledAt: 'asc' },
   });
+
+  await cacheSet(cacheKey, posts, CacheTTL.SHORT);
+  return posts;
 }
 
 // Update post
@@ -214,7 +244,7 @@ export async function updatePost(
     throw new AppError('Cannot update published post', 400);
   }
 
-  return prisma.post.update({
+  const updated = await prisma.post.update({
     where: { id: postId },
     data: {
       content: data.content,
@@ -225,6 +255,13 @@ export async function updatePost(
     },
     include: postIncludes,
   });
+
+  await cacheDelMultiple([
+    CacheKeys.post(postId),
+    `posts:workspace:${post.workspaceId}:*`,
+    CacheKeys.scheduledPosts(post.workspaceId),
+  ]);
+  return updated;
 }
 
 // Delete post
@@ -244,6 +281,13 @@ export async function deletePost(postId: string): Promise<void> {
   await prisma.post.delete({
     where: { id: postId },
   });
+
+  await cacheDelMultiple([
+    CacheKeys.post(postId),
+    `posts:workspace:${post.workspaceId}:*`,
+    CacheKeys.scheduledPosts(post.workspaceId),
+    `analytics:workspace:${post.workspaceId}:*`,
+  ]);
 }
 
 // Submit for approval
@@ -391,6 +435,14 @@ export async function publishPost(postId: string): Promise<Post> {
       publishedAt: allSucceeded || !allFailed ? new Date() : undefined,
     },
     include: postIncludes,
+  }).then(async (result) => {
+    await cacheDelMultiple([
+      CacheKeys.post(postId),
+      `posts:workspace:${post.workspaceId}:*`,
+      CacheKeys.scheduledPosts(post.workspaceId),
+      `analytics:workspace:${post.workspaceId}:*`,
+    ]);
+    return result;
   });
 }
 

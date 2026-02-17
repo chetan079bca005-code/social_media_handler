@@ -8,6 +8,7 @@ import aiRoutes from './ai.routes';
 import mediaRoutes from './media.routes';
 import analyticsRoutes from './analytics.routes';
 import templateRoutes from './template.routes';
+import searchRoutes from './search.routes';
 
 const router = Router();
 
@@ -26,5 +27,6 @@ router.use('/ai', aiRoutes);
 router.use('/media', mediaRoutes);
 router.use('/analytics', analyticsRoutes);
 router.use('/templates', templateRoutes);
+router.use('/search', searchRoutes);
 
 export default router;

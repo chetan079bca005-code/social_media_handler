@@ -5,6 +5,7 @@ import { generateUniqueSlug } from '../utils/response';
 import { generateToken } from '../utils/encryption';
 import { createNotification } from './user.service';
 import { sendInvitationEmail } from '../utils/email';
+import { cacheGet, cacheSet, cacheDel, CacheKeys, CacheTTL } from '../config/redis';
 
 export interface CreateWorkspaceInput {
   name: string;
@@ -24,12 +25,18 @@ export interface InviteMemberInput {
 
 // Get workspaces for user
 export async function getUserWorkspaces(userId: string) {
+  const cacheKey = CacheKeys.userWorkspaces(userId);
+  const cached = await cacheGet<any[]>(cacheKey);
+  if (cached) return cached;
+
   const memberships = await prisma.workspaceMember.findMany({
     where: { userId },
     include: { workspace: true },
   });
 
-  return memberships.map((m) => m.workspace);
+  const workspaces = memberships.map((m) => m.workspace);
+  await cacheSet(cacheKey, workspaces, CacheTTL.DEFAULT);
+  return workspaces;
 }
 
 // Create workspace
@@ -93,12 +100,19 @@ export async function createWorkspace(
     },
   });
 
+  // Invalidate user workspaces cache
+  await cacheDel(CacheKeys.userWorkspaces(ownerId));
+
   return workspace;
 }
 
 // Get workspace by ID
 export async function getWorkspaceById(workspaceId: string) {
-  return prisma.workspace.findUnique({
+  const cacheKey = CacheKeys.workspace(workspaceId);
+  const cached = await cacheGet<any>(cacheKey);
+  if (cached) return cached;
+
+  const workspace = await prisma.workspace.findUnique({
     where: { id: workspaceId },
     include: {
       owner: {
@@ -131,6 +145,9 @@ export async function getWorkspaceById(workspaceId: string) {
       },
     },
   });
+
+  if (workspace) await cacheSet(cacheKey, workspace, CacheTTL.DEFAULT);
+  return workspace;
 }
 
 // Get workspace by slug
@@ -181,6 +198,9 @@ export async function updateWorkspace(
   return prisma.workspace.update({
     where: { id: workspaceId },
     data: updateData,
+  }).then(async (updated) => {
+    await cacheDel(CacheKeys.workspace(workspaceId));
+    return updated;
   });
 }
 
@@ -197,11 +217,19 @@ export async function deleteWorkspace(workspaceId: string): Promise<void> {
   await prisma.workspace.delete({
     where: { id: workspaceId },
   });
+
+  // Invalidate workspace cache and owner's workspace list
+  await cacheDel(CacheKeys.workspace(workspaceId));
+  await cacheDel(CacheKeys.userWorkspaces(workspace.ownerId));
 }
 
 // Get workspace members
 export async function getWorkspaceMembers(workspaceId: string) {
-  return prisma.workspaceMember.findMany({
+  const cacheKey = CacheKeys.workspaceMembers(workspaceId);
+  const cached = await cacheGet<any[]>(cacheKey);
+  if (cached) return cached;
+
+  const members = await prisma.workspaceMember.findMany({
     where: { workspaceId },
     include: {
       user: {
@@ -219,6 +247,9 @@ export async function getWorkspaceMembers(workspaceId: string) {
       { joinedAt: 'asc' },
     ],
   });
+
+  await cacheSet(cacheKey, members, CacheTTL.DEFAULT);
+  return members;
 }
 
 // Invite member to workspace
