@@ -168,6 +168,7 @@ function App() {
             <Route index element={<Navigate to="/dashboard" replace />} />
             <Route path="dashboard" element={<Dashboard />} />
             <Route path="create" element={<CreatePost />} />
+            <Route path="edit/:postId" element={<CreatePost />} />
             <Route path="calendar" element={<ContentCalendar />} />
             <Route path="scheduled" element={<Scheduled />} />
             <Route path="published" element={<Published />} />

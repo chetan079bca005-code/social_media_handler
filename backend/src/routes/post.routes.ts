@@ -14,12 +14,13 @@ const createPostSchema = z.object({
   content: z.string().min(1).max(10000),
   type: z.enum(['TEXT', 'IMAGE', 'VIDEO', 'CAROUSEL', 'STORY', 'REEL']),
   platforms: z.array(z.object({
-    socialAccountId: z.string().uuid(),
+    socialAccountId: z.string(),
     platformContent: z.string().optional(),
-    scheduledAt: z.string().datetime().optional(),
   })).min(1),
-  mediaIds: z.array(z.string().uuid()).optional(),
+  scheduledAt: z.string().datetime().optional(),
+  mediaIds: z.array(z.string()).optional(),
   hashtags: z.array(z.string()).optional(),
+  linkUrl: z.string().url().optional(),
   aiGenerated: z.boolean().optional(),
   aiPrompt: z.string().optional(),
 });
@@ -29,6 +30,8 @@ const updatePostSchema = z.object({
   content: z.string().min(1).max(10000).optional(),
   type: z.enum(['TEXT', 'IMAGE', 'VIDEO', 'CAROUSEL', 'STORY', 'REEL']).optional(),
   hashtags: z.array(z.string()).optional(),
+  scheduledAt: z.string().datetime().optional().nullable(),
+  linkUrl: z.string().url().optional().nullable(),
 });
 
 const updatePlatformSchema = z.object({

@@ -14,6 +14,7 @@ export interface CreatePostInput {
   scheduledAt?: Date;
   mediaIds?: string[];
   hashtags?: string[];
+  linkUrl?: string;
   aiGenerated?: boolean;
   aiPrompt?: string;
 }
@@ -23,6 +24,7 @@ export interface UpdatePostInput {
   postType?: PostType;
   hashtags?: string[];
   scheduledAt?: Date | null;
+  linkUrl?: string | null;
 }
 
 export interface PostFilters {
@@ -103,6 +105,7 @@ export async function createPost(
       status,
       scheduledAt: data.scheduledAt,
       hashtags: data.hashtags || [],
+      linkUrl: data.linkUrl,
       aiGenerated: data.aiGenerated || false,
       aiPrompt: data.aiPrompt,
       platforms: {
@@ -251,6 +254,7 @@ export async function updatePost(
       postType: data.postType,
       hashtags: data.hashtags,
       scheduledAt: data.scheduledAt,
+      linkUrl: data.linkUrl,
       status: data.scheduledAt ? 'SCHEDULED' : post.status,
     },
     include: postIncludes,

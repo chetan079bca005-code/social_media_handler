@@ -10,15 +10,16 @@ export const createPost = asyncHandler(async (req: AuthRequest, res: Response) =
     return sendError(res, 'Unauthorized', 401);
   }
 
-  const { content, postType, platforms, scheduledAt, mediaIds, hashtags, aiGenerated, aiPrompt } = req.body;
+  const { content, type, platforms, scheduledAt, mediaIds, hashtags, linkUrl, aiGenerated, aiPrompt } = req.body;
 
   const post = await postService.createPost(req.workspace.id, req.user.id, {
     content,
-    postType,
+    postType: type,
     platforms,
     scheduledAt: scheduledAt ? new Date(scheduledAt) : undefined,
     mediaIds,
     hashtags,
+    linkUrl,
     aiGenerated,
     aiPrompt,
   });
@@ -100,13 +101,14 @@ export const getScheduledPosts = asyncHandler(async (req: AuthRequest, res: Resp
 
 export const updatePost = asyncHandler(async (req: AuthRequest, res: Response) => {
   const postId = req.params.postId as string;
-  const { content, postType, hashtags, scheduledAt } = req.body;
+  const { content, type, hashtags, scheduledAt, linkUrl } = req.body;
 
   const post = await postService.updatePost(postId, {
     content,
-    postType,
+    postType: type,
     hashtags,
-    scheduledAt: scheduledAt ? new Date(scheduledAt) : null,
+    scheduledAt: scheduledAt ? new Date(scheduledAt) : scheduledAt === null ? null : undefined,
+    linkUrl,
   });
 
   sendSuccess(res, { post }, 'Post updated');
