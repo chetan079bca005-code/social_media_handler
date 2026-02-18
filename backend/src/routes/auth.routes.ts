@@ -42,5 +42,6 @@ router.post('/change-password', authenticate, validateBody(changePasswordSchema)
 router.post('/password-reset/request', validateBody(resetPasswordRequestSchema), authController.requestPasswordReset);
 router.post('/password-reset/confirm', validateBody(resetPasswordSchema), authController.resetPassword);
 router.get('/me', authenticate, authController.getMe);
+router.post('/google', authController.googleAuth);
 
 export default router;

@@ -129,3 +129,28 @@ export const getMe = asyncHandler(async (req: AuthRequest, res: Response) => {
 
   sendSuccess(res, { user: req.user }, 'User retrieved');
 });
+
+export const googleAuth = asyncHandler(async (req: Request, res: Response) => {
+  const { email, name, googleSub } = req.body;
+
+  if (!email || !googleSub) {
+    return sendError(res, 'Email and Google ID are required', 400);
+  }
+
+  const result = await authService.googleAuthUser({ email, name: name || 'Google User', googleSub });
+
+  // Set refresh token as HTTP-only cookie
+  res.cookie('refreshToken', result.tokens.refreshToken, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'strict',
+    maxAge: 30 * 24 * 60 * 60 * 1000,
+  });
+
+  sendSuccess(res, {
+    user: result.user,
+    accessToken: result.tokens.accessToken,
+    workspace: result.workspace,
+    workspaces: result.workspaces,
+  }, 'Google authentication successful');
+});

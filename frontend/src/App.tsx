@@ -23,6 +23,7 @@ import {
   Login,
   Register,
   ForgotPassword,
+  GoogleCallback,
 } from './pages'
 import { useAuthStore, useUIStore } from './store'
 import { authApi, warmupBackend } from './services/api'
@@ -155,6 +156,9 @@ function App() {
             <Route path="register" element={<Register />} />
             <Route path="forgot-password" element={<ForgotPassword />} />
           </Route>
+
+          {/* Google OAuth callback — outside PublicRoute so it always runs */}
+          <Route path="/auth/google/callback" element={<GoogleCallback />} />
 
           {/* Protected Routes */}
           <Route

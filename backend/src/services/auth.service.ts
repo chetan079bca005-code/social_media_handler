@@ -350,6 +350,130 @@ export async function resetPassword(token: string, newPassword: string): Promise
   ]);
 }
 
+// Google OAuth: find or create user by email, issue tokens without password check
+export async function googleAuthUser(input: { email: string; name: string; googleSub: string }): Promise<{ user: User; tokens: Tokens; workspace?: Workspace; workspaces: Workspace[] }> {
+  const { email, name, googleSub } = input;
+  const lowerEmail = email.toLowerCase();
+
+  // Try to find existing user
+  let user = await prisma.user.findUnique({
+    where: { email: lowerEmail },
+    include: {
+      workspaceMembers: {
+        include: { workspace: true },
+      },
+    },
+  });
+
+  let createdWorkspace: Workspace | undefined;
+
+  if (!user) {
+    // New user — create with a random internal password hash (user won't use it)
+    const internalHash = await bcrypt.hash(`google-oauth-${googleSub}-${Date.now()}`, SALT_ROUNDS);
+
+    const result = await prisma.$transaction(async (tx) => {
+      const newUser = await tx.user.create({
+        data: {
+          email: lowerEmail,
+          passwordHash: internalHash,
+          name,
+          preferences: {
+            theme: 'system',
+            timezone: 'America/New_York',
+            notifications: {
+              email: true,
+              push: true,
+              inApp: true,
+              postPublished: true,
+              postFailed: true,
+              approvalNeeded: true,
+              analyticsReport: true,
+            },
+          },
+        },
+      });
+
+      const baseWorkspaceName = `${name}'s Workspace`;
+      const slug = await generateUniqueSlug(baseWorkspaceName, async (s) => {
+        const exists = await tx.workspace.findUnique({ where: { slug: s } });
+        return !!exists;
+      });
+
+      const workspace = await tx.workspace.create({
+        data: {
+          name: baseWorkspaceName,
+          slug,
+          ownerId: newUser.id,
+        },
+      });
+
+      await tx.workspaceMember.create({
+        data: {
+          workspaceId: workspace.id,
+          userId: newUser.id,
+          role: WorkspaceRole.OWNER,
+        },
+      });
+
+      return { user: newUser, workspace };
+    });
+
+    createdWorkspace = result.workspace;
+
+    // Re-fetch with relations
+    user = await prisma.user.findUnique({
+      where: { id: result.user.id },
+      include: {
+        workspaceMembers: {
+          include: { workspace: true },
+        },
+      },
+    });
+  } else {
+    // Existing user — ensure they have at least one workspace
+    if (!user.workspaceMembers || user.workspaceMembers.length === 0) {
+      const baseWorkspaceName = `${user.name}'s Workspace`;
+      await prisma.$transaction(async (tx) => {
+        const slug = await generateUniqueSlug(baseWorkspaceName, async (s) => {
+          const exists = await tx.workspace.findUnique({ where: { slug: s } });
+          return !!exists;
+        });
+
+        const workspace = await tx.workspace.create({
+          data: { name: baseWorkspaceName, slug, ownerId: user!.id },
+        });
+
+        await tx.workspaceMember.create({
+          data: { workspaceId: workspace.id, userId: user!.id, role: WorkspaceRole.OWNER },
+        });
+      });
+
+      user = await prisma.user.findUnique({
+        where: { id: user.id },
+        include: { workspaceMembers: { include: { workspace: true } } },
+      });
+    }
+  }
+
+  if (!user) {
+    throw new AppError('Failed to create or find user', 500);
+  }
+
+  // Update last login
+  await prisma.user.update({
+    where: { id: user.id },
+    data: { lastLoginAt: new Date() },
+  });
+
+  // Generate tokens
+  const tokens = generateTokens({ userId: user.id, email: user.email });
+  await saveRefreshToken(user.id, tokens.refreshToken);
+
+  const workspaces = (user.workspaceMembers || []).map((m) => m.workspace);
+
+  return { user, tokens, workspace: createdWorkspace, workspaces };
+}
+
 // Helper: Save refresh token
 async function saveRefreshToken(userId: string, token: string): Promise<void> {
   const expiresAt = new Date(Date.now() + getExpirationMs(config.jwt.refreshExpiresIn));

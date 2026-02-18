@@ -288,6 +288,13 @@ export const authApi = {
       url: '/auth/change-password',
       data: { currentPassword, newPassword },
     }),
+
+  googleAuth: (data: { email: string; name: string; googleSub: string }) =>
+    request<{ success: boolean; data: { user: any; accessToken: string; workspace?: any; workspaces: any[] } }>({
+      method: 'POST',
+      url: '/auth/google',
+      data,
+    }),
 }
 
 // User API
