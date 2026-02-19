@@ -74,6 +74,7 @@ export function SettingsPage() {
   const [deleteConfirm, setDeleteConfirm] = useState('')
   const [passwordData, setPasswordData] = useState({ currentPassword: '', newPassword: '', confirmPassword: '' })
   const [isChangingPassword, setIsChangingPassword] = useState(false)
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false)
   const { theme: storeTheme, setTheme: setStoreTheme } = useUIStore()
   const { user, updateUser, logout } = useAuthStore()
 
@@ -295,16 +296,53 @@ export function SettingsPage() {
                   fallback={profile.name.split(' ').map((n) => n[0]).join('')}
                   size="xl"
                 />
-                <button className="absolute bottom-0 right-0 w-8 h-8 rounded-full bg-indigo-600 text-white flex items-center justify-center hover:bg-indigo-700 transition-colors">
-                  <Camera className="w-4 h-4" />
-                </button>
+                <label className="absolute bottom-0 right-0 w-8 h-8 rounded-full bg-indigo-600 text-white flex items-center justify-center hover:bg-indigo-700 transition-colors cursor-pointer">
+                  {isUploadingAvatar ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Camera className="w-4 h-4" />
+                  )}
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    disabled={isUploadingAvatar}
+                    onChange={async (e) => {
+                      const file = e.target.files?.[0]
+                      if (!file) return
+                      if (file.size > 5 * 1024 * 1024) {
+                        toast.error('Image must be under 5MB')
+                        return
+                      }
+                      try {
+                        setIsUploadingAvatar(true)
+                        const res = await userApi.uploadAvatar(file)
+                        const avatarUrl = (res as any)?.data?.avatarUrl || (res as any)?.avatarUrl
+                        if (avatarUrl) {
+                          setProfile((prev) => ({ ...prev, avatar: avatarUrl }))
+                          updateUser({ avatarUrl })
+                          toast.success('Avatar updated!')
+                        }
+                      } catch (err: any) {
+                        toast.error(err.message || 'Failed to upload avatar')
+                      } finally {
+                        setIsUploadingAvatar(false)
+                        e.target.value = ''
+                      }
+                    }}
+                  />
+                </label>
               </div>
               <div>
                 <h3 className="font-semibold text-slate-900 dark:text-white">{profile.name}</h3>
                 <p className="text-sm text-slate-500">{profile.email}</p>
-                <Button variant="outline" size="sm" className="mt-2">
-                  Change Avatar
-                </Button>
+                <label className="cursor-pointer">
+                  <Button variant="outline" size="sm" className="mt-2" asChild>
+                    <span>
+                      {isUploadingAvatar ? 'Uploading...' : 'Change Avatar'}
+                    </span>
+                  </Button>
+                </label>
               </div>
             </div>
 

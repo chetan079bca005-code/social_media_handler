@@ -257,6 +257,41 @@ export function MediaLibrary() {
     toast.success('URL copied to clipboard')
   }
 
+  const downloadMedia = (url: string, name: string) => {
+    const a = document.createElement('a')
+    a.href = url
+    a.download = name
+    a.target = '_blank'
+    a.rel = 'noopener noreferrer'
+    a.click()
+  }
+
+  const downloadSelected = () => {
+    const items = filteredMedia.filter((m) => selectedMedia.has(m.id))
+    for (const item of items) {
+      downloadMedia(item.url, item.name)
+    }
+  }
+
+  const handleDeleteSingle = async (id: string) => {
+    try {
+      await mediaApi.delete(id)
+      toast.success('File deleted')
+      invalidateCache('media:*')
+      refetchMedia()
+    } catch {
+      toast.error('Failed to delete file')
+    }
+  }
+
+  const handleCreateFolder = () => {
+    const name = prompt('Enter folder name:')
+    if (name?.trim()) {
+      setSelectedFolder(name.trim())
+      toast.success(`Folder "${name.trim()}" created`)
+    }
+  }
+
   const getTypeIcon = (type: string) => {
     switch (type) {
       case 'image':
@@ -299,7 +334,7 @@ export function MediaLibrary() {
           <CardHeader>
             <div className="flex items-center justify-between">
               <CardTitle className="text-sm">Folders</CardTitle>
-              <Button variant="ghost" size="sm">
+              <Button variant="ghost" size="sm" onClick={handleCreateFolder}>
                 <Plus className="w-4 h-4" />
               </Button>
             </div>
@@ -409,7 +444,7 @@ export function MediaLibrary() {
                 {selectedMedia.size} selected
               </span>
               <div className="flex-1" />
-              <Button variant="ghost" size="sm">
+              <Button variant="ghost" size="sm" onClick={downloadSelected}>
                 <Download className="w-4 h-4 mr-2" />
                 Download
               </Button>
@@ -600,12 +635,18 @@ export function MediaLibrary() {
                                 <Copy className="w-4 h-4 mr-2" />
                                 Copy URL
                               </DropdownMenuItem>
-                              <DropdownMenuItem>
+                              <DropdownMenuItem onClick={(e) => {
+                                e.stopPropagation()
+                                downloadMedia(item.url, item.name)
+                              }}>
                                 <Download className="w-4 h-4 mr-2" />
                                 Download
                               </DropdownMenuItem>
                               <DropdownMenuSeparator />
-                              <DropdownMenuItem className="text-red-600">
+                              <DropdownMenuItem className="text-red-600" onClick={(e) => {
+                                e.stopPropagation()
+                                handleDeleteSingle(item.id)
+                              }}>
                                 <Trash2 className="w-4 h-4 mr-2" />
                                 Delete
                               </DropdownMenuItem>
@@ -757,7 +798,7 @@ export function MediaLibrary() {
               <Copy className="w-4 h-4 mr-2" />
               Copy URL
             </Button>
-            <Button>
+            <Button onClick={() => previewMedia && downloadMedia(previewMedia.url, previewMedia.name)}>
               <Download className="w-4 h-4 mr-2" />
               Download
             </Button>

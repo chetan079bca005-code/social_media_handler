@@ -65,15 +65,18 @@ export const updateAccount = asyncHandler(async (req: AuthRequest, res: Response
   const accountId = req.params.accountId as string;
   const { accountName, accountUsername, profileImageUrl, isActive } = req.body;
 
-  // Re-connect with updated details (simplified update)
-  const existing = await socialAccountService.getSocialAccountById(accountId);
-  if (!existing) {
+  const account = await socialAccountService.updateSocialAccount(accountId, {
+    accountName,
+    accountUsername,
+    profileImageUrl,
+    isActive,
+  });
+
+  if (!account) {
     return sendError(res, 'Account not found', 404);
   }
 
-  // For now, just disconnect and reconnect isn't ideal
-  // A proper updateSocialAccount function would be better
-  sendSuccess(res, { account: existing }, 'Account updated');
+  sendSuccess(res, { account }, 'Account updated');
 });
 
 export const disconnectAccount = asyncHandler(async (req: AuthRequest, res: Response) => {
@@ -123,25 +126,37 @@ export const getOAuthUrl = asyncHandler(async (req: AuthRequest, res: Response) 
 export const handleOAuthCallback = asyncHandler(async (req: AuthRequest, res: Response) => {
   const platform = req.params.platform as string;
   const { code, state, error } = req.query;
+  const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
 
   if (error) {
-    return res.redirect(`${process.env.FRONTEND_URL}/social-accounts?error=${error}`);
+    return res.redirect(`${frontendUrl}/accounts?error=${encodeURIComponent(error as string)}`);
   }
 
   if (!code || !state) {
-    return res.redirect(`${process.env.FRONTEND_URL}/social-accounts?error=missing_params`);
+    return res.redirect(`${frontendUrl}/accounts?error=missing_params`);
   }
 
   try {
-    // Decode state
+    // Decode state to get workspaceId
     const stateData = JSON.parse(Buffer.from(state as string, 'base64').toString());
     const { workspaceId } = stateData;
 
-    // Exchange code for tokens
-    // This would call platform-specific token exchange
-    // For now, redirect with success
-    res.redirect(`${process.env.FRONTEND_URL}/social-accounts?success=true&platform=${platform}`);
-  } catch (err) {
-    res.redirect(`${process.env.FRONTEND_URL}/social-accounts?error=invalid_state`);
+    if (!workspaceId) {
+      return res.redirect(`${frontendUrl}/accounts?error=missing_workspace`);
+    }
+
+    // Exchange code for tokens and connect the account
+    const account = await socialAccountService.handleOAuthCallback(
+      platform.toUpperCase() as Parameters<typeof socialAccountService.handleOAuthCallback>[0],
+      code as string,
+      workspaceId
+    );
+
+    res.redirect(
+      `${frontendUrl}/accounts?success=true&platform=${platform}&account=${encodeURIComponent(account.accountName || '')}`
+    );
+  } catch (err: any) {
+    console.error(`OAuth callback error for ${platform}:`, err.message);
+    res.redirect(`${frontendUrl}/accounts?error=${encodeURIComponent(err.message || 'oauth_failed')}`);
   }
 });

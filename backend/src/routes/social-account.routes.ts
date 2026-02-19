@@ -8,7 +8,7 @@ const router = Router();
 
 // Validation schemas
 const connectAccountSchema = z.object({
-  platform: z.enum(['FACEBOOK', 'INSTAGRAM', 'TWITTER', 'LINKEDIN', 'TIKTOK', 'YOUTUBE', 'PINTEREST']),
+  platform: z.enum(['FACEBOOK', 'INSTAGRAM', 'TWITTER', 'LINKEDIN', 'TIKTOK', 'YOUTUBE', 'PINTEREST', 'THREADS']),
   platformAccountId: z.string().min(1),
   accessToken: z.string().min(1),
   refreshToken: z.string().optional(),

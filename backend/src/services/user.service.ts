@@ -214,6 +214,17 @@ export async function markAllNotificationsRead(userId: string): Promise<void> {
   await cacheDel(`${CacheKeys.userNotifications(userId)}:*`);
 }
 
+export async function deleteNotification(userId: string, notificationId: string): Promise<void> {
+  await prisma.notification.deleteMany({
+    where: {
+      id: notificationId,
+      userId,
+    },
+  });
+
+  await cacheDel(`${CacheKeys.userNotifications(userId)}:*`);
+}
+
 // Create notification
 export async function createNotification(data: {
   userId: string;

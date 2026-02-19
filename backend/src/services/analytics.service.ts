@@ -58,6 +58,14 @@ export interface AggregatedAnalytics {
     engagement: number;
     impressions: number;
   }>;
+  comparison?: {
+    followersChange: number;
+    engagementChange: number;
+    postsChange: number;
+    impressionsChange: number;
+    reachChange: number;
+    engagementRateChange: number;
+  };
 }
 
 // Get aggregated analytics for workspace
@@ -111,8 +119,10 @@ export async function getWorkspaceAnalytics(
   // Calculate aggregated stats
   let totalFollowers = 0;
   let totalEngagement = 0;
+  let totalImpressions = 0;
+  let totalReach = 0;
   let followerGrowth = 0;
-  const byPlatform: Record<string, { followers: number; posts: number; engagement: number }> = {};
+  const byPlatform: Record<string, { followers: number; posts: number; engagement: number; impressions: number }> = {};
 
   for (const account of accounts) {
     const latestAnalytics = account.analytics[account.analytics.length - 1];
@@ -122,16 +132,34 @@ export async function getWorkspaceAnalytics(
       totalFollowers += latestAnalytics.followers || 0;
       totalEngagement += latestAnalytics.engagement || 0;
 
+      // Sum impressions and reach across all analytics entries for the period
+      for (const a of account.analytics) {
+        totalImpressions += (a as any).impressions || 0;
+        totalReach += (a as any).reach || 0;
+      }
+
       if (earliestAnalytics) {
         followerGrowth += (latestAnalytics.followers || 0) - (earliestAnalytics.followers || 0);
       }
 
       // By platform
       if (!byPlatform[account.platform]) {
-        byPlatform[account.platform] = { followers: 0, posts: 0, engagement: 0 };
+        byPlatform[account.platform] = { followers: 0, posts: 0, engagement: 0, impressions: 0 };
       }
       byPlatform[account.platform].followers += latestAnalytics.followers || 0;
       byPlatform[account.platform].engagement += latestAnalytics.engagement || 0;
+      byPlatform[account.platform].impressions += (latestAnalytics as any).impressions || 0;
+    }
+  }
+
+  // Also sum impressions/reach from individual post platform metrics
+  for (const post of posts) {
+    for (const platform of post.platforms) {
+      const metrics = (platform as any).metrics;
+      if (metrics && typeof metrics === 'object') {
+        totalImpressions += (metrics as any).impressions || 0;
+        totalReach += (metrics as any).reach || 0;
+      }
     }
   }
 
@@ -140,7 +168,7 @@ export async function getWorkspaceAnalytics(
     for (const platform of post.platforms) {
       const platformName = platform.socialAccount.platform;
       if (!byPlatform[platformName]) {
-        byPlatform[platformName] = { followers: 0, posts: 0, engagement: 0 };
+        byPlatform[platformName] = { followers: 0, posts: 0, engagement: 0, impressions: 0 };
       }
       byPlatform[platformName].posts++;
     }
@@ -149,25 +177,93 @@ export async function getWorkspaceAnalytics(
   // Generate trend data
   const trend = generateTrendData(accounts, timeframe);
 
-  // Get top posts (would need actual engagement data from platforms)
-  const topPosts = posts.slice(0, 5).map(post => ({
-    id: post.id,
-    content: post.content.substring(0, 100),
-    platform: post.platforms[0]?.socialAccount.platform || 'unknown',
-    engagement: 0, // Would come from platform analytics
-  }));
+  // Get top posts (with engagement from platform metrics)
+  const topPosts = posts
+    .map(post => {
+      // Sum engagement from all platforms' stored metrics
+      let totalEngagementForPost = 0;
+      for (const p of post.platforms) {
+        const metrics = (p as any).metrics;
+        if (metrics && typeof metrics === 'object') {
+          totalEngagementForPost += (metrics as any).likes || 0;
+          totalEngagementForPost += (metrics as any).comments || 0;
+          totalEngagementForPost += (metrics as any).shares || 0;
+        }
+      }
+      return {
+        id: post.id,
+        content: post.content.substring(0, 100),
+        platform: post.platforms[0]?.socialAccount.platform || 'unknown',
+        engagement: totalEngagementForPost,
+        publishedAt: post.publishedAt,
+      };
+    })
+    .sort((a, b) => b.engagement - a.engagement)
+    .slice(0, 5);
+
+  // Calculate period-over-period comparison
+  const periodLength = timeframe.endDate.getTime() - timeframe.startDate.getTime();
+  const prevStart = new Date(timeframe.startDate.getTime() - periodLength);
+  const prevEnd = new Date(timeframe.startDate);
+
+  // Get previous period's analytics for comparison
+  let prevFollowers = 0;
+  let prevEngagement = 0;
+  let prevImpressions = 0;
+  let prevReach = 0;
+  let prevPostCount = 0;
+  try {
+    const prevAccounts = await prisma.socialAccount.findMany({
+      where: { workspaceId, isActive: true },
+      include: {
+        analytics: {
+          where: { date: { gte: prevStart, lte: prevEnd } },
+          orderBy: { date: 'desc' },
+          take: 1,
+        },
+      },
+    });
+    for (const acc of prevAccounts) {
+      if (acc.analytics[0]) {
+        prevFollowers += acc.analytics[0].followers || 0;
+        prevEngagement += acc.analytics[0].engagement || 0;
+        prevImpressions += (acc.analytics[0] as any).impressions || 0;
+        prevReach += (acc.analytics[0] as any).reach || 0;
+      }
+    }
+    prevPostCount = await prisma.post.count({
+      where: { workspaceId, publishedAt: { gte: prevStart, lte: prevEnd } },
+    });
+  } catch { /* ignore comparison errors */ }
+
+  const followersChange = prevFollowers > 0 ? ((totalFollowers - prevFollowers) / prevFollowers) * 100 : 0;
+  const engagementChange = prevEngagement > 0 ? ((totalEngagement - prevEngagement) / prevEngagement) * 100 : 0;
+  const postsChange = prevPostCount > 0 ? ((posts.length - prevPostCount) / prevPostCount) * 100 : 0;
+  const impressionsChange = prevImpressions > 0 ? ((totalImpressions - prevImpressions) / prevImpressions) * 100 : 0;
+  const reachChange = prevReach > 0 ? ((totalReach - prevReach) / prevReach) * 100 : 0;
+  const currentEngRate = totalFollowers > 0 ? (totalEngagement / totalFollowers) * 100 : 0;
+  const prevEngRate = prevFollowers > 0 ? (prevEngagement / prevFollowers) * 100 : 0;
+  const engagementRateChange = prevEngRate > 0 ? ((currentEngRate - prevEngRate) / prevEngRate) * 100 : 0;
 
   const result: AggregatedAnalytics = {
     totalFollowers,
     totalPosts: posts.length,
     totalEngagement,
-    totalImpressions: 0, // Would need platform-specific data
-    totalReach: 0,
-    avgEngagementRate: totalFollowers > 0 ? (totalEngagement / totalFollowers) * 100 : 0,
+    totalImpressions,
+    totalReach,
+    avgEngagementRate: currentEngRate,
     followerGrowth,
     topPosts,
     byPlatform,
     trend,
+    comparison: {
+      followersChange: Math.round(followersChange * 10) / 10,
+      engagementChange: Math.round(engagementChange * 10) / 10,
+      postsChange: Math.round(postsChange * 10) / 10,
+      impressionsChange: Math.round(impressionsChange * 10) / 10,
+      reachChange: Math.round(reachChange * 10) / 10,
+      engagementRateChange: Math.round(engagementRateChange * 10) / 10,
+    },
   };
 
   // Cache the result

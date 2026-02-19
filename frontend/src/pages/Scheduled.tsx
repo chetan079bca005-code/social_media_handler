@@ -8,6 +8,8 @@ import {
   Copy,
   Plus,
   RefreshCw,
+  Send,
+  Loader2,
 } from 'lucide-react'
 import { Link, useNavigate } from 'react-router-dom'
 import { Card, CardContent } from '../components/ui/Card'
@@ -25,11 +27,13 @@ import { postsApi } from '../services/api'
 import { useWorkspaceStore } from '../store'
 import { useDataCache, invalidateCache } from '../lib/useDataCache'
 import toast from 'react-hot-toast'
+import { useState } from 'react'
 
 export function Scheduled() {
   const navigate = useNavigate()
   const { currentWorkspace } = useWorkspaceStore()
   const wsId = currentWorkspace?.id
+  const [publishingId, setPublishingId] = useState<string | null>(null)
 
   const { data: posts = [], isLoading, isRefreshing, refetch } = useDataCache<any[]>(
     `scheduled:${wsId}`,
@@ -62,6 +66,23 @@ export function Scheduled() {
       toast.success('Post duplicated')
     } catch {
       toast.error('Failed to duplicate post')
+    }
+  }
+
+  const handlePublishNow = async (id: string) => {
+    setPublishingId(id)
+    try {
+      await postsApi.publish(id)
+      invalidateCache('scheduled:*')
+      invalidateCache('published:*')
+      invalidateCache('calendar:*')
+      invalidateCache('analytics:*')
+      refetch()
+      toast.success('Post published successfully!')
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to publish post')
+    } finally {
+      setPublishingId(null)
     }
   }
 
@@ -166,6 +187,12 @@ export function Scheduled() {
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
+                      <DropdownMenuItem onClick={() => handlePublishNow(post.id)} disabled={publishingId === post.id}>
+                        {publishingId === post.id
+                          ? <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                          : <Send className="w-4 h-4 mr-2 text-emerald-500" />}
+                        Publish Now
+                      </DropdownMenuItem>
                       <DropdownMenuItem onClick={() => navigate(`/create?edit=${post.id}`)}>
                         <Edit2 className="w-4 h-4 mr-2" />Edit
                       </DropdownMenuItem>

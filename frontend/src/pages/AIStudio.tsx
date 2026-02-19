@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import {
   Sparkles,
@@ -11,6 +12,7 @@ import {
   Loader2,
   Copy,
   Check,
+  Send,
 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../components/ui/Card'
 import { Button } from '../components/ui/Button'
@@ -111,6 +113,7 @@ const LANGUAGES = [
 ]
 
 export function AIStudio() {
+  const navigate = useNavigate()
   const sampleImageUrl = 'https://static.apifree.ai/static/i/20260118/1768735837887497024_1.jpg'
   const [activeTool, setActiveTool] = useState('text-generator')
   const [isGenerating, setIsGenerating] = useState(false)
@@ -322,6 +325,10 @@ export function AIStudio() {
     toast.success('Copied to clipboard!')
   }
 
+  const useInPost = (content: string) => {
+    navigate(`/create?content=${encodeURIComponent(content)}`)
+  }
+
   const renderToolContent = () => {
     switch (activeTool) {
       case 'text-generator':
@@ -441,23 +448,33 @@ export function AIStudio() {
                     </p>
                     <div className="flex items-center justify-between mt-3 pt-3 border-t border-slate-200 dark:border-slate-700">
                       <span className="text-xs text-slate-500">{caption.length} characters</span>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => copyToClipboard(caption, index)}
-                      >
-                        {copiedIndex === index ? (
-                          <>
-                            <Check className="w-4 h-4 mr-1" />
-                            Copied!
-                          </>
-                        ) : (
-                          <>
-                            <Copy className="w-4 h-4 mr-1" />
-                            Copy
-                          </>
-                        )}
-                      </Button>
+                      <div className="flex items-center gap-1">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => copyToClipboard(caption, index)}
+                        >
+                          {copiedIndex === index ? (
+                            <>
+                              <Check className="w-4 h-4 mr-1" />
+                              Copied!
+                            </>
+                          ) : (
+                            <>
+                              <Copy className="w-4 h-4 mr-1" />
+                              Copy
+                            </>
+                          )}
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => useInPost(caption)}
+                        >
+                          <Send className="w-4 h-4 mr-1" />
+                          Use in Post
+                        </Button>
+                      </div>
                     </div>
                   </div>
                 ))}
@@ -523,14 +540,24 @@ export function AIStudio() {
                   <h3 className="font-semibold text-slate-900 dark:text-white">
                     Generated Hashtags
                   </h3>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => copyToClipboard(generatedHashtags.map((h) => `#${h}`).join(' '))}
-                  >
-                    <Copy className="w-4 h-4 mr-1" />
-                    Copy All
-                  </Button>
+                  <div className="flex items-center gap-1">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => copyToClipboard(generatedHashtags.map((h) => `#${h}`).join(' '))}
+                    >
+                      <Copy className="w-4 h-4 mr-1" />
+                      Copy All
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => useInPost(generatedHashtags.map((h) => `#${h}`).join(' '))}
+                    >
+                      <Send className="w-4 h-4 mr-1" />
+                      Use in Post
+                    </Button>
+                  </div>
                 </div>
                 <div className="flex flex-wrap gap-2">
                   {generatedHashtags.map((hashtag) => (
@@ -782,7 +809,17 @@ export function AIStudio() {
                           {idea.description}
                         </p>
                       </div>
-                      <Badge variant="secondary">{idea.contentType}</Badge>
+                      <div className="flex items-center gap-2 shrink-0">
+                        <Badge variant="secondary">{idea.contentType}</Badge>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => useInPost(`${idea.title}\n\n${idea.description}`)}
+                        >
+                          <Send className="w-4 h-4 mr-1" />
+                          Use
+                        </Button>
+                      </div>
                     </div>
                   </div>
                 ))}
@@ -870,7 +907,7 @@ export function AIStudio() {
                   <p className="text-sm text-slate-700 dark:text-slate-300 whitespace-pre-wrap">
                     {rewrittenCaption}
                   </p>
-                  <div className="flex items-center justify-end mt-3 pt-3 border-t border-slate-200 dark:border-slate-700">
+                  <div className="flex items-center justify-end mt-3 pt-3 border-t border-slate-200 dark:border-slate-700 gap-1">
                     <Button
                       variant="ghost"
                       size="sm"
@@ -878,6 +915,14 @@ export function AIStudio() {
                     >
                       <Copy className="w-4 h-4 mr-1" />
                       Copy
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => useInPost(rewrittenCaption)}
+                    >
+                      <Send className="w-4 h-4 mr-1" />
+                      Use in Post
                     </Button>
                   </div>
                 </div>
@@ -946,7 +991,7 @@ export function AIStudio() {
                   <p className="text-sm text-slate-700 dark:text-slate-300 whitespace-pre-wrap">
                     {translatedContent}
                   </p>
-                  <div className="flex items-center justify-end mt-3 pt-3 border-t border-slate-200 dark:border-slate-700">
+                  <div className="flex items-center justify-end mt-3 pt-3 border-t border-slate-200 dark:border-slate-700 gap-1">
                     <Button
                       variant="ghost"
                       size="sm"
@@ -954,6 +999,14 @@ export function AIStudio() {
                     >
                       <Copy className="w-4 h-4 mr-1" />
                       Copy
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => useInPost(translatedContent)}
+                    >
+                      <Send className="w-4 h-4 mr-1" />
+                      Use in Post
                     </Button>
                   </div>
                 </div>

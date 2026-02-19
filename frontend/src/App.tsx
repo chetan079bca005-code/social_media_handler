@@ -20,6 +20,7 @@ import {
   Hashtags,
   ManageWorkspaces,
   DesignStudio,
+  AcceptInvitation,
   Login,
   Register,
   ForgotPassword,
@@ -159,6 +160,9 @@ function App() {
 
           {/* Google OAuth callback — outside PublicRoute so it always runs */}
           <Route path="/auth/google/callback" element={<GoogleCallback />} />
+
+          {/* Team invitation acceptance — handles both logged-in and logged-out users */}
+          <Route path="/invite/:token" element={<AcceptInvitation />} />
 
           {/* Protected Routes */}
           <Route

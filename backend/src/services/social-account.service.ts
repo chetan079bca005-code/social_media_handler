@@ -149,6 +149,36 @@ export async function deleteSocialAccount(accountId: string): Promise<void> {
   await cacheDel(CacheKeys.workspaceSocialAccounts(account.workspaceId));
 }
 
+// Update social account details
+export async function updateSocialAccount(
+  accountId: string,
+  data: {
+    accountName?: string;
+    accountUsername?: string;
+    profileImageUrl?: string;
+    isActive?: boolean;
+  }
+): Promise<SocialAccount | null> {
+  const account = await prisma.socialAccount.findUnique({
+    where: { id: accountId },
+  });
+
+  if (!account) return null;
+
+  const updated = await prisma.socialAccount.update({
+    where: { id: accountId },
+    data: {
+      ...(data.accountName !== undefined && { accountName: data.accountName }),
+      ...(data.accountUsername !== undefined && { accountUsername: data.accountUsername }),
+      ...(data.profileImageUrl !== undefined && { profileImageUrl: data.profileImageUrl }),
+      ...(data.isActive !== undefined && { isActive: data.isActive }),
+    },
+  });
+
+  await cacheDel(CacheKeys.workspaceSocialAccounts(account.workspaceId));
+  return updated;
+}
+
 // Refresh account tokens
 export async function refreshAccessToken(accountId: string): Promise<SocialAccount> {
   const account = await prisma.socialAccount.findUnique({
@@ -265,7 +295,9 @@ async function refreshLinkedInToken(refreshToken: string) {
 
 // Get OAuth URL for platform
 export function getOAuthUrl(platform: SocialPlatform, workspaceId: string): string {
-  const redirectUri = `${config.frontendUrl}/oauth/callback/${platform.toLowerCase()}`;
+  // OAuth callback goes to backend API which exchanges the code, then redirects to frontend
+  const apiBase = process.env.API_URL || `http://localhost:${config.port}`;
+  const redirectUri = `${apiBase}/api/social-accounts/callback/${platform.toLowerCase()}`;
   const state = Buffer.from(JSON.stringify({ workspaceId })).toString('base64');
 
   const scopes: Record<SocialPlatform, string> = {
@@ -313,7 +345,8 @@ export async function handleOAuthCallback(
   code: string,
   workspaceId: string
 ): Promise<SocialAccount> {
-  const redirectUri = `${config.frontendUrl}/oauth/callback/${platform.toLowerCase()}`;
+  const apiBase = process.env.API_URL || `http://localhost:${config.port}`;
+  const redirectUri = `${apiBase}/api/social-accounts/callback/${platform.toLowerCase()}`;
 
   let tokenData: {
     accessToken: string;

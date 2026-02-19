@@ -153,7 +153,12 @@ export function useDataCache<T>(
     }
   }, [key, enabled]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  const refetch = useCallback(() => doFetch(false), [doFetch])
+  const refetch = useCallback(() => {
+    // Clear stale cache so we always hit the server
+    cache.delete(key)
+    // Use background mode to show the refresh spinner (not full loading skeleton)
+    return doFetch(true)
+  }, [doFetch, key])
 
   // Return `undefined` instead of `null` when there's no data.
   // This allows consumers to use destructuring defaults: `const { data: x = [] } = ...`

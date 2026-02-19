@@ -27,11 +27,13 @@ const updatePreferencesSchema = z.object({
 // Routes
 router.get('/profile', userController.getProfile);
 router.patch('/profile', validateBody(updateProfileSchema), userController.updateProfile);
+router.post('/profile/avatar', userController.avatarUploadMiddleware, userController.uploadAvatar);
 router.patch('/preferences', validateBody(updatePreferencesSchema), userController.updatePreferences);
 router.delete('/account', userController.deleteAccount);
 router.get('/workspaces', userController.getWorkspaces);
 router.get('/notifications', userController.getNotifications);
 router.patch('/notifications/:notificationId/read', userController.markNotificationRead);
 router.patch('/notifications/read-all', userController.markAllNotificationsRead);
+router.delete('/notifications/:notificationId', userController.deleteNotification);
 
 export default router;

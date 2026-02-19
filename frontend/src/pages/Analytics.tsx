@@ -1,4 +1,4 @@
-﻿import { useState } from 'react'
+﻿import { useState, useCallback } from 'react'
 import { motion } from 'framer-motion'
 import {
   XAxis,
@@ -69,14 +69,45 @@ export function Analytics() {
     { enabled: !!wsId }
   )
 
+  const [chartTab, setChartTab] = useState<'impressions' | 'engagement' | 'followers'>('impressions')
+
+  const comparison = analytics?.comparison
   const overviewStats = [
-    { title: 'Total Impressions', value: analytics?.totalImpressions || 0, change: 0, icon: Eye },
-    { title: 'Total Engagement', value: analytics?.totalEngagement || 0, change: 0, icon: Heart },
-    { title: 'Engagement Rate', value: analytics?.avgEngagementRate || 0, change: 0, isPercentage: true, icon: TrendingUp },
-    { title: 'Follower Growth', value: analytics?.followerGrowth || 0, change: 0, icon: Users },
-    { title: 'Total Reach', value: analytics?.totalReach || 0, change: 0, icon: MousePointer },
-    { title: 'Total Posts', value: analytics?.totalPosts || 0, change: 0, icon: Share2 },
+    { title: 'Total Impressions', value: analytics?.totalImpressions || 0, change: comparison?.impressionsChange || 0, icon: Eye },
+    { title: 'Total Engagement', value: analytics?.totalEngagement || 0, change: comparison?.engagementChange || 0, icon: Heart },
+    { title: 'Engagement Rate', value: analytics?.avgEngagementRate || 0, change: comparison?.engagementRateChange || 0, isPercentage: true, icon: TrendingUp },
+    { title: 'Follower Growth', value: analytics?.followerGrowth || 0, change: comparison?.followersChange || 0, icon: Users },
+    { title: 'Total Reach', value: analytics?.totalReach || 0, change: comparison?.reachChange || 0, icon: MousePointer },
+    { title: 'Total Posts', value: analytics?.totalPosts || 0, change: comparison?.postsChange || 0, icon: Share2 },
   ]
+
+  const handleExportCSV = useCallback(() => {
+    if (!analytics) return
+    const rows: string[][] = [['Metric', 'Value', 'Change %']]
+    overviewStats.forEach(s => {
+      rows.push([s.title, String(s.value), `${s.change}%`])
+    })
+    rows.push([])
+    rows.push(['Platform', 'Followers', 'Engagement Rate', 'Posts', 'Impressions'])
+    platformPerformance.forEach(p => {
+      rows.push([p.name, String(p.followers), `${p.engagement}%`, String(p.posts), String(p.impressions)])
+    })
+    if (engagementTrends.length > 0) {
+      rows.push([])
+      rows.push(['Date', 'Impressions', 'Engagement', 'Followers'])
+      engagementTrends.forEach((t: any) => {
+        rows.push([t.date, String(t.impressions), String(t.engagement), String(t.followers)])
+      })
+    }
+    const csv = rows.map(r => r.map(c => `"${c}"`).join(',')).join('\n')
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `analytics-${new Date().toISOString().slice(0, 10)}.csv`
+    a.click()
+    URL.revokeObjectURL(url)
+  }, [analytics])
 
   const engagementTrends = (analytics?.trend || []).map((t: any) => ({
     date: new Date(t.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
@@ -148,7 +179,7 @@ export function Analytics() {
           <Button variant="outline" className="w-full sm:w-auto" onClick={refetch}>
             <RefreshCw className={cn('w-4 h-4 mr-2', isRefreshing && 'animate-spin')} />Refresh
           </Button>
-          <Button variant="outline" className="w-full sm:w-auto">
+          <Button variant="outline" className="w-full sm:w-auto" onClick={handleExportCSV}>
             <Download className="w-4 h-4 mr-2" />Export
           </Button>
         </div>
@@ -192,7 +223,7 @@ export function Analytics() {
                 <CardTitle>Engagement Trends</CardTitle>
                 <CardDescription>Performance over time</CardDescription>
               </div>
-              <Tabs defaultValue="impressions" className="w-auto">
+              <Tabs value={chartTab} onValueChange={(v: string) => setChartTab(v as any)} className="w-auto">
                 <TabsList>
                   <TabsTrigger value="impressions">Impressions</TabsTrigger>
                   <TabsTrigger value="engagement">Engagement</TabsTrigger>
@@ -215,13 +246,24 @@ export function Analytics() {
                         <stop offset="5%" stopColor="#EC4899" stopOpacity={0.3} />
                         <stop offset="95%" stopColor="#EC4899" stopOpacity={0} />
                       </linearGradient>
+                      <linearGradient id="colorFollowers" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#10B981" stopOpacity={0.3} />
+                        <stop offset="95%" stopColor="#10B981" stopOpacity={0} />
+                      </linearGradient>
                     </defs>
                     <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
                     <XAxis dataKey="date" stroke="#94a3b8" fontSize={12} />
                     <YAxis stroke="#94a3b8" fontSize={12} />
                     <Tooltip contentStyle={{ backgroundColor: '#fff', border: '1px solid #e2e8f0', borderRadius: '8px', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)' }} />
-                    <Area type="monotone" dataKey="impressions" stroke="#6366F1" strokeWidth={2} fillOpacity={1} fill="url(#colorImpressions)" />
-                    <Area type="monotone" dataKey="engagement" stroke="#EC4899" strokeWidth={2} fillOpacity={1} fill="url(#colorEngagement)" />
+                    {chartTab === 'impressions' && (
+                      <Area type="monotone" dataKey="impressions" stroke="#6366F1" strokeWidth={2} fillOpacity={1} fill="url(#colorImpressions)" />
+                    )}
+                    {chartTab === 'engagement' && (
+                      <Area type="monotone" dataKey="engagement" stroke="#EC4899" strokeWidth={2} fillOpacity={1} fill="url(#colorEngagement)" />
+                    )}
+                    {chartTab === 'followers' && (
+                      <Area type="monotone" dataKey="followers" stroke="#10B981" strokeWidth={2} fillOpacity={1} fill="url(#colorFollowers)" />
+                    )}
                   </AreaChart>
                 </ResponsiveContainer>
               </div>

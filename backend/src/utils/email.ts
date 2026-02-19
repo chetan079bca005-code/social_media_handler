@@ -11,18 +11,56 @@ async function getTransporter(): Promise<nodemailer.Transporter> {
   const smtpPort = parseInt(process.env.SMTP_PORT || '587', 10);
   const smtpUser = process.env.SMTP_USER;
   const smtpPass = process.env.SMTP_PASS;
-  const smtpFrom = process.env.SMTP_FROM || 'SocialHub <noreply@socialhub.app>';
 
   if (smtpHost && smtpUser && smtpPass) {
-    transporter = nodemailer.createTransport({
-      host: smtpHost,
-      port: smtpPort,
-      secure: smtpPort === 465,
-      auth: {
-        user: smtpUser,
-        pass: smtpPass,
-      },
-    });
+    // Detect Gmail and use the built-in 'gmail' service for reliability
+    const isGmail = smtpHost.includes('gmail');
+
+    const transportConfig: any = isGmail
+      ? {
+          service: 'gmail',
+          auth: {
+            user: smtpUser,
+            pass: smtpPass,
+          },
+        }
+      : {
+          host: smtpHost,
+          port: smtpPort,
+          secure: smtpPort === 465,
+          auth: {
+            user: smtpUser,
+            pass: smtpPass,
+          },
+        };
+
+    transporter = nodemailer.createTransport(transportConfig);
+
+    console.log(`📧 SMTP configured: ${isGmail ? 'Gmail service' : smtpHost + ':' + smtpPort} (user: ${smtpUser})`);
+
+    // Verify connection
+    try {
+      await transporter.verify();
+      console.log('✅ SMTP connection verified — emails will be delivered to real recipients');
+    } catch (err: any) {
+      console.error('❌ SMTP connection failed:', err.message);
+      console.error('   Check SMTP_HOST, SMTP_USER, SMTP_PASS in your .env file');
+      console.error('   For Gmail: enable 2FA → create App Password at https://myaccount.google.com/apppasswords');
+      // Reset transporter so next attempt re-creates it
+      transporter = null;
+      // Fall back to Ethereal if SMTP fails
+      const testAccount = await nodemailer.createTestAccount();
+      transporter = nodemailer.createTransport({
+        host: 'smtp.ethereal.email',
+        port: 587,
+        secure: false,
+        auth: {
+          user: testAccount.user,
+          pass: testAccount.pass,
+        },
+      });
+      console.log('⚠️  Falling back to Ethereal test email');
+    }
   } else {
     // Use Ethereal for dev/testing — emails are captured at https://ethereal.email
     const testAccount = await nodemailer.createTestAccount();
@@ -35,15 +73,24 @@ async function getTransporter(): Promise<nodemailer.Transporter> {
         pass: testAccount.pass,
       },
     });
-    console.log('📧 Using Ethereal test email account:', testAccount.user);
-    console.log('   View sent emails at: https://ethereal.email/login');
+    console.log('');
+    console.log('⚠️  No SMTP configured — using Ethereal test email (emails will NOT reach real inboxes)');
+    console.log('   To send real emails, add SMTP_HOST, SMTP_USER, SMTP_PASS to backend/.env');
+    console.log('   Ethereal account:', testAccount.user);
+    console.log('   View test emails at: https://ethereal.email/login');
+    console.log('');
   }
 
-  return transporter;
+  return transporter!;
 }
 
 function getFromAddress(): string {
-  return process.env.SMTP_FROM || 'SocialHub <noreply@socialhub.app>';
+  // Gmail requires From to match the authenticated account
+  const smtpUser = process.env.SMTP_USER;
+  const smtpFrom = process.env.SMTP_FROM;
+  if (smtpFrom) return smtpFrom;
+  if (smtpUser) return `SocialHub <${smtpUser}>`;
+  return 'SocialHub <noreply@socialhub.app>';
 }
 
 export async function sendInvitationEmail(params: {

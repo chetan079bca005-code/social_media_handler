@@ -6,6 +6,12 @@ import path from 'path';
 import fs from 'fs/promises';
 import { config } from '../config';
 import { cacheGet, cacheSet, cacheDel, CacheKeys, CacheTTL } from '../config/redis';
+import {
+  isCloudinaryConfigured,
+  uploadToCloudinary,
+  uploadUrlToCloudinary,
+  deleteFromCloudinary,
+} from '../config/cloudinary';
 
 export interface UploadedFile {
   fieldname: string;
@@ -34,6 +40,13 @@ export interface MediaFilters {
   search?: string;
 }
 
+// Determine resource type from mimetype
+function getCloudinaryResourceType(mimeType: string): 'image' | 'video' | 'raw' {
+  if (mimeType.startsWith('image/')) return 'image';
+  if (mimeType.startsWith('video/') || mimeType.startsWith('audio/')) return 'video';
+  return 'raw';
+}
+
 // Upload file
 export async function uploadFile(
   workspaceId: string,
@@ -41,20 +54,37 @@ export async function uploadFile(
   file: UploadedFile,
   folderId?: string
 ): Promise<MediaFile> {
-  // Generate unique filename
+  let url: string;
+  let thumbnailUrl: string | undefined;
+  let width: number | undefined;
+  let height: number | undefined;
+  let duration: number | undefined;
+  let cloudinaryPublicId: string | undefined;
   const ext = path.extname(file.originalname);
   const filename = `${uuidv4()}${ext}`;
-  const uploadPath = path.join(config.server.uploadDir, workspaceId, filename);
-  
-  // Ensure directory exists
-  await fs.mkdir(path.dirname(uploadPath), { recursive: true });
-  
-  // Save file
-  await fs.writeFile(uploadPath, file.buffer);
-  
-  // Generate URL (in production, this would be a CDN URL)
-  const url = `/uploads/${workspaceId}/${filename}`;
-  
+
+  if (isCloudinaryConfigured()) {
+    // Upload to Cloudinary
+    const resourceType = getCloudinaryResourceType(file.mimetype);
+    const result = await uploadToCloudinary(file.buffer, {
+      folder: `socialhub/${workspaceId}`,
+      publicId: filename.replace(ext, ''),
+      resourceType,
+    });
+    url = result.secureUrl;
+    thumbnailUrl = result.thumbnailUrl;
+    width = result.width;
+    height = result.height;
+    duration = result.duration;
+    cloudinaryPublicId = result.publicId;
+  } else {
+    // Fallback: save to local disk
+    const uploadPath = path.join(config.server.uploadDir, workspaceId, filename);
+    await fs.mkdir(path.dirname(uploadPath), { recursive: true });
+    await fs.writeFile(uploadPath, file.buffer);
+    url = `/uploads/${workspaceId}/${filename}`;
+  }
+
   // Create media record
   const media = await prisma.mediaFile.create({
     data: {
@@ -63,12 +93,17 @@ export async function uploadFile(
       filename,
       originalName: file.originalname,
       url,
+      thumbnailUrl,
       mimeType: file.mimetype,
       size: file.size,
+      width,
+      height,
+      duration,
       folderId,
+      metadata: cloudinaryPublicId ? { cloudinaryPublicId } : {},
     },
   });
-  
+
   await cacheDel(`media:workspace:${workspaceId}:*`);
   return media;
 }
@@ -81,21 +116,47 @@ export async function createMediaFromUrl(
 ): Promise<MediaFile> {
   const ext = path.extname(data.url) || '.png';
   const filename = `${uuidv4()}${ext}`;
-  
+
+  let finalUrl = data.url;
+  let thumbnailUrl = data.thumbnailUrl;
+  let width = data.width;
+  let height = data.height;
+  let cloudinaryPublicId: string | undefined;
+
+  // If Cloudinary is configured, re-upload the external URL to Cloudinary
+  // so it's stored on our CDN with optimizations
+  if (isCloudinaryConfigured() && data.url.startsWith('http')) {
+    try {
+      const resourceType = getCloudinaryResourceType(data.mimeType);
+      const result = await uploadUrlToCloudinary(data.url, {
+        folder: `socialhub/${workspaceId}`,
+        resourceType,
+      });
+      finalUrl = result.secureUrl;
+      width = result.width || width;
+      height = result.height || height;
+      cloudinaryPublicId = result.publicId;
+    } catch (err: any) {
+      console.warn('Cloudinary URL upload failed, keeping original URL:', err.message);
+      // Keep the original URL if Cloudinary upload fails
+    }
+  }
+
   const media = await prisma.mediaFile.create({
     data: {
       workspaceId,
       uploadedById: uploadedBy,
       filename,
       originalName: data.name,
-      url: data.url,
-      thumbnailUrl: data.thumbnailUrl,
+      url: finalUrl,
+      thumbnailUrl,
       mimeType: data.mimeType,
       size: data.size,
-      width: data.width,
-      height: data.height,
+      width,
+      height,
       duration: data.duration,
       folderId: data.folderId,
+      metadata: cloudinaryPublicId ? { cloudinaryPublicId } : {},
     },
   });
 
@@ -222,8 +283,14 @@ export async function deleteMediaFile(mediaId: string): Promise<void> {
     throw new AppError('Cannot delete media file that is used in posts', 400);
   }
   
-  // Delete physical file if stored locally
-  if (media.url.startsWith('/uploads')) {
+  // Delete from storage
+  const metadata = (media.metadata as Record<string, any>) || {};
+  if (metadata.cloudinaryPublicId) {
+    // Delete from Cloudinary
+    const resourceType = getCloudinaryResourceType(media.mimeType);
+    await deleteFromCloudinary(metadata.cloudinaryPublicId, resourceType);
+  } else if (media.url.startsWith('/uploads')) {
+    // Delete local file
     const filePath = path.join(config.server.uploadDir, media.url.replace('/uploads/', ''));
     try {
       await fs.unlink(filePath);

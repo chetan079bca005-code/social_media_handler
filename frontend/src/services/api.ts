@@ -312,6 +312,17 @@ export const userApi = {
       data,
     }),
 
+  uploadAvatar: (file: File) => {
+    const formData = new FormData()
+    formData.append('avatar', file)
+    return request<{ success: boolean; data: { user: any; avatarUrl: string } }>({
+      method: 'POST',
+      url: '/users/profile/avatar',
+      data: formData,
+      headers: { 'Content-Type': 'multipart/form-data' },
+    })
+  },
+
   updatePreferences: (preferences: Record<string, unknown>) =>
     request<{ success: boolean; data: { user: any } }>({
       method: 'PATCH',
@@ -651,6 +662,12 @@ export const notificationsApi = {
     request<void>({
       method: 'PATCH',
       url: '/users/notifications/read-all',
+    }),
+
+  delete: (id: string) =>
+    request<void>({
+      method: 'DELETE',
+      url: `/users/notifications/${id}`,
     }),
 }
 

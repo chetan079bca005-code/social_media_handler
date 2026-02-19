@@ -185,6 +185,24 @@ export function CreatePost() {
     }
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
+  // ─── Accept content/hashtags from URL params (AI Studio / Hashtags page) ─
+  useEffect(() => {
+    if (editId) return // Don't override when editing
+    const incomingContent = searchParams.get('content')
+    const incomingHashtags = searchParams.get('hashtags')
+    if (incomingContent) {
+      updateDraft({ content: incomingContent })
+    }
+    if (incomingHashtags) {
+      const tags = incomingHashtags.split(/[\s,]+/).map(t => t.replace(/^#/, '').trim()).filter(Boolean)
+      updateDraft({ hashtags: [...new Set([...draft.hashtags, ...tags])] })
+    }
+    // Clean URL params after consuming them
+    if (incomingContent || incomingHashtags) {
+      window.history.replaceState({}, '', '/create')
+    }
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
   // ─── Auto-save to draft store on changes ─────────────────────────────────
   useEffect(() => {
     if (isInitialLoadRef.current) return

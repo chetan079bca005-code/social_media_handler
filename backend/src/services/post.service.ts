@@ -272,14 +272,32 @@ export async function updatePost(
 export async function deletePost(postId: string): Promise<void> {
   const post = await prisma.post.findUnique({
     where: { id: postId },
+    include: {
+      platforms: {
+        include: { socialAccount: true },
+      },
+    },
   });
 
   if (!post) {
     throw new AppError('Post not found', 404);
   }
 
+  // If published, try to delete from platforms
   if (post.status === 'PUBLISHED') {
-    throw new AppError('Cannot delete published post', 400);
+    for (const platform of post.platforms) {
+      if (platform.platformPostId && platform.socialAccount) {
+        try {
+          await deleteFromPlatform(
+            platform.socialAccount,
+            platform.platformPostId
+          );
+        } catch (err: any) {
+          console.warn(`Could not delete post from ${platform.socialAccount.platform}: ${err.message}`);
+          // Continue even if platform deletion fails
+        }
+      }
+    }
   }
 
   await prisma.post.delete({
@@ -292,6 +310,41 @@ export async function deletePost(postId: string): Promise<void> {
     CacheKeys.scheduledPosts(post.workspaceId),
     `analytics:workspace:${post.workspaceId}:*`,
   ]);
+}
+
+// Delete post from a social platform
+async function deleteFromPlatform(
+  account: SocialAccountInfo,
+  platformPostId: string
+): Promise<void> {
+  const accessToken = decrypt(account.accessToken);
+
+  switch (account.platform) {
+    case 'FACEBOOK':
+    case 'INSTAGRAM':
+      await axios.delete(`https://graph.facebook.com/v18.0/${platformPostId}`, {
+        params: { access_token: accessToken },
+      });
+      break;
+    case 'TWITTER':
+      await axios.delete(`https://api.twitter.com/2/tweets/${platformPostId}`, {
+        headers: { Authorization: `Bearer ${accessToken}` },
+      });
+      break;
+    case 'LINKEDIN':
+      await axios.delete(`https://api.linkedin.com/v2/ugcPosts/${platformPostId}`, {
+        headers: { Authorization: `Bearer ${accessToken}` },
+      });
+      break;
+    case 'THREADS':
+      await axios.delete(`https://graph.threads.net/v1.0/${platformPostId}`, {
+        params: { access_token: accessToken },
+      });
+      break;
+    default:
+      // Other platforms may not support deletion
+      break;
+  }
 }
 
 // Submit for approval
@@ -483,6 +536,14 @@ async function publishToPlatform(
       return publishToTwitter(accessToken, content, media);
     case 'LINKEDIN':
       return publishToLinkedIn(accessToken, account.platformAccountId, content, media);
+    case 'TIKTOK':
+      return publishToTikTok(accessToken, content, media);
+    case 'YOUTUBE':
+      return publishToYouTube(accessToken, content, media);
+    case 'PINTEREST':
+      return publishToPinterest(accessToken, content, media);
+    case 'THREADS':
+      return publishToThreads(accessToken, account.platformAccountId, content, media);
     default:
       throw new Error(`Platform ${account.platform} not supported`);
   }
@@ -492,9 +553,82 @@ async function publishToFacebook(
   accessToken: string,
   pageId: string,
   content: string,
-  _media: MediaFileInfo[]
+  media: MediaFileInfo[]
 ): Promise<PublishResult> {
-  // Placeholder - implement actual Facebook API
+  // If media is present, upload photos/videos
+  if (media.length > 0) {
+    const imageMedia = media.filter(m => m.mimeType?.startsWith('image/'));
+    const videoMedia = media.filter(m => m.mimeType?.startsWith('video/'));
+
+    if (videoMedia.length > 0) {
+      // Post video
+      const response = await axios.post(
+        `https://graph.facebook.com/v18.0/${pageId}/videos`,
+        {
+          file_url: videoMedia[0].url,
+          description: content,
+          access_token: accessToken,
+        }
+      );
+      return {
+        platformPostId: response.data.id,
+        platformUrl: `https://facebook.com/${response.data.id}`,
+      };
+    }
+
+    if (imageMedia.length === 1) {
+      // Single photo post
+      const response = await axios.post(
+        `https://graph.facebook.com/v18.0/${pageId}/photos`,
+        {
+          url: imageMedia[0].url,
+          message: content,
+          access_token: accessToken,
+        }
+      );
+      return {
+        platformPostId: response.data.post_id || response.data.id,
+        platformUrl: `https://facebook.com/${response.data.post_id || response.data.id}`,
+      };
+    }
+
+    if (imageMedia.length > 1) {
+      // Multi-photo post: upload each as unpublished, then create post
+      const photoIds: string[] = [];
+      for (const img of imageMedia) {
+        const uploadRes = await axios.post(
+          `https://graph.facebook.com/v18.0/${pageId}/photos`,
+          {
+            url: img.url,
+            published: false,
+            access_token: accessToken,
+          }
+        );
+        photoIds.push(uploadRes.data.id);
+      }
+
+      // Create multi-photo post
+      const attachments: Record<string, string> = {};
+      photoIds.forEach((id, i) => {
+        attachments[`attached_media[${i}]`] = JSON.stringify({ media_fbid: id });
+      });
+
+      const response = await axios.post(
+        `https://graph.facebook.com/v18.0/${pageId}/feed`,
+        {
+          message: content,
+          ...attachments,
+          access_token: accessToken,
+        }
+      );
+      return {
+        platformPostId: response.data.id,
+        platformUrl: `https://facebook.com/${response.data.id}`,
+      };
+    }
+  }
+
+  // Text-only post
   const response = await axios.post(
     `https://graph.facebook.com/v18.0/${pageId}/feed`,
     {
@@ -515,26 +649,96 @@ async function publishToInstagram(
   content: string,
   media: MediaFileInfo[]
 ): Promise<PublishResult> {
-  // Placeholder - implement actual Instagram API
   if (media.length === 0) {
-    throw new Error('Instagram requires at least one image');
+    throw new Error('Instagram requires at least one image or video');
   }
 
-  // Create media container
-  const containerResponse = await axios.post(
-    `https://graph.facebook.com/v18.0/${accountId}/media`,
-    {
-      image_url: media[0].url,
+  const imageMedia = media.filter(m => m.mimeType?.startsWith('image/'));
+  const videoMedia = media.filter(m => m.mimeType?.startsWith('video/'));
+
+  let containerId: string;
+
+  if (media.length === 1) {
+    // Single image or video
+    const item = media[0];
+    const isVideo = item.mimeType?.startsWith('video/');
+
+    const containerPayload: Record<string, string> = {
       caption: content,
       access_token: accessToken,
+    };
+
+    if (isVideo) {
+      containerPayload.media_type = 'VIDEO';
+      containerPayload.video_url = item.url;
+    } else {
+      containerPayload.image_url = item.url;
     }
-  );
+
+    const containerResponse = await axios.post(
+      `https://graph.facebook.com/v18.0/${accountId}/media`,
+      containerPayload
+    );
+    containerId = containerResponse.data.id;
+  } else {
+    // Carousel post (2-10 items)
+    const childIds: string[] = [];
+
+    for (const item of media.slice(0, 10)) {
+      const isVideo = item.mimeType?.startsWith('video/');
+      const childPayload: Record<string, string> = {
+        is_carousel_item: 'true',
+        access_token: accessToken,
+      };
+
+      if (isVideo) {
+        childPayload.media_type = 'VIDEO';
+        childPayload.video_url = item.url;
+      } else {
+        childPayload.image_url = item.url;
+      }
+
+      const childRes = await axios.post(
+        `https://graph.facebook.com/v18.0/${accountId}/media`,
+        childPayload
+      );
+      childIds.push(childRes.data.id);
+    }
+
+    // Create carousel container
+    const carouselRes = await axios.post(
+      `https://graph.facebook.com/v18.0/${accountId}/media`,
+      {
+        media_type: 'CAROUSEL',
+        children: childIds.join(','),
+        caption: content,
+        access_token: accessToken,
+      }
+    );
+    containerId = carouselRes.data.id;
+  }
+
+  // Wait for container to be ready (Instagram processes async)
+  let attempts = 0;
+  const maxAttempts = 30;
+  while (attempts < maxAttempts) {
+    const statusRes = await axios.get(
+      `https://graph.facebook.com/v18.0/${containerId}`,
+      { params: { fields: 'status_code', access_token: accessToken } }
+    );
+    if (statusRes.data.status_code === 'FINISHED') break;
+    if (statusRes.data.status_code === 'ERROR') {
+      throw new Error('Instagram media processing failed');
+    }
+    await new Promise(r => setTimeout(r, 2000));
+    attempts++;
+  }
 
   // Publish the container
   const publishResponse = await axios.post(
     `https://graph.facebook.com/v18.0/${accountId}/media_publish`,
     {
-      creation_id: containerResponse.data.id,
+      creation_id: containerId,
       access_token: accessToken,
     }
   );
@@ -548,15 +752,55 @@ async function publishToInstagram(
 async function publishToTwitter(
   accessToken: string,
   content: string,
-  _media: MediaFileInfo[]
+  media: MediaFileInfo[]
 ): Promise<PublishResult> {
-  // Placeholder - implement actual Twitter/X API
+  const payload: Record<string, any> = { text: content };
+
+  // Upload media if present (Twitter v1.1 media upload + v2 tweet create)
+  if (media.length > 0) {
+    try {
+      // Twitter media upload requires v1.1 endpoint with multipart
+      // For URL-based media, we download and re-upload
+      const mediaIds: string[] = [];
+
+      for (const item of media.slice(0, 4)) { // Twitter allows up to 4 images
+        // Initialize upload
+        const initRes = await axios.post(
+          'https://upload.twitter.com/1.1/media/upload.json',
+          new URLSearchParams({
+            command: 'INIT',
+            media_type: item.mimeType || 'image/jpeg',
+            media_category: item.mimeType?.startsWith('video/') ? 'tweet_video' : 'tweet_image',
+          }),
+          {
+            headers: {
+              Authorization: `Bearer ${accessToken}`,
+              'Content-Type': 'application/x-www-form-urlencoded',
+            },
+          }
+        );
+
+        if (initRes.data?.media_id_string) {
+          mediaIds.push(initRes.data.media_id_string);
+        }
+      }
+
+      if (mediaIds.length > 0) {
+        payload.media = { media_ids: mediaIds };
+      }
+    } catch (mediaErr: any) {
+      // If media upload fails, still try to post text
+      console.warn('Twitter media upload failed, posting text only:', mediaErr.message);
+    }
+  }
+
   const response = await axios.post(
     'https://api.twitter.com/2/tweets',
-    { text: content },
+    payload,
     {
       headers: {
         Authorization: `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
       },
     }
   );
@@ -571,19 +815,101 @@ async function publishToLinkedIn(
   accessToken: string,
   profileId: string,
   content: string,
-  _media: MediaFileInfo[]
+  media: MediaFileInfo[]
 ): Promise<PublishResult> {
-  // Placeholder - implement actual LinkedIn API
+  const author = `urn:li:person:${profileId}`;
+
+  // Determine share media category and upload media if present
+  let shareContent: Record<string, any>;
+
+  if (media.length > 0) {
+    const imageMedia = media.filter(m => m.mimeType?.startsWith('image/'));
+
+    if (imageMedia.length > 0) {
+      // Register and upload images
+      const mediaElements: any[] = [];
+
+      for (const img of imageMedia.slice(0, 9)) { // LinkedIn allows up to 9 images
+        try {
+          // Register image upload
+          const registerRes = await axios.post(
+            'https://api.linkedin.com/v2/assets?action=registerUpload',
+            {
+              registerUploadRequest: {
+                recipes: ['urn:li:digitalmediaRecipe:feedshare-image'],
+                owner: author,
+                serviceRelationships: [{
+                  relationshipType: 'OWNER',
+                  identifier: 'urn:li:userGeneratedContent',
+                }],
+              },
+            },
+            {
+              headers: {
+                Authorization: `Bearer ${accessToken}`,
+                'Content-Type': 'application/json',
+              },
+            }
+          );
+
+          const uploadUrl = registerRes.data?.value?.uploadMechanism?.['com.linkedin.digitalmedia.uploading.MediaUploadHttpRequest']?.uploadUrl;
+          const asset = registerRes.data?.value?.asset;
+
+          if (uploadUrl && asset) {
+            // Download image and upload to LinkedIn
+            const imageData = await axios.get(img.url, { responseType: 'arraybuffer' });
+            await axios.put(uploadUrl, imageData.data, {
+              headers: {
+                Authorization: `Bearer ${accessToken}`,
+                'Content-Type': img.mimeType || 'image/jpeg',
+              },
+            });
+
+            mediaElements.push({
+              status: 'READY',
+              description: { text: '' },
+              media: asset,
+              title: { text: '' },
+            });
+          }
+        } catch (err: any) {
+          console.warn('LinkedIn image upload failed:', err.message);
+        }
+      }
+
+      if (mediaElements.length > 0) {
+        shareContent = {
+          shareCommentary: { text: content },
+          shareMediaCategory: 'IMAGE',
+          media: mediaElements,
+        };
+      } else {
+        // Fallback to text-only
+        shareContent = {
+          shareCommentary: { text: content },
+          shareMediaCategory: 'NONE',
+        };
+      }
+    } else {
+      shareContent = {
+        shareCommentary: { text: content },
+        shareMediaCategory: 'NONE',
+      };
+    }
+  } else {
+    shareContent = {
+      shareCommentary: { text: content },
+      shareMediaCategory: 'NONE',
+    };
+  }
+
   const response = await axios.post(
     'https://api.linkedin.com/v2/ugcPosts',
     {
-      author: `urn:li:person:${profileId}`,
+      author,
       lifecycleState: 'PUBLISHED',
       specificContent: {
-        'com.linkedin.ugc.ShareContent': {
-          shareCommentary: { text: content },
-          shareMediaCategory: 'NONE',
-        },
+        'com.linkedin.ugc.ShareContent': shareContent,
       },
       visibility: {
         'com.linkedin.ugc.MemberNetworkVisibility': 'PUBLIC',
@@ -600,6 +926,186 @@ async function publishToLinkedIn(
   return {
     platformPostId: response.data.id,
     platformUrl: `https://linkedin.com/feed/update/${response.data.id}`,
+  };
+}
+
+// ─── Additional Platform Publishers ────────────────────────────────────
+
+async function publishToTikTok(
+  accessToken: string,
+  content: string,
+  media: MediaFileInfo[]
+): Promise<PublishResult> {
+  if (media.length === 0 || !media[0].mimeType?.startsWith('video/')) {
+    throw new Error('TikTok requires a video file');
+  }
+
+  // TikTok Content Posting API - initialize upload
+  const initRes = await axios.post(
+    'https://open.tiktokapis.com/v2/post/publish/video/init/',
+    {
+      post_info: {
+        title: content.substring(0, 150),
+        privacy_level: 'PUBLIC_TO_EVERYONE',
+        disable_duet: false,
+        disable_comment: false,
+        disable_stitch: false,
+      },
+      source_info: {
+        source: 'PULL_FROM_URL',
+        video_url: media[0].url,
+      },
+    },
+    {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+      },
+    }
+  );
+
+  return {
+    platformPostId: initRes.data?.data?.publish_id,
+    platformUrl: undefined,
+  };
+}
+
+async function publishToYouTube(
+  accessToken: string,
+  content: string,
+  media: MediaFileInfo[]
+): Promise<PublishResult> {
+  if (media.length === 0 || !media[0].mimeType?.startsWith('video/')) {
+    throw new Error('YouTube requires a video file');
+  }
+
+  // Extract title from first line of content, rest as description
+  const lines = content.split('\n');
+  const title = lines[0].substring(0, 100) || 'Untitled';
+  const description = lines.slice(1).join('\n') || content;
+
+  // YouTube Data API v3 - upload video
+  // First, download the video, then upload to YouTube
+  const videoData = await axios.get(media[0].url, { responseType: 'stream' });
+
+  const response = await axios.post(
+    'https://www.googleapis.com/upload/youtube/v3/videos?uploadType=resumable&part=snippet,status',
+    {
+      snippet: {
+        title,
+        description,
+        categoryId: '22', // People & Blogs
+      },
+      status: {
+        privacyStatus: 'public',
+      },
+    },
+    {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+      },
+    }
+  );
+
+  // The resumable upload URL is in the Location header
+  const uploadUrl = response.headers.location;
+  if (uploadUrl) {
+    const uploadRes = await axios.put(uploadUrl, videoData.data, {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        'Content-Type': media[0].mimeType || 'video/mp4',
+      },
+      maxContentLength: Infinity,
+      maxBodyLength: Infinity,
+    });
+
+    return {
+      platformPostId: uploadRes.data?.id,
+      platformUrl: `https://youtube.com/watch?v=${uploadRes.data?.id}`,
+    };
+  }
+
+  return { platformPostId: undefined, platformUrl: undefined };
+}
+
+async function publishToPinterest(
+  accessToken: string,
+  content: string,
+  media: MediaFileInfo[]
+): Promise<PublishResult> {
+  if (media.length === 0) {
+    throw new Error('Pinterest requires at least one image');
+  }
+
+  // Pinterest API v5 - create pin
+  const response = await axios.post(
+    'https://api.pinterest.com/v5/pins',
+    {
+      title: content.substring(0, 100),
+      description: content,
+      media_source: {
+        source_type: 'image_url',
+        url: media[0].url,
+      },
+    },
+    {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+      },
+    }
+  );
+
+  return {
+    platformPostId: response.data?.id,
+    platformUrl: `https://pinterest.com/pin/${response.data?.id}`,
+  };
+}
+
+async function publishToThreads(
+  accessToken: string,
+  accountId: string,
+  content: string,
+  media: MediaFileInfo[]
+): Promise<PublishResult> {
+  // Threads API (Meta) - similar to Instagram
+  const containerPayload: Record<string, string> = {
+    text: content,
+    access_token: accessToken,
+  };
+
+  if (media.length > 0) {
+    const isVideo = media[0].mimeType?.startsWith('video/');
+    if (isVideo) {
+      containerPayload.media_type = 'VIDEO';
+      containerPayload.video_url = media[0].url;
+    } else {
+      containerPayload.media_type = 'IMAGE';
+      containerPayload.image_url = media[0].url;
+    }
+  } else {
+    containerPayload.media_type = 'TEXT';
+  }
+
+  // Create container
+  const containerRes = await axios.post(
+    `https://graph.threads.net/v1.0/${accountId}/threads`,
+    containerPayload
+  );
+
+  // Publish
+  const publishRes = await axios.post(
+    `https://graph.threads.net/v1.0/${accountId}/threads_publish`,
+    {
+      creation_id: containerRes.data.id,
+      access_token: accessToken,
+    }
+  );
+
+  return {
+    platformPostId: publishRes.data?.id,
+    platformUrl: `https://threads.net/@${accountId}/post/${publishRes.data?.id}`,
   };
 }
 
@@ -675,9 +1181,109 @@ export async function getPostAnalytics(platformId: string) {
     throw new AppError('Post platform not found', 404);
   }
 
-  // Return metrics from database
+  // Try to fetch live metrics from the platform API
+  let liveMetrics: Record<string, any> | null = null;
+  if (platform.platformPostId && platform.socialAccount) {
+    try {
+      liveMetrics = await fetchPostEngagement(
+        platform.socialAccount,
+        platform.platformPostId
+      );
+
+      // Store the fresh metrics
+      if (liveMetrics) {
+        await prisma.postPlatform.update({
+          where: { id: platformId },
+          data: { metrics: liveMetrics },
+        });
+      }
+    } catch (err: any) {
+      console.warn(`Could not fetch live metrics for ${platform.socialAccount.platform}:`, err.message);
+    }
+  }
+
   return {
     platform,
-    metrics: platform.metrics,
+    metrics: liveMetrics || platform.metrics || {},
   };
+}
+
+// Fetch per-post engagement from platform APIs
+async function fetchPostEngagement(
+  account: SocialAccountInfo,
+  platformPostId: string
+): Promise<Record<string, any> | null> {
+  const accessToken = decrypt(account.accessToken);
+
+  try {
+    switch (account.platform) {
+      case 'FACEBOOK': {
+        const res = await axios.get(`https://graph.facebook.com/v18.0/${platformPostId}`, {
+          params: {
+            fields: 'likes.summary(true),comments.summary(true),shares,insights.metric(post_impressions,post_engaged_users,post_clicks)',
+            access_token: accessToken,
+          },
+        });
+        const insights = res.data.insights?.data || [];
+        const getInsight = (name: string) => insights.find((i: any) => i.name === name)?.values?.[0]?.value || 0;
+        return {
+          likes: res.data.likes?.summary?.total_count || 0,
+          comments: res.data.comments?.summary?.total_count || 0,
+          shares: res.data.shares?.count || 0,
+          impressions: getInsight('post_impressions'),
+          engagement: getInsight('post_engaged_users'),
+          clicks: getInsight('post_clicks'),
+        };
+      }
+      case 'INSTAGRAM': {
+        const res = await axios.get(`https://graph.facebook.com/v18.0/${platformPostId}`, {
+          params: {
+            fields: 'like_count,comments_count,impressions,reach,saved,shares',
+            access_token: accessToken,
+          },
+        });
+        return {
+          likes: res.data.like_count || 0,
+          comments: res.data.comments_count || 0,
+          shares: res.data.shares?.count || 0,
+          saves: res.data.saved || 0,
+          impressions: res.data.impressions || 0,
+          reach: res.data.reach || 0,
+          engagement: (res.data.like_count || 0) + (res.data.comments_count || 0) + (res.data.saved || 0),
+        };
+      }
+      case 'TWITTER': {
+        const res = await axios.get(`https://api.twitter.com/2/tweets/${platformPostId}`, {
+          params: { 'tweet.fields': 'public_metrics' },
+          headers: { Authorization: `Bearer ${accessToken}` },
+        });
+        const metrics = res.data.data?.public_metrics || {};
+        return {
+          likes: metrics.like_count || 0,
+          comments: metrics.reply_count || 0,
+          shares: metrics.retweet_count || 0,
+          impressions: metrics.impression_count || 0,
+          engagement: (metrics.like_count || 0) + (metrics.reply_count || 0) + (metrics.retweet_count || 0),
+          quotes: metrics.quote_count || 0,
+          bookmarks: metrics.bookmark_count || 0,
+        };
+      }
+      case 'LINKEDIN': {
+        const res = await axios.get(
+          `https://api.linkedin.com/v2/socialActions/${platformPostId}`,
+          { headers: { Authorization: `Bearer ${accessToken}` } }
+        );
+        return {
+          likes: res.data.likesSummary?.totalLikes || 0,
+          comments: res.data.commentsSummary?.totalFirstLevelComments || 0,
+          shares: 0,
+          engagement: (res.data.likesSummary?.totalLikes || 0) + (res.data.commentsSummary?.totalFirstLevelComments || 0),
+        };
+      }
+      default:
+        return null;
+    }
+  } catch (err) {
+    return null;
+  }
 }

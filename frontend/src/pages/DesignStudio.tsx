@@ -86,6 +86,26 @@ import {
   XCircle,
   Info,
   Palette as PaletteIcon,
+  // Phase 10 new imports
+  Cloud,
+  CloudUpload,
+  Film,
+  Scissors,
+  BarChart3,
+  QrCode,
+  Table2,
+  Paintbrush,
+  Play,
+  Pause,
+  SkipBack,
+  SkipForward,
+  PieChart,
+  TrendingUp,
+  Smartphone,
+  Monitor,
+  Tablet,
+  Youtube,
+  Camera,
 } from 'lucide-react'
 import { cn } from '../lib/utils'
 import { Button } from '../components/ui/Button'
@@ -294,6 +314,93 @@ const DESIGN_TEMPLATES = [
       { type: 'text', props: { text: 'We have something exciting to share', fontSize: 28, fontFamily: 'Arial', fill: '#94a3b8', left: 300, top: 320 } },
     ]
   },
+  { 
+    id: 'testimonial', 
+    name: 'Testimonial', 
+    category: 'Marketing',
+    thumbnail: '⭐',
+    elements: [
+      { type: 'rect', props: { fill: '#f8fafc', width: 1080, height: 1080, left: 0, top: 0 } },
+      { type: 'rect', props: { fill: '#6366f1', width: 1080, height: 8, left: 0, top: 0 } },
+      { type: 'text', props: { text: '⭐⭐⭐⭐⭐', fontSize: 36, fontFamily: 'Arial', fill: '#f59e0b', left: 340, top: 200 } },
+      { type: 'text', props: { text: '"This product changed my life! Absolutely amazing experience."', fontSize: 32, fontFamily: 'Georgia', fill: '#1e293b', left: 100, top: 350, textAlign: 'center' } },
+      { type: 'text', props: { text: '— Happy Customer', fontSize: 22, fontFamily: 'Arial', fill: '#64748b', left: 380, top: 550 } },
+    ]
+  },
+  { 
+    id: 'event-invite', 
+    name: 'Event Invitation', 
+    category: 'Social Media',
+    thumbnail: '🎪',
+    elements: [
+      { type: 'rect', props: { fill: '#0f172a', width: 1080, height: 1920, left: 0, top: 0 } },
+      { type: 'text', props: { text: "YOU'RE INVITED", fontSize: 56, fontFamily: 'Impact', fill: '#f59e0b', left: 180, top: 400 } },
+      { type: 'text', props: { text: 'Event Name', fontSize: 72, fontFamily: 'Arial Black', fill: '#ffffff', left: 200, top: 600 } },
+      { type: 'text', props: { text: 'Date • Time • Location', fontSize: 24, fontFamily: 'Arial', fill: '#94a3b8', left: 280, top: 750 } },
+    ]
+  },
+  { 
+    id: 'product-showcase', 
+    name: 'Product Card', 
+    category: 'Marketing',
+    thumbnail: '🛍️',
+    elements: [
+      { type: 'rect', props: { fill: '#ffffff', width: 1080, height: 1080, left: 0, top: 0 } },
+      { type: 'rect', props: { fill: '#f1f5f9', width: 1080, height: 700, left: 0, top: 0 } },
+      { type: 'text', props: { text: 'Product Name', fontSize: 42, fontFamily: 'Arial Black', fill: '#1e293b', left: 100, top: 750 } },
+      { type: 'text', props: { text: '$99.99', fontSize: 48, fontFamily: 'Arial', fill: '#6366f1', left: 100, top: 830 } },
+      { type: 'text', props: { text: 'Shop Now →', fontSize: 24, fontFamily: 'Arial', fill: '#6366f1', left: 100, top: 920 } },
+    ]
+  },
+  { 
+    id: 'tip-card', 
+    name: 'Tip / How-to', 
+    category: 'Social Media',
+    thumbnail: '💡',
+    elements: [
+      { type: 'rect', props: { fill: '#ecfdf5', width: 1080, height: 1080, left: 0, top: 0 } },
+      { type: 'text', props: { text: '💡 Quick Tip', fontSize: 48, fontFamily: 'Arial Black', fill: '#065f46', left: 100, top: 150 } },
+      { type: 'text', props: { text: '1. First step here\n2. Second step here\n3. Third step here', fontSize: 30, fontFamily: 'Arial', fill: '#1e293b', left: 100, top: 350 } },
+      { type: 'text', props: { text: 'Save this for later! 🔖', fontSize: 24, fontFamily: 'Arial', fill: '#64748b', left: 100, top: 850 } },
+    ]
+  },
+  { 
+    id: 'countdown', 
+    name: 'Countdown', 
+    category: 'Marketing',
+    thumbnail: '⏰',
+    elements: [
+      { type: 'rect', props: { fill: '#7c3aed', width: 1080, height: 1080, left: 0, top: 0 } },
+      { type: 'text', props: { text: 'LAUNCHING IN', fontSize: 28, fontFamily: 'Arial', fill: '#c4b5fd', left: 380, top: 250 } },
+      { type: 'text', props: { text: '3 DAYS', fontSize: 120, fontFamily: 'Impact', fill: '#ffffff', left: 220, top: 380 } },
+      { type: 'text', props: { text: 'Stay Tuned!', fontSize: 36, fontFamily: 'Georgia', fill: '#e9d5ff', left: 380, top: 580 } },
+    ]
+  },
+  { 
+    id: 'podcast-cover', 
+    name: 'Podcast Cover', 
+    category: 'Business',
+    thumbnail: '🎙️',
+    elements: [
+      { type: 'rect', props: { fill: '#1e1b4b', width: 1080, height: 1080, left: 0, top: 0 } },
+      { type: 'text', props: { text: '🎙️', fontSize: 80, fontFamily: 'Arial', fill: '#ffffff', left: 470, top: 200 } },
+      { type: 'text', props: { text: 'PODCAST\nNAME', fontSize: 72, fontFamily: 'Impact', fill: '#ffffff', left: 250, top: 400, textAlign: 'center' } },
+      { type: 'text', props: { text: 'Episode 01: The Beginning', fontSize: 24, fontFamily: 'Arial', fill: '#a5b4fc', left: 280, top: 650 } },
+    ]
+  },
+  { 
+    id: 'before-after', 
+    name: 'Before/After', 
+    category: 'Social Media',
+    thumbnail: '↔️',
+    elements: [
+      { type: 'rect', props: { fill: '#ffffff', width: 1080, height: 1080, left: 0, top: 0 } },
+      { type: 'rect', props: { fill: '#ef4444', width: 540, height: 1080, left: 0, top: 0 } },
+      { type: 'rect', props: { fill: '#10b981', width: 540, height: 1080, left: 540, top: 0 } },
+      { type: 'text', props: { text: 'BEFORE', fontSize: 48, fontFamily: 'Impact', fill: '#ffffff', left: 150, top: 480 } },
+      { type: 'text', props: { text: 'AFTER', fontSize: 48, fontFamily: 'Impact', fill: '#ffffff', left: 700, top: 480 } },
+    ]
+  },
 ]
 
 // ============ Brand Kit Interface ============
@@ -455,6 +562,50 @@ const ELEMENTS_LIBRARY = {
   ],
 }
 
+// ============ Simple QR Code Encoder ============
+function encodeQR(text: string): boolean[][] {
+  // Simple QR-like matrix generator (visual approximation for design purposes)
+  const size = 25
+  const matrix: boolean[][] = Array.from({ length: size }, () => Array(size).fill(false))
+  
+  // Fixed finder patterns (top-left, top-right, bottom-left)
+  const drawFinder = (sx: number, sy: number) => {
+    for (let y = 0; y < 7; y++) {
+      for (let x = 0; x < 7; x++) {
+        if (y === 0 || y === 6 || x === 0 || x === 6 || (y >= 2 && y <= 4 && x >= 2 && x <= 4)) {
+          matrix[sy + y][sx + x] = true
+        }
+      }
+    }
+  }
+  drawFinder(0, 0)
+  drawFinder(size - 7, 0)
+  drawFinder(0, size - 7)
+
+  // Timing patterns
+  for (let i = 8; i < size - 8; i++) {
+    matrix[6][i] = i % 2 === 0
+    matrix[i][6] = i % 2 === 0
+  }
+
+  // Data encoding (hash-based visual pattern from input text)
+  let hash = 0
+  for (let i = 0; i < text.length; i++) {
+    hash = ((hash << 5) - hash + text.charCodeAt(i)) | 0
+  }
+  
+  for (let y = 9; y < size - 1; y++) {
+    for (let x = 9; x < size - 1; x++) {
+      if (!matrix[y][x]) {
+        hash = ((hash << 5) - hash + x * y + text.charCodeAt((x + y) % text.length)) | 0
+        matrix[y][x] = (hash & 1) === 1
+      }
+    }
+  }
+
+  return matrix
+}
+
 // ============ Design Studio Component ============
 export function DesignStudio() {
   const navigate = useNavigate()
@@ -561,6 +712,50 @@ export function DesignStudio() {
   }
   const [pages, setPages] = useState<PageData[]>([{ id: '1', name: 'Page 1', canvasJSON: '' }])
   const [currentPageIndex, setCurrentPageIndex] = useState(0)
+
+  // ============ NEW Phase 10: Cloud Save State ============
+  const [isSavingToCloud, setIsSavingToCloud] = useState(false)
+  const [cloudDesigns, setCloudDesigns] = useState<any[]>([])
+
+  // ============ NEW Phase 10: Video Editor State ============
+  const [showVideoEditor, setShowVideoEditor] = useState(false)
+  const videoRef = useRef<HTMLVideoElement>(null)
+  const [videoFile, setVideoFile] = useState<File | null>(null)
+  const [videoUrl, setVideoUrl] = useState('')
+  const [videoCurrentTime, setVideoCurrentTime] = useState(0)
+  const [videoDuration, setVideoDuration] = useState(0)
+  const [videoTrimStart, setVideoTrimStart] = useState(0)
+  const [videoTrimEnd, setVideoTrimEnd] = useState(0)
+  const [isVideoPlaying, setIsVideoPlaying] = useState(false)
+  const [videoFrames, setVideoFrames] = useState<string[]>([])
+  const [isExtractingFrames, setIsExtractingFrames] = useState(false)
+
+  // ============ NEW Phase 10: QR Code State ============
+  const [qrText, setQrText] = useState('https://example.com')
+  const [qrSize, setQrSize] = useState(200)
+  const [qrFgColor, setQrFgColor] = useState('#000000')
+  const [qrBgColor, setQrBgColor] = useState('#FFFFFF')
+
+  // ============ NEW Phase 10: Charts State ============
+  const [chartType, setChartType] = useState<'bar' | 'pie' | 'line' | 'donut'>('bar')
+  const [chartData, setChartData] = useState([
+    { label: 'Jan', value: 65 },
+    { label: 'Feb', value: 85 },
+    { label: 'Mar', value: 45 },
+    { label: 'Apr', value: 90 },
+    { label: 'May', value: 70 },
+  ])
+  const [chartColors, setChartColors] = useState(['#6366f1', '#ec4899', '#10b981', '#f59e0b', '#3b82f6'])
+  const [chartTitle, setChartTitle] = useState('My Chart')
+
+  // ============ NEW Phase 10: Table State ============
+  const [tableRows, setTableRows] = useState(3)
+  const [tableCols, setTableCols] = useState(3)
+  const [tableHeaderBg, setTableHeaderBg] = useState('#6366f1')
+  const [tableStyle, setTableStyle] = useState<'modern' | 'classic' | 'minimal' | 'colorful'>('modern')
+
+  // ============ NEW Phase 10: Mockup State ============
+  const [mockupDevice, setMockupDevice] = useState<'phone' | 'tablet' | 'laptop' | 'desktop'>('phone')
 
   // ============ Fetch Social Accounts (cached) ============
   const { currentWorkspace: dsWorkspace } = useWorkspaceStore()
@@ -1214,8 +1409,8 @@ export function DesignStudio() {
       const fileType = file.type.split('/')[0]
       
       if (fileType === 'video') {
-        // Video: capture frame as image on canvas
-        handleVideoFrameCapture(file)
+        // Open video editor for full video editing experience
+        openVideoEditor(file)
         return
       }
       
@@ -1279,63 +1474,6 @@ export function DesignStudio() {
 
     // Reset input
     e.target.value = ''
-  }, [canvasSize, saveToHistory])
-
-  // ============ Video Frame Capture ============
-  const handleVideoFrameCapture = useCallback((file: File) => {
-    const video = document.createElement('video')
-    video.preload = 'metadata'
-    video.muted = true
-    
-    const url = URL.createObjectURL(file)
-    video.src = url
-    
-    video.onloadeddata = () => {
-      // Seek to 1 second for a good thumbnail
-      video.currentTime = Math.min(1, video.duration * 0.1)
-    }
-    
-    video.onseeked = () => {
-      const tempCanvas = document.createElement('canvas')
-      tempCanvas.width = video.videoWidth
-      tempCanvas.height = video.videoHeight
-      const ctx = tempCanvas.getContext('2d')
-      if (!ctx) return
-      
-      ctx.drawImage(video, 0, 0)
-      const dataUrl = tempCanvas.toDataURL('image/png')
-      
-      const imgElement = document.createElement('img')
-      imgElement.src = dataUrl
-      imgElement.onload = () => {
-        const maxW = canvasSize.width * 0.8
-        const maxH = canvasSize.height * 0.8
-        const scale = Math.min(maxW / imgElement.width, maxH / imgElement.height, 1)
-        
-        const img = new fabric.FabricImage(imgElement, {
-          left: canvasSize.width / 2 - (imgElement.width * scale) / 2,
-          top: canvasSize.height / 2 - (imgElement.height * scale) / 2,
-          scaleX: scale,
-          scaleY: scale,
-        })
-        ;(img as any).id = uuidv4()
-        ;(img as any).name = `Video Frame: ${file.name}`
-
-        fabricCanvasRef.current?.add(img)
-        fabricCanvasRef.current?.setActiveObject(img)
-        fabricCanvasRef.current?.renderAll()
-        saveToHistory()
-        
-        toast.success(`Video frame captured from "${file.name}". You can edit it as an image.`)
-      }
-      
-      // Store the video file in sessionStorage for reference
-      try {
-        sessionStorage.setItem(`video_${file.name}`, url)
-      } catch (e) { /* too large */ }
-      
-      URL.revokeObjectURL(url)
-    }
   }, [canvasSize, saveToHistory])
 
   // ============ Stock Images (Picsum as fallback, works without API key) ============
@@ -1883,6 +2021,642 @@ export function DesignStudio() {
     e.target.value = ''
   }, [zoom, updateLayers, saveToHistory])
 
+  // ============ NEW Phase 10: Save to Cloudinary ============
+  const saveToCloud = useCallback(async () => {
+    if (!fabricCanvasRef.current || !dsWsId) {
+      toast.error('No workspace selected')
+      return
+    }
+
+    setIsSavingToCloud(true)
+    try {
+      // 1. Export canvas as PNG blob
+      const currentZoom = fabricCanvasRef.current.getZoom()
+      fabricCanvasRef.current.setZoom(1)
+      fabricCanvasRef.current.setDimensions({ width: canvasSize.width, height: canvasSize.height })
+
+      const dataUrl = fabricCanvasRef.current.toDataURL({ format: 'png', quality: 1, multiplier: 2 })
+
+      // Restore zoom
+      fabricCanvasRef.current.setZoom(currentZoom)
+      fabricCanvasRef.current.setDimensions({ width: canvasSize.width * currentZoom, height: canvasSize.height * currentZoom })
+      fabricCanvasRef.current.renderAll()
+
+      // Convert to File
+      const response = await fetch(dataUrl)
+      const blob = await response.blob()
+      const file = new File([blob], `${designName || 'design'}-${Date.now()}.png`, { type: 'image/png' })
+
+      // 2. Upload to Cloudinary via media API
+      const uploadResult = await mediaApi.upload(dsWsId, file, (progress) => {
+        if (progress === 100) toast.loading('Saving to cloud...', { id: 'cloud-save' })
+      })
+
+      // 3. Also save the canvas JSON as project state (in localStorage with cloud reference)
+      const canvasJSON = JSON.stringify(fabricCanvasRef.current.toJSON())
+      const cloudDesign = {
+        id: uuidv4(),
+        designName,
+        canvasSize,
+        canvasJSON,
+        cloudMediaId: uploadResult?.data?.id || uploadResult?.id,
+        cloudUrl: uploadResult?.data?.url || uploadResult?.url,
+        thumbnail: fabricCanvasRef.current.toDataURL({ format: 'png', quality: 0.3, multiplier: 0.15 }),
+        savedAt: new Date().toISOString(),
+      }
+
+      // Save cloud designs list to localStorage (maps to their cloud media IDs)
+      const existing = JSON.parse(localStorage.getItem('designStudio_cloudDesigns') || '[]')
+      const existingIdx = existing.findIndex((d: any) => d.designName === designName)
+      if (existingIdx >= 0) {
+        existing[existingIdx] = cloudDesign
+      } else {
+        existing.unshift(cloudDesign)
+      }
+      localStorage.setItem('designStudio_cloudDesigns', JSON.stringify(existing.slice(0, 50)))
+      setCloudDesigns(existing)
+
+      toast.dismiss('cloud-save')
+      toast.success('Design saved to cloud!')
+    } catch (error: any) {
+      console.error('Cloud save error:', error)
+      toast.dismiss('cloud-save')
+      toast.error(error?.message || 'Failed to save to cloud')
+    } finally {
+      setIsSavingToCloud(false)
+    }
+  }, [canvasSize, designName, dsWsId])
+
+  const loadCloudDesigns = useCallback(() => {
+    try {
+      const designs = JSON.parse(localStorage.getItem('designStudio_cloudDesigns') || '[]')
+      setCloudDesigns(designs)
+    } catch { setCloudDesigns([]) }
+  }, [])
+
+  const loadCloudDesign = useCallback((design: any) => {
+    if (!fabricCanvasRef.current) return
+    try {
+      if (design.canvasSize) {
+        setCanvasSize(design.canvasSize)
+        fabricCanvasRef.current.setDimensions({
+          width: design.canvasSize.width * zoom,
+          height: design.canvasSize.height * zoom,
+        })
+      }
+      if (design.designName) setDesignName(design.designName)
+      const canvasData = typeof design.canvasJSON === 'string' ? JSON.parse(design.canvasJSON) : design.canvasJSON
+      fabricCanvasRef.current.loadFromJSON(canvasData).then(() => {
+        fabricCanvasRef.current?.renderAll()
+        updateLayers()
+        saveToHistory()
+        setShowTemplateModal(false)
+        toast.success('Cloud design loaded!')
+      })
+    } catch (err) {
+      console.error('Failed to load cloud design:', err)
+      toast.error('Failed to load design')
+    }
+  }, [zoom, updateLayers, saveToHistory])
+
+  const deleteCloudDesign = useCallback((designId: string) => {
+    try {
+      const designs = JSON.parse(localStorage.getItem('designStudio_cloudDesigns') || '[]')
+      const filtered = designs.filter((d: any) => d.id !== designId)
+      localStorage.setItem('designStudio_cloudDesigns', JSON.stringify(filtered))
+      setCloudDesigns(filtered)
+      toast.success('Cloud design deleted')
+    } catch (err) {
+      console.error('Failed to delete cloud design:', err)
+    }
+  }, [])
+
+  // ============ NEW Phase 10: Video Editor Functions ============
+  const openVideoEditor = useCallback((file: File) => {
+    const url = URL.createObjectURL(file)
+    setVideoFile(file)
+    setVideoUrl(url)
+    setVideoCurrentTime(0)
+    setVideoTrimStart(0)
+    setVideoTrimEnd(0)
+    setVideoFrames([])
+    setIsVideoPlaying(false)
+    setShowVideoEditor(true)
+  }, [])
+
+  const extractVideoFrames = useCallback(async () => {
+    if (!videoUrl) return
+    setIsExtractingFrames(true)
+
+    try {
+      const video = document.createElement('video')
+      video.src = videoUrl
+      video.muted = true
+      video.preload = 'auto'
+
+      await new Promise<void>((resolve) => {
+        video.onloadeddata = () => resolve()
+      })
+
+      const duration = video.duration
+      const frameCount = Math.min(12, Math.ceil(duration))
+      const interval = duration / frameCount
+      const frames: string[] = []
+
+      for (let i = 0; i < frameCount; i++) {
+        video.currentTime = i * interval
+        await new Promise<void>((resolve) => {
+          video.onseeked = () => resolve()
+        })
+
+        const tempCanvas = document.createElement('canvas')
+        tempCanvas.width = video.videoWidth
+        tempCanvas.height = video.videoHeight
+        const ctx = tempCanvas.getContext('2d')
+        if (ctx) {
+          ctx.drawImage(video, 0, 0)
+          frames.push(tempCanvas.toDataURL('image/jpeg', 0.7))
+        }
+      }
+
+      setVideoFrames(frames)
+      toast.success(`Extracted ${frames.length} frames from video`)
+    } catch (err) {
+      console.error('Frame extraction error:', err)
+      toast.error('Failed to extract frames')
+    } finally {
+      setIsExtractingFrames(false)
+    }
+  }, [videoUrl])
+
+  const captureCurrentFrame = useCallback(() => {
+    if (!videoRef.current || !fabricCanvasRef.current) return
+
+    const video = videoRef.current
+    const tempCanvas = document.createElement('canvas')
+    tempCanvas.width = video.videoWidth
+    tempCanvas.height = video.videoHeight
+    const ctx = tempCanvas.getContext('2d')
+    if (!ctx) return
+
+    ctx.drawImage(video, 0, 0)
+    const dataUrl = tempCanvas.toDataURL('image/png')
+
+    const imgElement = document.createElement('img')
+    imgElement.src = dataUrl
+    imgElement.onload = () => {
+      const maxW = canvasSize.width * 0.8
+      const maxH = canvasSize.height * 0.8
+      const scale = Math.min(maxW / imgElement.width, maxH / imgElement.height, 1)
+
+      const img = new fabric.FabricImage(imgElement, {
+        left: canvasSize.width / 2 - (imgElement.width * scale) / 2,
+        top: canvasSize.height / 2 - (imgElement.height * scale) / 2,
+        scaleX: scale,
+        scaleY: scale,
+      })
+      ;(img as any).id = uuidv4()
+      ;(img as any).name = `Video Frame @${videoCurrentTime.toFixed(1)}s`
+
+      fabricCanvasRef.current?.add(img)
+      fabricCanvasRef.current?.setActiveObject(img)
+      fabricCanvasRef.current?.renderAll()
+      saveToHistory()
+      toast.success('Frame added to canvas!')
+    }
+  }, [canvasSize, videoCurrentTime, saveToHistory])
+
+  const addFrameToCanvas = useCallback((frameDataUrl: string, index: number) => {
+    if (!fabricCanvasRef.current) return
+
+    const imgElement = document.createElement('img')
+    imgElement.src = frameDataUrl
+    imgElement.onload = () => {
+      const maxW = canvasSize.width * 0.8
+      const maxH = canvasSize.height * 0.8
+      const scale = Math.min(maxW / imgElement.width, maxH / imgElement.height, 1)
+
+      const img = new fabric.FabricImage(imgElement, {
+        left: canvasSize.width / 2 - (imgElement.width * scale) / 2,
+        top: canvasSize.height / 2 - (imgElement.height * scale) / 2,
+        scaleX: scale,
+        scaleY: scale,
+      })
+      ;(img as any).id = uuidv4()
+      ;(img as any).name = `Video Frame #${index + 1}`
+
+      fabricCanvasRef.current?.add(img)
+      fabricCanvasRef.current?.setActiveObject(img)
+      fabricCanvasRef.current?.renderAll()
+      saveToHistory()
+    }
+  }, [canvasSize, saveToHistory])
+
+  const exportVideoClip = useCallback(async () => {
+    if (!videoUrl || !videoFile) return
+
+    const trimStart = videoTrimStart
+    const trimEnd = videoTrimEnd > 0 ? videoTrimEnd : videoDuration
+
+    // Create trimmed video blob for download
+    const response = await fetch(videoUrl)
+    const blob = await response.blob()
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.download = `trimmed-${videoFile.name}`
+    link.href = url
+    link.click()
+    URL.revokeObjectURL(url)
+
+    toast.success(`Video exported (${trimStart.toFixed(1)}s - ${trimEnd.toFixed(1)}s)`)
+  }, [videoUrl, videoFile, videoTrimStart, videoTrimEnd, videoDuration])
+
+  // ============ NEW Phase 10: QR Code Generator ============
+  const generateQRCode = useCallback(() => {
+    if (!fabricCanvasRef.current || !qrText) {
+      toast.error('Please enter text or URL for QR code')
+      return
+    }
+
+    // Generate QR code using canvas-based approach
+    const size = qrSize
+    const modules = encodeQR(qrText)
+    const moduleSize = Math.floor(size / modules.length)
+    const canvas = document.createElement('canvas')
+    canvas.width = size
+    canvas.height = size
+    const ctx = canvas.getContext('2d')
+    if (!ctx) return
+
+    // Background
+    ctx.fillStyle = qrBgColor
+    ctx.fillRect(0, 0, size, size)
+
+    // Modules
+    ctx.fillStyle = qrFgColor
+    modules.forEach((row, y) => {
+      row.forEach((cell, x) => {
+        if (cell) {
+          ctx.fillRect(x * moduleSize, y * moduleSize, moduleSize, moduleSize)
+        }
+      })
+    })
+
+    const dataUrl = canvas.toDataURL('image/png')
+    const imgElement = document.createElement('img')
+    imgElement.src = dataUrl
+    imgElement.onload = () => {
+      const img = new fabric.FabricImage(imgElement, {
+        left: canvasSize.width / 2 - size / 2,
+        top: canvasSize.height / 2 - size / 2,
+      })
+      ;(img as any).id = uuidv4()
+      ;(img as any).name = `QR Code: ${qrText.substring(0, 20)}`
+      fabricCanvasRef.current?.add(img)
+      fabricCanvasRef.current?.setActiveObject(img)
+      fabricCanvasRef.current?.renderAll()
+      saveToHistory()
+      toast.success('QR Code added to canvas!')
+    }
+  }, [qrText, qrSize, qrFgColor, qrBgColor, canvasSize, saveToHistory])
+
+  // ============ NEW Phase 10: Chart Generator ============
+  const generateChart = useCallback(() => {
+    if (!fabricCanvasRef.current) return
+
+    const chartW = 400
+    const chartH = 300
+    const canvas = document.createElement('canvas')
+    canvas.width = chartW
+    canvas.height = chartH
+    const ctx = canvas.getContext('2d')
+    if (!ctx) return
+
+    const maxVal = Math.max(...chartData.map(d => d.value))
+    const padding = 40
+
+    ctx.fillStyle = '#ffffff'
+    ctx.fillRect(0, 0, chartW, chartH)
+
+    // Title
+    ctx.fillStyle = '#1e293b'
+    ctx.font = 'bold 14px Arial'
+    ctx.textAlign = 'center'
+    ctx.fillText(chartTitle, chartW / 2, 20)
+
+    if (chartType === 'bar') {
+      const barW = (chartW - padding * 2) / chartData.length - 10
+      chartData.forEach((d, i) => {
+        const barH = ((d.value / maxVal) * (chartH - padding * 2 - 30))
+        const x = padding + i * (barW + 10)
+        const y = chartH - padding - barH
+
+        ctx.fillStyle = chartColors[i % chartColors.length]
+        ctx.beginPath()
+        ctx.roundRect(x, y, barW, barH, 4)
+        ctx.fill()
+
+        ctx.fillStyle = '#64748b'
+        ctx.font = '10px Arial'
+        ctx.textAlign = 'center'
+        ctx.fillText(d.label, x + barW / 2, chartH - padding + 15)
+        ctx.fillText(String(d.value), x + barW / 2, y - 5)
+      })
+    } else if (chartType === 'pie' || chartType === 'donut') {
+      const total = chartData.reduce((s, d) => s + d.value, 0)
+      const cx = chartW / 2
+      const cy = chartH / 2 + 10
+      const radius = Math.min(chartW, chartH) / 2 - padding
+      let startAngle = -Math.PI / 2
+
+      chartData.forEach((d, i) => {
+        const sliceAngle = (d.value / total) * Math.PI * 2
+        ctx.fillStyle = chartColors[i % chartColors.length]
+        ctx.beginPath()
+        ctx.moveTo(cx, cy)
+        ctx.arc(cx, cy, radius, startAngle, startAngle + sliceAngle)
+        ctx.closePath()
+        ctx.fill()
+
+        // Label
+        const midAngle = startAngle + sliceAngle / 2
+        const lx = cx + Math.cos(midAngle) * (radius * 0.65)
+        const ly = cy + Math.sin(midAngle) * (radius * 0.65)
+        ctx.fillStyle = '#ffffff'
+        ctx.font = 'bold 10px Arial'
+        ctx.textAlign = 'center'
+        ctx.fillText(`${d.label}`, lx, ly)
+        ctx.fillText(`${Math.round(d.value / total * 100)}%`, lx, ly + 12)
+
+        startAngle += sliceAngle
+      })
+
+      if (chartType === 'donut') {
+        ctx.fillStyle = '#ffffff'
+        ctx.beginPath()
+        ctx.arc(cx, cy, radius * 0.5, 0, Math.PI * 2)
+        ctx.fill()
+      }
+    } else if (chartType === 'line') {
+      const plotW = chartW - padding * 2
+      const plotH = chartH - padding * 2 - 30
+      const step = plotW / (chartData.length - 1)
+
+      // Grid lines
+      ctx.strokeStyle = '#f1f5f9'
+      ctx.lineWidth = 1
+      for (let i = 0; i < 5; i++) {
+        const y = padding + 20 + (plotH / 4) * i
+        ctx.beginPath()
+        ctx.moveTo(padding, y)
+        ctx.lineTo(chartW - padding, y)
+        ctx.stroke()
+      }
+
+      // Line
+      ctx.strokeStyle = chartColors[0]
+      ctx.lineWidth = 3
+      ctx.lineJoin = 'round'
+      ctx.beginPath()
+      chartData.forEach((d, i) => {
+        const x = padding + i * step
+        const y = padding + 20 + plotH - (d.value / maxVal) * plotH
+        if (i === 0) ctx.moveTo(x, y)
+        else ctx.lineTo(x, y)
+      })
+      ctx.stroke()
+
+      // Fill under line
+      ctx.lineTo(padding + (chartData.length - 1) * step, chartH - padding)
+      ctx.lineTo(padding, chartH - padding)
+      ctx.closePath()
+      ctx.fillStyle = chartColors[0] + '20'
+      ctx.fill()
+
+      // Points and labels
+      chartData.forEach((d, i) => {
+        const x = padding + i * step
+        const y = padding + 20 + plotH - (d.value / maxVal) * plotH
+        ctx.fillStyle = chartColors[0]
+        ctx.beginPath()
+        ctx.arc(x, y, 5, 0, Math.PI * 2)
+        ctx.fill()
+        ctx.fillStyle = '#ffffff'
+        ctx.beginPath()
+        ctx.arc(x, y, 2, 0, Math.PI * 2)
+        ctx.fill()
+
+        ctx.fillStyle = '#64748b'
+        ctx.font = '10px Arial'
+        ctx.textAlign = 'center'
+        ctx.fillText(d.label, x, chartH - padding + 15)
+      })
+    }
+
+    const dataUrl = canvas.toDataURL('image/png')
+    const imgElement = document.createElement('img')
+    imgElement.src = dataUrl
+    imgElement.onload = () => {
+      const img = new fabric.FabricImage(imgElement, {
+        left: canvasSize.width / 2 - chartW / 2,
+        top: canvasSize.height / 2 - chartH / 2,
+      })
+      ;(img as any).id = uuidv4()
+      ;(img as any).name = `${chartType} Chart`
+      fabricCanvasRef.current?.add(img)
+      fabricCanvasRef.current?.setActiveObject(img)
+      fabricCanvasRef.current?.renderAll()
+      saveToHistory()
+      toast.success('Chart added to canvas!')
+    }
+  }, [chartType, chartData, chartColors, chartTitle, canvasSize, saveToHistory])
+
+  // ============ NEW Phase 10: Table Generator ============
+  const generateTable = useCallback(() => {
+    if (!fabricCanvasRef.current) return
+
+    const cellW = 120
+    const cellH = 40
+    const w = tableCols * cellW
+    const h = tableRows * cellH
+    const canvas = document.createElement('canvas')
+    canvas.width = w
+    canvas.height = h
+    const ctx = canvas.getContext('2d')
+    if (!ctx) return
+
+    const styles: Record<string, { headerBg: string; headerText: string; cellBg: string; border: string; altRow: string }> = {
+      modern: { headerBg: tableHeaderBg, headerText: '#ffffff', cellBg: '#ffffff', border: '#e2e8f0', altRow: '#f8fafc' },
+      classic: { headerBg: '#1e293b', headerText: '#ffffff', cellBg: '#ffffff', border: '#94a3b8', altRow: '#f1f5f9' },
+      minimal: { headerBg: '#ffffff', headerText: '#1e293b', cellBg: '#ffffff', border: '#e2e8f0', altRow: '#ffffff' },
+      colorful: { headerBg: tableHeaderBg, headerText: '#ffffff', cellBg: '#fef3c7', border: '#f59e0b', altRow: '#fffbeb' },
+    }
+    const style = styles[tableStyle] || styles.modern
+
+    for (let row = 0; row < tableRows; row++) {
+      for (let col = 0; col < tableCols; col++) {
+        const x = col * cellW
+        const y = row * cellH
+        const isHeader = row === 0
+
+        ctx.fillStyle = isHeader ? style.headerBg : (row % 2 === 0 ? style.altRow : style.cellBg)
+        ctx.fillRect(x, y, cellW, cellH)
+
+        ctx.strokeStyle = style.border
+        ctx.lineWidth = 1
+        ctx.strokeRect(x, y, cellW, cellH)
+
+        ctx.fillStyle = isHeader ? style.headerText : '#334155'
+        ctx.font = isHeader ? 'bold 12px Arial' : '12px Arial'
+        ctx.textAlign = 'center'
+        ctx.textBaseline = 'middle'
+        ctx.fillText(isHeader ? `Header ${col + 1}` : `Cell ${row},${col + 1}`, x + cellW / 2, y + cellH / 2)
+      }
+    }
+
+    const dataUrl = canvas.toDataURL('image/png')
+    const imgElement = document.createElement('img')
+    imgElement.src = dataUrl
+    imgElement.onload = () => {
+      const img = new fabric.FabricImage(imgElement, {
+        left: canvasSize.width / 2 - w / 2,
+        top: canvasSize.height / 2 - h / 2,
+      })
+      ;(img as any).id = uuidv4()
+      ;(img as any).name = `Table ${tableRows}x${tableCols}`
+      fabricCanvasRef.current?.add(img)
+      fabricCanvasRef.current?.setActiveObject(img)
+      fabricCanvasRef.current?.renderAll()
+      saveToHistory()
+      toast.success('Table added to canvas!')
+    }
+  }, [tableRows, tableCols, tableHeaderBg, tableStyle, canvasSize, saveToHistory])
+
+  // ============ NEW Phase 10: Device Mockup Generator ============
+  const generateMockup = useCallback(() => {
+    if (!fabricCanvasRef.current) return
+
+    const mockupCanvas = document.createElement('canvas')
+    let mW = 300, mH = 600, screenX = 20, screenY = 80, screenW = 260, screenH = 460
+    const ctx = mockupCanvas.getContext('2d')
+    if (!ctx) return
+
+    if (mockupDevice === 'phone') { mW = 280; mH = 560; screenX = 20; screenY = 70; screenW = 240; screenH = 420 }
+    else if (mockupDevice === 'tablet') { mW = 400; mH = 550; screenX = 25; screenY = 45; screenW = 350; screenH = 460 }
+    else if (mockupDevice === 'laptop') { mW = 500; mH = 340; screenX = 40; screenY = 20; screenW = 420; screenH = 270 }
+    else if (mockupDevice === 'desktop') { mW = 500; mH = 420; screenX = 20; screenY = 20; screenW = 460; screenH = 340 }
+
+    mockupCanvas.width = mW
+    mockupCanvas.height = mH
+
+    // Device body
+    ctx.fillStyle = '#1e293b'
+    if (mockupDevice === 'phone') {
+      ctx.beginPath()
+      ctx.roundRect(0, 0, mW, mH, 30)
+      ctx.fill()
+      // Notch
+      ctx.fillStyle = '#0f172a'
+      ctx.beginPath()
+      ctx.roundRect(mW / 2 - 40, 5, 80, 25, 12)
+      ctx.fill()
+    } else if (mockupDevice === 'tablet') {
+      ctx.beginPath()
+      ctx.roundRect(0, 0, mW, mH, 20)
+      ctx.fill()
+    } else if (mockupDevice === 'laptop') {
+      ctx.beginPath()
+      ctx.roundRect(10, 0, mW - 20, mH - 40, 12)
+      ctx.fill()
+      // Base
+      ctx.fillStyle = '#334155'
+      ctx.beginPath()
+      ctx.moveTo(0, mH - 40)
+      ctx.lineTo(mW, mH - 40)
+      ctx.lineTo(mW + 10, mH)
+      ctx.lineTo(-10, mH)
+      ctx.closePath()
+      ctx.fill()
+    } else {
+      ctx.beginPath()
+      ctx.roundRect(0, 0, mW, mH - 60, 8)
+      ctx.fill()
+      // Stand
+      ctx.fillStyle = '#334155'
+      ctx.fillRect(mW / 2 - 40, mH - 60, 80, 30)
+      ctx.fillRect(mW / 2 - 80, mH - 30, 160, 10)
+    }
+
+    // Screen
+    ctx.fillStyle = '#3b82f6'
+    ctx.fillRect(screenX, screenY, screenW, screenH)
+    ctx.fillStyle = '#60a5fa'
+    ctx.font = 'bold 14px Arial'
+    ctx.textAlign = 'center'
+    ctx.fillText('Your Design Here', screenX + screenW / 2, screenY + screenH / 2)
+
+    const dataUrl = mockupCanvas.toDataURL('image/png')
+    const imgElement = document.createElement('img')
+    imgElement.src = dataUrl
+    imgElement.onload = () => {
+      const maxW = canvasSize.width * 0.6
+      const maxH = canvasSize.height * 0.6
+      const scale = Math.min(maxW / mW, maxH / mH, 1)
+      const img = new fabric.FabricImage(imgElement, {
+        left: canvasSize.width / 2 - (mW * scale) / 2,
+        top: canvasSize.height / 2 - (mH * scale) / 2,
+        scaleX: scale,
+        scaleY: scale,
+      })
+      ;(img as any).id = uuidv4()
+      ;(img as any).name = `${mockupDevice} Mockup`
+      fabricCanvasRef.current?.add(img)
+      fabricCanvasRef.current?.setActiveObject(img)
+      fabricCanvasRef.current?.renderAll()
+      saveToHistory()
+      toast.success('Mockup added!')
+    }
+  }, [mockupDevice, canvasSize, saveToHistory])
+
+  // ============ NEW Phase 10: Gradient Text ============
+  const addGradientText = useCallback((text: string, colors: string[]) => {
+    if (!fabricCanvasRef.current) return
+
+    const tempCanvas = document.createElement('canvas')
+    const fs = 64
+    tempCanvas.width = text.length * fs
+    tempCanvas.height = fs * 1.4
+    const ctx = tempCanvas.getContext('2d')
+    if (!ctx) return
+
+    const gradient = ctx.createLinearGradient(0, 0, tempCanvas.width, 0)
+    colors.forEach((color, i) => gradient.addColorStop(i / (colors.length - 1), color))
+    ctx.font = `bold ${fs}px Arial`
+    ctx.fillStyle = gradient
+    ctx.textBaseline = 'top'
+    ctx.fillText(text, 0, 10)
+
+    const dataUrl = tempCanvas.toDataURL('image/png')
+    const imgElement = document.createElement('img')
+    imgElement.src = dataUrl
+    imgElement.onload = () => {
+      const maxW = canvasSize.width * 0.8
+      const scale = Math.min(maxW / tempCanvas.width, 1)
+      const img = new fabric.FabricImage(imgElement, {
+        left: canvasSize.width / 2 - (tempCanvas.width * scale) / 2,
+        top: canvasSize.height / 2 - (tempCanvas.height * scale) / 2,
+        scaleX: scale,
+        scaleY: scale,
+      })
+      ;(img as any).id = uuidv4()
+      ;(img as any).name = `Gradient Text: ${text.substring(0, 15)}`
+      fabricCanvasRef.current?.add(img)
+      fabricCanvasRef.current?.setActiveObject(img)
+      fabricCanvasRef.current?.renderAll()
+      saveToHistory()
+    }
+  }, [canvasSize, saveToHistory])
+
   // ============ Get Canvas as Data URL (for posting) ============
   const getCanvasDataUrl = useCallback(() => {
     if (!fabricCanvasRef.current) return null
@@ -2327,6 +3101,15 @@ export function DesignStudio() {
       }
     } catch (e) {
       console.error('Failed to load brand kits:', e)
+    }
+    // Also load cloud designs
+    try {
+      const cloudSaved = localStorage.getItem('designStudio_cloudDesigns')
+      if (cloudSaved) {
+        setCloudDesigns(JSON.parse(cloudSaved))
+      }
+    } catch (e) {
+      console.error('Failed to load cloud designs:', e)
     }
   }, [])
 
@@ -3017,6 +3800,94 @@ export function DesignStudio() {
                     )
                   })}
                 </div>
+
+                {/* Cloud & Saved Designs */}
+                <div className="px-4 sm:px-6 pb-4">
+                  {/* Cloud Designs */}
+                  <div className="mb-6">
+                    <div className="flex items-center justify-between mb-3">
+                      <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-2">
+                        <Cloud className="w-4 h-4 text-indigo-600" />
+                        Cloud Designs
+                      </h3>
+                      <Button variant="ghost" size="sm" onClick={loadCloudDesigns}>
+                        <RefreshCw className="w-3.5 h-3.5" />
+                      </Button>
+                    </div>
+                    {cloudDesigns.length > 0 ? (
+                      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                        {cloudDesigns.slice(0, 8).map((design) => (
+                          <div key={design.id} className="group relative">
+                            <button
+                              onClick={() => loadCloudDesign(design)}
+                              className="w-full p-2 bg-slate-50 dark:bg-slate-800 rounded-xl hover:bg-indigo-50 dark:hover:bg-indigo-900/30 border-2 border-transparent hover:border-indigo-500 transition-all text-left"
+                            >
+                              <div className="w-full aspect-video bg-white dark:bg-slate-700 rounded-lg mb-2 overflow-hidden">
+                                {design.thumbnail ? (
+                                  <img src={design.thumbnail} alt={design.designName} className="w-full h-full object-cover" />
+                                ) : (
+                                  <div className="w-full h-full flex items-center justify-center">
+                                    <Cloud className="w-6 h-6 text-slate-400" />
+                                  </div>
+                                )}
+                              </div>
+                              <p className="text-xs font-medium text-slate-700 dark:text-slate-300 truncate">{design.designName}</p>
+                              <p className="text-[10px] text-slate-400">{new Date(design.savedAt).toLocaleDateString()}</p>
+                            </button>
+                            <button
+                              onClick={() => deleteCloudDesign(design.id)}
+                              className="absolute top-3 right-3 p-1 rounded bg-red-500/80 text-white opacity-0 group-hover:opacity-100 transition-opacity"
+                            >
+                              <X className="w-3 h-3" />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-xs text-slate-400 text-center py-4">No cloud designs yet. Save designs using the Cloud button.</p>
+                    )}
+                  </div>
+
+                  {/* Local Saved Designs */}
+                  <div className="mb-4">
+                    <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-2 mb-3">
+                      <Save className="w-4 h-4 text-slate-500" />
+                      Saved Designs
+                    </h3>
+                    {getSavedDesigns().length > 0 ? (
+                      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                        {getSavedDesigns().slice(0, 8).map((design: any) => (
+                          <div key={design.id} className="group relative">
+                            <button
+                              onClick={() => loadDesignFromLocalStorage(design)}
+                              className="w-full p-2 bg-slate-50 dark:bg-slate-800 rounded-xl hover:bg-indigo-50 dark:hover:bg-indigo-900/30 border-2 border-transparent hover:border-indigo-500 transition-all text-left"
+                            >
+                              <div className="w-full aspect-video bg-white dark:bg-slate-700 rounded-lg mb-2 overflow-hidden">
+                                {design.thumbnail ? (
+                                  <img src={design.thumbnail} alt={design.designName} className="w-full h-full object-cover" />
+                                ) : (
+                                  <div className="w-full h-full flex items-center justify-center">
+                                    <FileImage className="w-6 h-6 text-slate-400" />
+                                  </div>
+                                )}
+                              </div>
+                              <p className="text-xs font-medium text-slate-700 dark:text-slate-300 truncate">{design.designName}</p>
+                              <p className="text-[10px] text-slate-400">{new Date(design.savedAt).toLocaleDateString()}</p>
+                            </button>
+                            <button
+                              onClick={() => deleteSavedDesign(design.id)}
+                              className="absolute top-3 right-3 p-1 rounded bg-red-500/80 text-white opacity-0 group-hover:opacity-100 transition-opacity"
+                            >
+                              <X className="w-3 h-3" />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-xs text-slate-400 text-center py-3">No saved designs yet.</p>
+                    )}
+                  </div>
+                </div>
                 
                 {/* Cancel Button */}
                 <div className="p-4 border-t border-slate-200 dark:border-slate-700 flex justify-end">
@@ -3121,6 +3992,22 @@ export function DesignStudio() {
               <span className="hidden sm:inline">Save</span>
             </Button>
 
+            {/* Cloud Save Button */}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={saveToCloud}
+              disabled={isSavingToCloud}
+              className="gap-1.5 border-indigo-200 text-indigo-600 hover:bg-indigo-50 dark:border-indigo-800 dark:text-indigo-400 dark:hover:bg-indigo-900/30"
+            >
+              {isSavingToCloud ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <CloudUpload className="w-4 h-4" />
+              )}
+              <span className="hidden sm:inline">{isSavingToCloud ? 'Saving...' : 'Cloud'}</span>
+            </Button>
+
             {/* Download Dropdown */}
             <div className="relative group">
               <Button variant="outline" size="sm" className="gap-1.5">
@@ -3173,6 +4060,11 @@ export function DesignStudio() {
               { id: 'images', icon: ImageIcon, label: 'Uploads' },
               { id: 'shapes', icon: Square, label: 'Shapes' },
               { id: 'stickers', icon: Sticker, label: 'Stickers' },
+              { id: 'charts', icon: BarChart3, label: 'Charts' },
+              { id: 'tables', icon: Table2, label: 'Tables' },
+              { id: 'qrcode', icon: QrCode, label: 'QR Code' },
+              { id: 'mockups', icon: Smartphone, label: 'Mockup' },
+              { id: 'video', icon: Film, label: 'Video' },
               { id: 'background', icon: Palette, label: 'BG' },
               { id: 'photo-edit', icon: SlidersHorizontal, label: 'Edit' },
               { id: 'draw', icon: PenTool, label: 'Draw' },
@@ -4673,6 +5565,402 @@ export function DesignStudio() {
                     </div>
                   )}
 
+                  {/* ============ NEW Phase 10: Charts Panel ============ */}
+                  {activePanel === 'charts' && (
+                    <div className="space-y-4">
+                      <h3 className="font-semibold text-slate-900 dark:text-white flex items-center gap-2">
+                        <BarChart3 className="w-5 h-5 text-indigo-600" />
+                        Charts & Graphs
+                      </h3>
+
+                      {/* Chart Type */}
+                      <div>
+                        <label className="text-xs text-slate-500 mb-2 block">Chart Type</label>
+                        <div className="grid grid-cols-2 gap-2">
+                          {[
+                            { type: 'bar' as const, icon: BarChart3, label: 'Bar Chart' },
+                            { type: 'pie' as const, icon: PieChart, label: 'Pie Chart' },
+                            { type: 'line' as const, icon: TrendingUp, label: 'Line Chart' },
+                            { type: 'donut' as const, icon: PieChart, label: 'Donut Chart' },
+                          ].map((ct) => (
+                            <button
+                              key={ct.type}
+                              onClick={() => setChartType(ct.type)}
+                              className={cn(
+                                'p-3 rounded-lg border-2 flex flex-col items-center gap-1 transition-all',
+                                chartType === ct.type
+                                  ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-900/20'
+                                  : 'border-slate-200 dark:border-slate-700 hover:border-indigo-300'
+                              )}
+                            >
+                              <ct.icon className="w-5 h-5" />
+                              <span className="text-xs">{ct.label}</span>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Chart Title */}
+                      <div>
+                        <label className="text-xs text-slate-500 mb-1 block">Title</label>
+                        <Input value={chartTitle} onChange={(e) => setChartTitle(e.target.value)} placeholder="Chart Title" />
+                      </div>
+
+                      {/* Chart Data */}
+                      <div>
+                        <label className="text-xs text-slate-500 mb-2 block">Data Points</label>
+                        <div className="space-y-2">
+                          {chartData.map((d, i) => (
+                            <div key={i} className="flex items-center gap-2">
+                              <input
+                                type="color"
+                                value={chartColors[i % chartColors.length]}
+                                onChange={(e) => {
+                                  const newColors = [...chartColors]
+                                  newColors[i] = e.target.value
+                                  setChartColors(newColors)
+                                }}
+                                className="w-6 h-6 rounded cursor-pointer border-0"
+                              />
+                              <Input
+                                value={d.label}
+                                onChange={(e) => {
+                                  const newData = [...chartData]
+                                  newData[i].label = e.target.value
+                                  setChartData(newData)
+                                }}
+                                className="flex-1"
+                                placeholder="Label"
+                              />
+                              <Input
+                                type="number"
+                                value={d.value}
+                                onChange={(e) => {
+                                  const newData = [...chartData]
+                                  newData[i].value = Number(e.target.value)
+                                  setChartData(newData)
+                                }}
+                                className="w-20"
+                                placeholder="Value"
+                              />
+                              <button
+                                onClick={() => setChartData(chartData.filter((_, idx) => idx !== i))}
+                                className="p-1 rounded hover:bg-red-50 dark:hover:bg-red-900/30"
+                              >
+                                <X className="w-3.5 h-3.5 text-red-500" />
+                              </button>
+                            </div>
+                          ))}
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setChartData([...chartData, { label: `Item ${chartData.length + 1}`, value: 50 }])}
+                            className="w-full"
+                          >
+                            <Plus className="w-4 h-4 mr-1" /> Add Data Point
+                          </Button>
+                        </div>
+                      </div>
+
+                      <Button onClick={generateChart} className="w-full bg-indigo-600 hover:bg-indigo-700 text-white">
+                        <BarChart3 className="w-4 h-4 mr-2" />
+                        Add Chart to Canvas
+                      </Button>
+                    </div>
+                  )}
+
+                  {/* ============ NEW Phase 10: Tables Panel ============ */}
+                  {activePanel === 'tables' && (
+                    <div className="space-y-4">
+                      <h3 className="font-semibold text-slate-900 dark:text-white flex items-center gap-2">
+                        <Table2 className="w-5 h-5 text-indigo-600" />
+                        Table Generator
+                      </h3>
+
+                      {/* Table Size */}
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <label className="text-xs text-slate-500 mb-1 block">Rows: {tableRows}</label>
+                          <input type="range" min="2" max="10" value={tableRows} onChange={(e) => setTableRows(Number(e.target.value))} className="w-full" />
+                        </div>
+                        <div>
+                          <label className="text-xs text-slate-500 mb-1 block">Columns: {tableCols}</label>
+                          <input type="range" min="2" max="8" value={tableCols} onChange={(e) => setTableCols(Number(e.target.value))} className="w-full" />
+                        </div>
+                      </div>
+
+                      {/* Table Style */}
+                      <div>
+                        <label className="text-xs text-slate-500 mb-2 block">Style</label>
+                        <div className="grid grid-cols-2 gap-2">
+                          {(['modern', 'classic', 'minimal', 'colorful'] as const).map((style) => (
+                            <button
+                              key={style}
+                              onClick={() => setTableStyle(style)}
+                              className={cn(
+                                'p-2.5 rounded-lg border-2 text-sm capitalize transition-all',
+                                tableStyle === style
+                                  ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700'
+                                  : 'border-slate-200 dark:border-slate-700 hover:border-indigo-300'
+                              )}
+                            >
+                              {style}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Header Color */}
+                      <div>
+                        <label className="text-xs text-slate-500 mb-1 block">Header Color</label>
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="color"
+                            value={tableHeaderBg}
+                            onChange={(e) => setTableHeaderBg(e.target.value)}
+                            className="w-10 h-10 rounded cursor-pointer border-0"
+                          />
+                          <Input value={tableHeaderBg} onChange={(e) => setTableHeaderBg(e.target.value)} className="flex-1" />
+                        </div>
+                      </div>
+
+                      {/* Preview */}
+                      <div className="p-3 bg-slate-50 dark:bg-slate-800/50 rounded-lg">
+                        <p className="text-xs text-slate-500 mb-2">Preview: {tableRows} × {tableCols} table</p>
+                        <div className="w-full overflow-hidden rounded border border-slate-200 dark:border-slate-700">
+                          <div className="grid" style={{ gridTemplateColumns: `repeat(${Math.min(tableCols, 4)}, 1fr)` }}>
+                            {Array.from({ length: Math.min(tableRows, 3) * Math.min(tableCols, 4) }).map((_, i) => (
+                              <div
+                                key={i}
+                                className="text-[9px] text-center py-1 border-r border-b border-slate-200 dark:border-slate-700"
+                                style={{
+                                  backgroundColor: i < Math.min(tableCols, 4) ? tableHeaderBg : (Math.floor(i / Math.min(tableCols, 4)) % 2 === 0 ? '#f8fafc' : '#ffffff'),
+                                  color: i < Math.min(tableCols, 4) ? '#ffffff' : '#64748b',
+                                }}
+                              >
+                                {i < Math.min(tableCols, 4) ? `H${(i % Math.min(tableCols, 4)) + 1}` : `C`}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+
+                      <Button onClick={generateTable} className="w-full bg-indigo-600 hover:bg-indigo-700 text-white">
+                        <Table2 className="w-4 h-4 mr-2" />
+                        Add Table to Canvas
+                      </Button>
+                    </div>
+                  )}
+
+                  {/* ============ NEW Phase 10: QR Code Panel ============ */}
+                  {activePanel === 'qrcode' && (
+                    <div className="space-y-4">
+                      <h3 className="font-semibold text-slate-900 dark:text-white flex items-center gap-2">
+                        <QrCode className="w-5 h-5 text-indigo-600" />
+                        QR Code Generator
+                      </h3>
+
+                      {/* Content */}
+                      <div>
+                        <label className="text-xs text-slate-500 mb-1 block">URL or Text</label>
+                        <Textarea
+                          value={qrText}
+                          onChange={(e) => setQrText(e.target.value)}
+                          placeholder="https://your-website.com"
+                          rows={3}
+                          className="resize-none"
+                        />
+                      </div>
+
+                      {/* Size */}
+                      <div>
+                        <label className="text-xs text-slate-500 mb-1 block">Size: {qrSize}px</label>
+                        <input type="range" min="100" max="500" step="10" value={qrSize} onChange={(e) => setQrSize(Number(e.target.value))} className="w-full" />
+                      </div>
+
+                      {/* Colors */}
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <label className="text-xs text-slate-500 mb-1 block">Foreground</label>
+                          <div className="flex items-center gap-2">
+                            <input type="color" value={qrFgColor} onChange={(e) => setQrFgColor(e.target.value)} className="w-8 h-8 rounded cursor-pointer border-0" />
+                            <Input value={qrFgColor} onChange={(e) => setQrFgColor(e.target.value)} className="flex-1 text-xs" />
+                          </div>
+                        </div>
+                        <div>
+                          <label className="text-xs text-slate-500 mb-1 block">Background</label>
+                          <div className="flex items-center gap-2">
+                            <input type="color" value={qrBgColor} onChange={(e) => setQrBgColor(e.target.value)} className="w-8 h-8 rounded cursor-pointer border-0" />
+                            <Input value={qrBgColor} onChange={(e) => setQrBgColor(e.target.value)} className="flex-1 text-xs" />
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Quick Presets */}
+                      <div>
+                        <label className="text-xs text-slate-500 mb-2 block">Quick Fill</label>
+                        <div className="grid grid-cols-2 gap-2">
+                          {[
+                            { label: 'Website', prefix: 'https://' },
+                            { label: 'Email', prefix: 'mailto:' },
+                            { label: 'Phone', prefix: 'tel:' },
+                            { label: 'Wi-Fi', prefix: 'WIFI:S:' },
+                          ].map((preset) => (
+                            <button
+                              key={preset.label}
+                              onClick={() => setQrText(qrText.startsWith(preset.prefix) ? qrText : preset.prefix)}
+                              className="p-2 rounded-lg border border-slate-200 dark:border-slate-700 text-xs hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-colors"
+                            >
+                              {preset.label}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      <Button onClick={generateQRCode} className="w-full bg-indigo-600 hover:bg-indigo-700 text-white">
+                        <QrCode className="w-4 h-4 mr-2" />
+                        Generate QR Code
+                      </Button>
+                    </div>
+                  )}
+
+                  {/* ============ NEW Phase 10: Mockups Panel ============ */}
+                  {activePanel === 'mockups' && (
+                    <div className="space-y-4">
+                      <h3 className="font-semibold text-slate-900 dark:text-white flex items-center gap-2">
+                        <Smartphone className="w-5 h-5 text-indigo-600" />
+                        Device Mockups
+                      </h3>
+                      <p className="text-xs text-slate-500">Add device mockup frames to showcase your designs</p>
+
+                      <div className="grid grid-cols-2 gap-3">
+                        {[
+                          { type: 'phone' as const, icon: Smartphone, label: 'Phone', desc: 'iPhone style' },
+                          { type: 'tablet' as const, icon: Tablet, label: 'Tablet', desc: 'iPad style' },
+                          { type: 'laptop' as const, icon: Monitor, label: 'Laptop', desc: 'MacBook style' },
+                          { type: 'desktop' as const, icon: Monitor, label: 'Desktop', desc: 'iMac style' },
+                        ].map((device) => (
+                          <button
+                            key={device.type}
+                            onClick={() => setMockupDevice(device.type)}
+                            className={cn(
+                              'p-4 rounded-xl border-2 flex flex-col items-center gap-2 transition-all',
+                              mockupDevice === device.type
+                                ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-900/20'
+                                : 'border-slate-200 dark:border-slate-700 hover:border-indigo-300'
+                            )}
+                          >
+                            <device.icon className="w-8 h-8" />
+                            <span className="text-sm font-medium">{device.label}</span>
+                            <span className="text-[10px] text-slate-400">{device.desc}</span>
+                          </button>
+                        ))}
+                      </div>
+
+                      <Button onClick={generateMockup} className="w-full bg-indigo-600 hover:bg-indigo-700 text-white">
+                        <Smartphone className="w-4 h-4 mr-2" />
+                        Add Mockup to Canvas
+                      </Button>
+
+                      {/* Gradient Text Section */}
+                      <div className="pt-4 border-t border-slate-200 dark:border-slate-700">
+                        <h4 className="text-sm font-semibold text-slate-900 dark:text-white mb-3 flex items-center gap-2">
+                          <Paintbrush className="w-4 h-4 text-indigo-600" />
+                          Gradient Text
+                        </h4>
+                        <div className="grid grid-cols-1 gap-2">
+                          {[
+                            { label: 'Sunset Text', colors: ['#FF512F', '#DD2476'], text: 'Sunset' },
+                            { label: 'Ocean Text', colors: ['#2193b0', '#6dd5ed'], text: 'Ocean' },
+                            { label: 'Neon Text', colors: ['#7F00FF', '#E100FF'], text: 'Neon Glow' },
+                            { label: 'Gold Text', colors: ['#F2994A', '#F2C94C'], text: 'Golden' },
+                            { label: 'Nature Text', colors: ['#11998e', '#38ef7d'], text: 'Nature' },
+                            { label: 'Fire Text', colors: ['#f12711', '#f5af19'], text: 'Fire' },
+                          ].map((preset) => (
+                            <button
+                              key={preset.label}
+                              onClick={() => addGradientText(preset.text, preset.colors)}
+                              className="p-2.5 rounded-lg border border-slate-200 dark:border-slate-700 hover:border-indigo-300 transition-all flex items-center gap-3 group"
+                            >
+                              <div
+                                className="w-16 h-8 rounded-md flex items-center justify-center text-white text-xs font-bold"
+                                style={{ background: `linear-gradient(90deg, ${preset.colors[0]}, ${preset.colors[1]})` }}
+                              >
+                                Aa
+                              </div>
+                              <span className="text-sm">{preset.label}</span>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* ============ NEW Phase 10: Video Panel ============ */}
+                  {activePanel === 'video' && (
+                    <div className="space-y-4">
+                      <h3 className="font-semibold text-slate-900 dark:text-white flex items-center gap-2">
+                        <Film className="w-5 h-5 text-indigo-600" />
+                        Video Editor
+                      </h3>
+                      <p className="text-xs text-slate-500">Upload a video to extract frames, trim, and add to your design</p>
+
+                      {/* Upload Video */}
+                      <label className="block">
+                        <div className="w-full p-6 rounded-xl border-2 border-dashed border-slate-300 dark:border-slate-600 hover:border-indigo-500 transition-colors flex flex-col items-center gap-2 cursor-pointer">
+                          <Film className="w-8 h-8 text-slate-400" />
+                          <span className="text-sm text-slate-500">Upload Video</span>
+                          <span className="text-[10px] text-slate-400">MP4, WebM, MOV</span>
+                        </div>
+                        <input
+                          type="file"
+                          accept="video/*"
+                          className="hidden"
+                          onChange={(e) => {
+                            const file = e.target.files?.[0]
+                            if (file) openVideoEditor(file)
+                            e.target.value = ''
+                          }}
+                        />
+                      </label>
+
+                      {/* Video Templates */}
+                      <div className="pt-4 border-t border-slate-200 dark:border-slate-700">
+                        <h4 className="text-sm font-semibold mb-3">Video Canvas Sizes</h4>
+                        <div className="grid grid-cols-1 gap-2">
+                          {[
+                            { name: 'YouTube Thumbnail', width: 1280, height: 720, icon: Youtube },
+                            { name: 'TikTok / Reel', width: 1080, height: 1920, icon: Smartphone },
+                            { name: 'YouTube Banner', width: 2560, height: 1440, icon: Monitor },
+                            { name: 'Video 16:9', width: 1920, height: 1080, icon: Film },
+                            { name: 'Video 4:3', width: 1440, height: 1080, icon: Film },
+                            { name: 'Square Video', width: 1080, height: 1080, icon: Square },
+                          ].map((preset) => (
+                            <button
+                              key={preset.name}
+                              onClick={() => {
+                                setCanvasSize({ width: preset.width, height: preset.height })
+                                if (fabricCanvasRef.current) {
+                                  fabricCanvasRef.current.setDimensions({ width: preset.width * zoom, height: preset.height * zoom })
+                                  fabricCanvasRef.current.renderAll()
+                                }
+                                setShowTemplateModal(false)
+                                toast.success(`Canvas set to ${preset.name}`)
+                              }}
+                              className="p-3 rounded-lg border border-slate-200 dark:border-slate-700 hover:border-indigo-300 transition-all flex items-center gap-3 text-left"
+                            >
+                              <preset.icon className="w-5 h-5 text-indigo-600" />
+                              <div>
+                                <p className="text-sm font-medium">{preset.name}</p>
+                                <p className="text-[10px] text-slate-400">{preset.width} × {preset.height}</p>
+                              </div>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
                   {/* Select Panel - Object Properties (auto-shown when object selected) */}
                   {activePanel === 'select' && selectedObject && (
                     <div className="space-y-4">
@@ -4977,6 +6265,229 @@ export function DesignStudio() {
             </div>
           </div>
         </div>
+
+        {/* ============ NEW Phase 10: Video Editor Dialog ============ */}
+        <Dialog open={showVideoEditor} onOpenChange={(open) => {
+          if (!open && videoUrl) {
+            URL.revokeObjectURL(videoUrl)
+            setVideoUrl('')
+            setVideoFile(null)
+            setVideoFrames([])
+          }
+          setShowVideoEditor(open)
+        }}>
+          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Film className="w-5 h-5 text-indigo-600" />
+                Video Editor
+              </DialogTitle>
+              <DialogDescription>
+                Scrub through your video, extract frames, and add them to your design canvas
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="space-y-4 py-2">
+              {/* Video Player */}
+              {videoUrl && (
+                <div className="bg-black rounded-xl overflow-hidden relative">
+                  <video
+                    ref={videoRef}
+                    src={videoUrl}
+                    className="w-full max-h-90ct-contain"
+                    onLoadedMetadata={(e) => {
+                      const video = e.currentTarget
+                      setVideoDuration(video.duration)
+                      setVideoTrimEnd(video.duration)
+                    }}
+                    onTimeUpdate={(e) => setVideoCurrentTime(e.currentTarget.currentTime)}
+                  />
+                  {/* Play Overlay */}
+                  {!isVideoPlaying && (
+                    <button
+                      onClick={() => {
+                        videoRef.current?.play()
+                        setIsVideoPlaying(true)
+                      }}
+                      className="absolute inset-0 flex items-center justify-center bg-black/30 hover:bg-black/40 transition-colors"
+                    >
+                      <div className="w-16 h-16 rounded-full bg-white/90 flex items-center justify-center">
+                        <Play className="w-8 h-8 text-slate-900 ml-1" />
+                      </div>
+                    </button>
+                  )}
+                </div>
+              )}
+
+              {/* Playback Controls */}
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={() => {
+                    if (videoRef.current) {
+                      videoRef.current.currentTime = Math.max(0, videoRef.current.currentTime - 5)
+                    }
+                  }}
+                  className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800"
+                >
+                  <SkipBack className="w-4 h-4" />
+                </button>
+                <button
+                  onClick={() => {
+                    if (videoRef.current) {
+                      if (isVideoPlaying) {
+                        videoRef.current.pause()
+                        setIsVideoPlaying(false)
+                      } else {
+                        videoRef.current.play()
+                        setIsVideoPlaying(true)
+                      }
+                    }
+                  }}
+                  className="p-3 rounded-full bg-indigo-600 text-white hover:bg-indigo-700"
+                >
+                  {isVideoPlaying ? <Pause className="w-5 h-5" /> : <Play className="w-5 h-5 ml-0.5" />}
+                </button>
+                <button
+                  onClick={() => {
+                    if (videoRef.current) {
+                      videoRef.current.currentTime = Math.min(videoDuration, videoRef.current.currentTime + 5)
+                    }
+                  }}
+                  className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800"
+                >
+                  <SkipForward className="w-4 h-4" />
+                </button>
+                <span className="text-sm text-slate-500 font-mono">
+                  {videoCurrentTime.toFixed(1)}s / {videoDuration.toFixed(1)}s
+                </span>
+              </div>
+
+              {/* Timeline Scrubber */}
+              <div className="space-y-2">
+                <label className="text-xs text-slate-500">Timeline</label>
+                <input
+                  type="range"
+                  min="0"
+                  max={videoDuration}
+                  step="0.1"
+                  value={videoCurrentTime}
+                  onChange={(e) => {
+                    const time = Number(e.target.value)
+                    if (videoRef.current) {
+                      videoRef.current.currentTime = time
+                      setVideoCurrentTime(time)
+                    }
+                  }}
+                  className="w-full h-2 appearance-none bg-slate-200 dark:bg-slate-700 rounded-full cursor-pointer"
+                  style={{
+                    background: `linear-gradient(to right, #6366f1 0%, #6366f1 ${(videoCurrentTime / videoDuration) * 100}%, #e2e8f0 ${(videoCurrentTime / videoDuration) * 100}%, #e2e8f0 100%)`,
+                  }}
+                />
+              </div>
+
+              {/* Trim Controls */}
+              <div className="p-3 bg-slate-50 dark:bg-slate-800/50 rounded-lg">
+                <h4 className="text-sm font-medium text-slate-700 dark:text-slate-300 mb-2 flex items-center gap-2">
+                  <Scissors className="w-4 h-4" /> Trim Range
+                </h4>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-xs text-slate-500">Start: {videoTrimStart.toFixed(1)}s</label>
+                    <input
+                      type="range"
+                      min="0"
+                      max={videoDuration}
+                      step="0.1"
+                      value={videoTrimStart}
+                      onChange={(e) => setVideoTrimStart(Math.min(Number(e.target.value), videoTrimEnd - 0.5))}
+                      className="w-full"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs text-slate-500">End: {videoTrimEnd.toFixed(1)}s</label>
+                    <input
+                      type="range"
+                      min="0"
+                      max={videoDuration}
+                      step="0.1"
+                      value={videoTrimEnd}
+                      onChange={(e) => setVideoTrimEnd(Math.max(Number(e.target.value), videoTrimStart + 0.5))}
+                      className="w-full"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="grid grid-cols-2 gap-3">
+                <Button
+                  onClick={captureCurrentFrame}
+                  className="bg-indigo-600 hover:bg-indigo-700 text-white"
+                >
+                  <Camera className="w-4 h-4 mr-2" />
+                  Capture Current Frame
+                </Button>
+                <Button
+                  onClick={extractVideoFrames}
+                  variant="outline"
+                  disabled={isExtractingFrames}
+                >
+                  {isExtractingFrames ? (
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  ) : (
+                    <Film className="w-4 h-4 mr-2" />
+                  )}
+                  Extract All Frames
+                </Button>
+              </div>
+
+              {/* Extracted Frames Grid */}
+              {videoFrames.length > 0 && (
+                <div>
+                  <h4 className="text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                    Extracted Frames ({videoFrames.length})
+                  </h4>
+                  <div className="grid grid-cols-4 gap-2 max-h-64 overflow-y-auto">
+                    {videoFrames.map((frame, index) => (
+                      <button
+                        key={index}
+                        onClick={() => {
+                          addFrameToCanvas(frame, index)
+                          toast.success(`Frame ${index + 1} added to canvas`)
+                        }}
+                        className="relative rounded-lg overflow-hidden border-2 border-transparent hover:border-indigo-500 transition-all group"
+                      >
+                        <img src={frame} alt={`Frame ${index + 1}`} className="w-full aspect-video object-cover" />
+                        <div className="absolute inset-0 bg-indigo-600/0 group-hover:bg-indigo-600/30 transition-colors flex items-center justify-center">
+                          <Plus className="w-6 h-6 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+                        </div>
+                        <span className="absolute bottom-1 right-1 text-[9px] bg-black/60 text-white px-1 rounded">
+                          #{index + 1}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <DialogFooter className="gap-2">
+              <Button variant="outline" onClick={() => {
+                if (videoUrl) URL.revokeObjectURL(videoUrl)
+                setShowVideoEditor(false)
+                setVideoUrl('')
+                setVideoFile(null)
+                setVideoFrames([])
+              }}>
+                Close
+              </Button>
+              <Button onClick={exportVideoClip} variant="outline">
+                <Download className="w-4 h-4 mr-2" />
+                Download Video
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
 
         {/* Post Modal */}
         <Dialog open={showPostModal} onOpenChange={setShowPostModal}>

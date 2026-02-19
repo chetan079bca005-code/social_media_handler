@@ -363,8 +363,33 @@ export async function acceptInvitation(token: string, userId: string) {
     where: { id: userId },
   });
 
-  if (!user || user.email !== invitation.email) {
+  if (!user || user.email.toLowerCase() !== invitation.email.toLowerCase()) {
     throw new AppError('This invitation is for a different email address', 403);
+  }
+
+  // Check if user is already a member of this workspace
+  const existingMember = await prisma.workspaceMember.findFirst({
+    where: {
+      workspaceId: invitation.workspaceId,
+      userId,
+    },
+    include: {
+      workspace: true,
+      user: {
+        select: { id: true, name: true, email: true, avatarUrl: true },
+      },
+    },
+  });
+
+  if (existingMember) {
+    // Mark invitation as accepted if not already
+    if (!invitation.acceptedAt) {
+      await prisma.workspaceInvitation.update({
+        where: { id: invitation.id },
+        data: { acceptedAt: new Date() },
+      });
+    }
+    return existingMember;
   }
 
   // Add user to workspace
@@ -392,6 +417,11 @@ export async function acceptInvitation(token: string, userId: string) {
       data: { acceptedAt: new Date() },
     }),
   ]);
+
+  // Invalidate workspace caches so the new member shows up
+  await cacheDel(CacheKeys.userWorkspaces(userId));
+  await cacheDel(CacheKeys.workspace(invitation.workspaceId));
+  await cacheDel(CacheKeys.workspaceMembers(invitation.workspaceId));
 
   return member;
 }

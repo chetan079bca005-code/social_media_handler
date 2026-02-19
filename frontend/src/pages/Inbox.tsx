@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import {
   Bell,
@@ -61,13 +62,24 @@ const formatTimeAgo = (dateStr: string) => {
 
 export function Inbox() {
   const [filter, setFilter] = useState<'all' | 'unread'>('all')
+  const navigate = useNavigate()
 
   const { data: notifications = [], isLoading, isRefreshing, refetch } = useDataCache<Notification[]>(
     'notifications',
     async () => {
       const res = await notificationsApi.getAll()
-      const data = res.data?.data?.notifications || res.data?.data || []
-      return Array.isArray(data) ? data : []
+      // sendPaginatedSuccess puts array at res.data directly
+      const raw = res?.data
+      const data = Array.isArray(raw) ? raw : (raw as any)?.notifications || []
+      return data.map((n: any) => ({
+        id: n.id,
+        type: n.type,
+        title: n.title,
+        message: n.message,
+        isRead: n.isRead ?? n.read ?? false,
+        createdAt: n.createdAt,
+        metadata: n.data || n.metadata,
+      }))
     }
   )
 
@@ -89,6 +101,49 @@ export function Inbox() {
       toast.success('All notifications marked as read')
     } catch {
       toast.error('Failed to mark all as read')
+    }
+  }
+
+  const handleNotificationClick = async (notification: Notification) => {
+    if (!notification.isRead) {
+      handleMarkAsRead(notification.id)
+    }
+    // Navigate based on notification type and metadata
+    const meta = notification.metadata || {}
+    switch (notification.type) {
+      case 'post_published':
+      case 'post_scheduled':
+        if (meta.postId) navigate(`/create?edit=${meta.postId}`)
+        else navigate('/published')
+        break
+      case 'post_failed':
+        if (meta.postId) navigate(`/create?edit=${meta.postId}`)
+        else navigate('/scheduled')
+        break
+      case 'comment':
+        navigate('/published')
+        break
+      case 'team':
+      case 'team_invite':
+        navigate('/team')
+        break
+      case 'analytics':
+        navigate('/analytics')
+        break
+      default:
+        // No specific navigation — just mark as read
+        break
+    }
+  }
+
+  const handleDeleteNotification = async (e: React.MouseEvent, id: string) => {
+    e.stopPropagation()
+    try {
+      await notificationsApi.delete(id)
+      invalidateCache('notifications')
+      refetch()
+    } catch {
+      toast.error('Failed to delete notification')
     }
   }
 
@@ -186,7 +241,7 @@ export function Inbox() {
                   'flex items-start gap-4 p-4 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors cursor-pointer',
                   !notification.isRead && 'bg-blue-50/50 dark:bg-blue-900/10'
                 )}
-                onClick={() => !notification.isRead && handleMarkAsRead(notification.id)}
+                onClick={() => handleNotificationClick(notification)}
               >
                 <div className="w-9 h-9 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center shrink-0">
                   {getNotificationIcon(notification.type)}
@@ -212,6 +267,13 @@ export function Inbox() {
                     {formatTimeAgo(notification.createdAt)}
                   </p>
                 </div>
+                <button
+                  onClick={(e) => handleDeleteNotification(e, notification.id)}
+                  className="p-1.5 rounded-md text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors shrink-0"
+                  title="Delete notification"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
               </div>
             ))
           )}

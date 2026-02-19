@@ -90,18 +90,19 @@ export function Dashboard() {
   const topPosts = dashboardData?.topPosts || []
   const upcomingPosts = dashboardData?.upcomingPosts || []
 
+  const comparison = analytics?.comparison
   const stats = [
     {
       title: 'Total Impressions',
       value: analytics?.totalImpressions || 0,
-      change: 0,
+      change: comparison?.impressionsChange || 0,
       icon: Eye,
       color: 'indigo',
     },
     {
       title: 'Engagement Rate',
       value: analytics?.avgEngagementRate || 0,
-      change: 0,
+      change: comparison?.engagementRateChange || 0,
       icon: Heart,
       isPercentage: true,
       color: 'pink',
@@ -109,14 +110,14 @@ export function Dashboard() {
     {
       title: 'Total Followers',
       value: analytics?.totalFollowers || 0,
-      change: analytics?.followerGrowth || 0,
+      change: comparison?.followersChange || analytics?.followerGrowth || 0,
       icon: Users,
       color: 'purple',
     },
     {
       title: 'Total Posts',
       value: analytics?.totalPosts || 0,
-      change: 0,
+      change: comparison?.postsChange || 0,
       icon: Clock,
       color: 'amber',
     },

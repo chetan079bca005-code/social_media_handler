@@ -430,6 +430,10 @@ export async function saveGeneratedImages(params: {
 }): Promise<void> {
   const { workspaceId, userId, urls, prompt, model } = params;
 
+  // Import Cloudinary helpers dynamically to avoid circular dependency
+  const { isCloudinaryConfigured, uploadUrlToCloudinary } = await import('../config/cloudinary');
+  const useCloudinary = isCloudinaryConfigured();
+
   await Promise.all(
     urls.map(async (url, index) => {
       const existing = await prisma.mediaFile.findFirst({
@@ -443,7 +447,30 @@ export async function saveGeneratedImages(params: {
         return;
       }
 
-      const filename = getGeneratedImageFilename(url);
+      let finalUrl = url;
+      let cloudinaryPublicId: string | undefined;
+      let width: number | undefined;
+      let height: number | undefined;
+      let fileSize = 0;
+
+      // Upload AI-generated image to Cloudinary for CDN delivery
+      if (useCloudinary && url.startsWith('http')) {
+        try {
+          const result = await uploadUrlToCloudinary(url, {
+            folder: `socialhub/${workspaceId}/ai-generated`,
+            resourceType: 'image',
+          });
+          finalUrl = result.secureUrl;
+          cloudinaryPublicId = result.publicId;
+          width = result.width;
+          height = result.height;
+          fileSize = result.bytes;
+        } catch (err: any) {
+          console.warn('Cloudinary upload of AI image failed, keeping original URL:', err.message);
+        }
+      }
+
+      const filename = getGeneratedImageFilename(finalUrl);
 
       await prisma.mediaFile.create({
         data: {
@@ -452,8 +479,10 @@ export async function saveGeneratedImages(params: {
           filename,
           originalName: filename,
           mimeType: 'image/png',
-          size: 0,
-          url,
+          size: fileSize,
+          url: finalUrl,
+          width,
+          height,
           tags: ['ai-generated'],
           metadata: {
             aiGenerated: true,
@@ -461,6 +490,7 @@ export async function saveGeneratedImages(params: {
             model,
             source: 'apifree',
             index,
+            ...(cloudinaryPublicId ? { cloudinaryPublicId } : {}),
           },
         },
       });

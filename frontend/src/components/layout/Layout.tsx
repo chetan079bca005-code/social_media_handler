@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { Sidebar } from './Sidebar'
 import { Header } from './Header'
 import { useUIStore } from '../../store'
+import { cn } from '../../lib/utils'
 
 export function MainLayout() {
   const { sidebarCollapsed, isMobile, setIsMobile, setSidebarCollapsed } = useUIStore()
@@ -51,18 +52,17 @@ export function MainLayout() {
         <Sidebar onClose={() => setSidebarOpen(false)} isMobile={isMobile} />
       </div>
 
-      <motion.div
-        initial={false}
-        animate={{
-          marginLeft: isMobile ? 0 : (sidebarCollapsed ? 80 : 260),
-        }}
-        className="transition-all duration-300 min-h-screen"
+      <div
+        className={cn(
+          'min-h-screen transition-[margin-left] duration-300 ease-in-out',
+          isMobile ? 'ml-0' : (sidebarCollapsed ? 'ml-18' : 'ml-65')
+        )}
       >
         <Header onMenuClick={() => setSidebarOpen(!sidebarOpen)} showMenuButton={isMobile} />
         <main className="p-3 sm:p-4 md:p-6">
           <Outlet />
         </main>
-      </motion.div>
+      </div>
     </div>
   )
 }

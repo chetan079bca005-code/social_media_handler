@@ -11,6 +11,7 @@ import routes from './routes';
 import { errorHandler, notFoundHandler } from './middleware/error';
 import prisma from './config/database';
 import { getRedisClient, disconnectRedis } from './config/redis';
+import { startScheduler } from './services/scheduler.service';
 
 // Validate config
 validateConfig();
@@ -185,10 +186,13 @@ async function startServer() {
 
   // Start listening IMMEDIATELY so frontend requests don't get ECONNREFUSED
   app.listen(PORT, () => {
+    // Check Cloudinary config
+    const cloudinaryConfigured = !!(process.env.CLOUDINARY_CLOUD_NAME && process.env.CLOUDINARY_API_KEY && process.env.CLOUDINARY_API_SECRET);
     console.log(`
 🚀 Server running on port ${PORT}
 📝 Environment: ${config.nodeEnv}
 🌐 Frontend URL: ${config.frontendUrl}
+☁️  Cloudinary: ${cloudinaryConfigured ? '✅ Configured (CDN uploads enabled)' : '⚠️  Not configured (using local disk storage)'}
     `);
   });
 
@@ -198,6 +202,9 @@ async function startServer() {
     await prisma.$connect();
     dbReady = true;
     console.log('✅ Prisma connected to MongoDB');
+
+    // Start background scheduler after DB is ready
+    startScheduler();
   } catch (err: any) {
     console.error('⚠️ Database warmup failed (will retry on first request):', err.message);
   }

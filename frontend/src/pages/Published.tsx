@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { motion } from 'framer-motion'
 import {
   CheckCircle2,
@@ -8,6 +9,14 @@ import {
   Plus,
   RefreshCw,
   TrendingUp,
+  Trash2,
+  ExternalLink,
+  Search,
+  Edit,
+  ThumbsUp,
+  MessageSquare,
+  Share2,
+  BarChart2,
 } from 'lucide-react'
 import { Link, useNavigate } from 'react-router-dom'
 import { Card, CardContent } from '../components/ui/Card'
@@ -17,6 +26,7 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '../components/ui/DropdownMenu'
 import { getPlatformColor, cn, formatNumber } from '../lib/utils'
@@ -29,17 +39,31 @@ export function Published() {
   const navigate = useNavigate()
   const { currentWorkspace } = useWorkspaceStore()
   const wsId = currentWorkspace?.id
+  const [search, setSearch] = useState('')
+  const [page, setPage] = useState(1)
+  const limit = 20
 
-  const { data: posts = [], isLoading, isRefreshing, refetch } = useDataCache<any[]>(
-    `published:${wsId}`,
+  const { data: postsData, isLoading, isRefreshing, refetch } = useDataCache<any>(
+    `published:${wsId}:${page}`,
     async () => {
-      if (!wsId) return []
-      const res = await postsApi.getAll({ status: 'PUBLISHED', limit: 100 })
+      if (!wsId) return { posts: [], total: 0 }
+      const res = await postsApi.getAll({ status: 'PUBLISHED', limit, page })
       const d = res?.data || res
-      return Array.isArray(d) ? d : d?.posts || []
+      if (Array.isArray(d)) return { posts: d, total: d.length }
+      return { posts: d?.posts || [], total: d?.total || d?.posts?.length || 0 }
     },
     { enabled: !!wsId }
   )
+  const allPosts: any[] = postsData?.posts ?? []
+  const total: number = postsData?.total ?? 0
+  const totalPages = Math.ceil(total / limit)
+
+  // Client-side search filter
+  const posts = search.trim()
+    ? allPosts.filter((p: any) =>
+        (p.content || p.caption || '').toLowerCase().includes(search.toLowerCase())
+      )
+    : allPosts
 
   const handleDuplicate = async (id: string) => {
     try {
@@ -47,8 +71,20 @@ export function Published() {
       invalidateCache('published:*')
       refetch()
       toast.success('Post duplicated')
-    } catch {
-      toast.error('Failed to duplicate post')
+    } catch { toast.error('Failed to duplicate post') }
+  }
+
+  const handleDelete = async (id: string) => {
+    if (!confirm('Delete this published post? This will also attempt to remove it from the social platform.')) return
+    try {
+      await postsApi.delete(id)
+      invalidateCache('published:*')
+      invalidateCache('calendar:*')
+      invalidateCache('analytics:*')
+      refetch()
+      toast.success('Post deleted')
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to delete post')
     }
   }
 
@@ -66,11 +102,7 @@ export function Published() {
   }
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="space-y-4 sm:space-y-6"
-    >
+    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-4 sm:space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
         <div>
@@ -80,21 +112,22 @@ export function Published() {
             </div>
             Published Posts
           </h1>
-          <p className="text-sm sm:text-base text-slate-500 dark:text-slate-400 mt-1">
-            {posts.length} post{posts.length !== 1 ? 's' : ''} published
-          </p>
+          <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">{total} published</p>
         </div>
         <div className="flex items-center gap-2">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+            <input
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              className="pl-9 pr-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm w-48 focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+              placeholder="Search posts..."
+            />
+          </div>
           <Button variant="outline" size="sm" onClick={() => refetch()}>
-            <RefreshCw className={cn('w-4 h-4 mr-2', isRefreshing && 'animate-spin')} />
-            Refresh
+            <RefreshCw className={cn('w-4 h-4 mr-2', isRefreshing && 'animate-spin')} /> Refresh
           </Button>
-          <Button asChild>
-            <Link to="/create">
-              <Plus className="w-4 h-4 mr-2" />
-              Create Post
-            </Link>
-          </Button>
+          <Button asChild><Link to="/create"><Plus className="w-4 h-4 mr-2" />Create Post</Link></Button>
         </div>
       </div>
 
@@ -114,8 +147,13 @@ export function Published() {
             </div>
           ) : (
             posts.map((post: any) => {
-              const platform = post.platforms?.[0] || post.platform || ''
-              const platformColor = getPlatformColor(platform.toLowerCase())
+              const platforms = post.platforms || []
+              const firstPlatform = platforms[0]?.socialAccount?.platform || platforms[0] || ''
+              const platformName = typeof firstPlatform === 'string' ? firstPlatform : firstPlatform.platform || ''
+              const platformColor = getPlatformColor(platformName.toLowerCase())
+              const platformUrl = platforms[0]?.platformUrl
+              const metrics = platforms[0]?.metrics || {}
+
               return (
                 <div key={post.id}
                   className="flex items-center gap-4 p-4 sm:p-5 hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors group"
@@ -129,28 +167,48 @@ export function Published() {
                       {post.content || post.caption || 'Untitled post'}
                     </p>
                     <div className="flex items-center gap-2 mt-1.5 flex-wrap">
-                      {platform && (
-                        <Badge variant="secondary" size="sm" className="text-[10px] font-semibold"
-                          style={{ backgroundColor: `${platformColor}15`, color: platformColor }}>
-                          {platform}
-                        </Badge>
-                      )}
+                      {platforms.map((p: any, i: number) => {
+                        const pName = p?.socialAccount?.platform || p || ''
+                        const pColor = getPlatformColor((typeof pName === 'string' ? pName : '').toLowerCase())
+                        return (
+                          <Badge key={i} variant="secondary" size="sm" className="text-[10px] font-semibold"
+                            style={{ backgroundColor: `${pColor}15`, color: pColor }}>
+                            {typeof pName === 'string' ? pName : ''}
+                          </Badge>
+                        )
+                      })}
                       <span className="text-xs text-slate-400 flex items-center gap-1">
                         <CheckCircle2 className="w-3 h-3 text-emerald-500" />
                         {post.publishedAt
-                          ? new Date(post.publishedAt).toLocaleDateString('en-US', {
-                              weekday: 'short', month: 'short', day: 'numeric',
-                              hour: 'numeric', minute: '2-digit',
-                            })
+                          ? new Date(post.publishedAt).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })
                           : 'Published'}
                       </span>
-                      {(post.impressions || post.engagement) && (
-                        <span className="text-xs text-slate-400 flex items-center gap-1">
-                          <TrendingUp className="w-3 h-3" />
-                          {formatNumber(post.impressions || 0)} views
-                        </span>
-                      )}
                     </div>
+                    {/* Engagement metrics */}
+                    {(metrics.likes || metrics.comments || metrics.shares || metrics.impressions) && (
+                      <div className="flex items-center gap-3 mt-2">
+                        {metrics.likes != null && (
+                          <span className="text-xs text-slate-500 flex items-center gap-1">
+                            <ThumbsUp className="w-3 h-3" />{formatNumber(metrics.likes)}
+                          </span>
+                        )}
+                        {metrics.comments != null && (
+                          <span className="text-xs text-slate-500 flex items-center gap-1">
+                            <MessageSquare className="w-3 h-3" />{formatNumber(metrics.comments)}
+                          </span>
+                        )}
+                        {metrics.shares != null && (
+                          <span className="text-xs text-slate-500 flex items-center gap-1">
+                            <Share2 className="w-3 h-3" />{formatNumber(metrics.shares)}
+                          </span>
+                        )}
+                        {metrics.impressions != null && (
+                          <span className="text-xs text-slate-500 flex items-center gap-1">
+                            <Eye className="w-3 h-3" />{formatNumber(metrics.impressions)}
+                          </span>
+                        )}
+                      </div>
+                    )}
                   </div>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
@@ -159,8 +217,20 @@ export function Published() {
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
+                      {platformUrl && (
+                        <DropdownMenuItem onClick={() => window.open(platformUrl, '_blank')}>
+                          <ExternalLink className="w-4 h-4 mr-2" />View on Platform
+                        </DropdownMenuItem>
+                      )}
+                      <DropdownMenuItem onClick={() => navigate(`/analytics`)}>
+                        <BarChart2 className="w-4 h-4 mr-2" />View Analytics
+                      </DropdownMenuItem>
                       <DropdownMenuItem onClick={() => handleDuplicate(post.id)}>
                         <Copy className="w-4 h-4 mr-2" />Duplicate
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem className="text-red-600 focus:text-red-600" onClick={() => handleDelete(post.id)}>
+                        <Trash2 className="w-4 h-4 mr-2" />Delete
                       </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
@@ -170,6 +240,19 @@ export function Published() {
           )}
         </CardContent>
       </Card>
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-center gap-2">
+          <Button variant="outline" size="sm" onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}>
+            Previous
+          </Button>
+          <span className="text-sm text-slate-500">Page {page} of {totalPages}</span>
+          <Button variant="outline" size="sm" onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page >= totalPages}>
+            Next
+          </Button>
+        </div>
+      )}
     </motion.div>
   )
 }

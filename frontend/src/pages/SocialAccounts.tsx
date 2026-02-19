@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   Plus,
@@ -52,6 +52,7 @@ import { getPlatformIcon } from '../components/ui/PlatformIcons'
 import { socialAccountsApi } from '../services/api'
 import { useWorkspaceStore } from '../store'
 import { useDataCache, invalidateCache } from '../lib/useDataCache'
+import { useNavigate } from 'react-router-dom'
 import toast from 'react-hot-toast'
 
 // ─── Platform metadata ───────────────────────────────────────────────────────
@@ -698,9 +699,10 @@ interface AccountCardProps {
   onDisconnect: (id: string) => void
   onRefresh: (id: string) => void
   onReconnect: (platform: string) => void
+  onViewAnalytics: () => void
 }
 
-function AccountCard({ account, onDisconnect, onRefresh, onReconnect }: AccountCardProps) {
+function AccountCard({ account, onDisconnect, onRefresh, onReconnect, onViewAnalytics }: AccountCardProps) {
   const color = getPlatformColor(account.platform)
   const meta = PLATFORM_META[account.platform]
   const isError = !!account.error
@@ -761,7 +763,7 @@ function AccountCard({ account, onDisconnect, onRefresh, onReconnect }: AccountC
                 >
                   <ExternalLink className="w-4 h-4 mr-2 text-slate-500" />View Profile
                 </DropdownMenuItem>
-                <DropdownMenuItem>
+                <DropdownMenuItem onClick={onViewAnalytics}>
                   <BarChart2 className="w-4 h-4 mr-2 text-purple-500" />View Analytics
                 </DropdownMenuItem>
                 <DropdownMenuItem>
@@ -1015,6 +1017,7 @@ export function SocialAccounts() {
   const [isSaving, setIsSaving] = useState(false)
   const [activeTab, setActiveTab] = useState<'connected' | 'available'>('connected')
   const { currentWorkspace } = useWorkspaceStore()
+  const navigate = useNavigate()
   const wsId = currentWorkspace?.id
 
   const { data: accountsData, isLoading, refetch } = useDataCache<any[]>(
@@ -1029,6 +1032,27 @@ export function SocialAccounts() {
   const accounts = accountsData ?? []
   const connectedPlatforms = accounts.map((a: any) => a.platform)
 
+  // Handle real OAuth redirect: fetch OAuth URL from backend and redirect the browser
+  const handleStartRealOAuth = async (platform: string) => {
+    if (!currentWorkspace) return
+    setIsSaving(true)
+    try {
+      const res = await socialAccountsApi.getOAuthUrl(currentWorkspace.id, platform) as any
+      const oauthUrl = res?.data?.url || res?.url
+      if (oauthUrl) {
+        // Redirect to the platform's OAuth consent screen
+        window.location.href = oauthUrl
+      } else {
+        toast.error('Could not get OAuth URL. Make sure API credentials are configured on the server.')
+      }
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to start OAuth')
+    } finally {
+      setIsSaving(false)
+    }
+  }
+
+  // Legacy simulated OAuth handler (fallback for demo mode)
   const handleOAuthSuccess = async (data: { accountName: string; username: string; followers: number }) => {
     if (!oauthPlatform || !currentWorkspace) return
     const p = oauthPlatform
@@ -1053,6 +1077,26 @@ export function SocialAccounts() {
       setIsSaving(false)
     }
   }
+
+  // Check for OAuth callback success/error in URL params
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const success = params.get('success')
+    const error = params.get('error')
+    const platform = params.get('platform')
+    const account = params.get('account')
+
+    if (success === 'true') {
+      toast.success(`${platform ? PLATFORM_META[platform]?.name || platform : 'Account'} connected successfully!${account ? ` (${account})` : ''}`)
+      invalidateCache('social-accounts:*')
+      refetch()
+      // Clean URL
+      window.history.replaceState({}, '', window.location.pathname)
+    } else if (error) {
+      toast.error(`OAuth failed: ${decodeURIComponent(error)}`)
+      window.history.replaceState({}, '', window.location.pathname)
+    }
+  }, [])
 
   const handleDisconnect = async (id: string) => {
     try {
@@ -1106,7 +1150,7 @@ export function SocialAccounts() {
         platform={connectModalPlatform}
         isOpen={!!connectModalPlatform}
         onClose={() => setConnectModalPlatform(null)}
-        onStartOAuth={p => setOauthPlatform(p)}
+        onStartOAuth={p => { setConnectModalPlatform(null); handleStartRealOAuth(p.toUpperCase()) }}
       />
 
       {isSaving && (
@@ -1197,6 +1241,7 @@ export function SocialAccounts() {
                     onDisconnect={handleDisconnect}
                     onRefresh={handleRefresh}
                     onReconnect={p => setConnectModalPlatform(p)}
+                    onViewAnalytics={() => navigate('/analytics')}
                   />
                 ))}
               </AnimatePresence>
