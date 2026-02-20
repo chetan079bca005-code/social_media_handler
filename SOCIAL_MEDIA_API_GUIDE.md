@@ -1,5 +1,5 @@
 # Social Media API Integration Guide
-## Complete Step-by-Step Guide to Connect, Post & Analyze
+<!-- ## Complete Step-by-Step Guide to Connect, Post & Analyze -->
 
 ---
 
