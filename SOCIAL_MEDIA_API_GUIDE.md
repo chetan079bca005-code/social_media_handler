@@ -16,7 +16,7 @@
 10. [Best Practices](#best-practices) -->
 
 ---
-
+<!-- 
 ## Overview
 
 This guide covers how to integrate social media APIs with your Social Media Handler platform to:
@@ -25,7 +25,7 @@ This guide covers how to integrate social media APIs with your Social Media Hand
 - ✅ Upload media files
 - ✅ Retrieve analytics and metrics
 - ✅ Schedule posts
-- ✅ Manage comments and engagement
+- ✅ Manage comments and engagement -->
 
 ---
 
