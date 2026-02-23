@@ -3,7 +3,7 @@
 
 ---
 
-## Table of Contents
+<!-- ## Table of Contents
 1. [Overview](#overview)
 2. [Facebook API](#facebook-api)
 3. [Instagram API](#instagram-api)
@@ -13,14 +13,14 @@
 7. [YouTube API](#youtube-api)
 8. [Comparison Chart](#comparison-chart)
 9. [Implementation Steps](#implementation-steps)
-10. [Best Practices](#best-practices)
+10. [Best Practices](#best-practices) -->
 
 ---
 
 ## Overview
 
 This guide covers how to integrate social media APIs with your Social Media Handler platform to:
-- ✅ Authenticate with social platforms
+- ✅ Authenticate with social platforms 
 - ✅ Post content directly
 - ✅ Upload media files
 - ✅ Retrieve analytics and metrics
