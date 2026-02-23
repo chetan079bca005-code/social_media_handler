@@ -34,7 +34,7 @@ This guide covers how to integrate social media APIs with your Social Media Hand
 ## Overview
 - **Free Tier:** Yes, limited
 - **Authentication:** OAuth 2.0
-- **Best For:** Reaching older demographics, community building
+- **Best For:** Reaching mature demographics and community building
 - **Cost:** Free with limitations, paid for higher features
 
 ## Get Free API Access
