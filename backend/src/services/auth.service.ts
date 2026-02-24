@@ -7,6 +7,7 @@ import { Tokens } from '../types';
 import { User, Workspace, WorkspaceRole } from '@prisma/client';
 import { AppError } from '../middleware/error';
 import { generateUniqueSlug } from '../utils/response';
+import { sendGenericEmail } from '../utils/email';
 
 const SALT_ROUNDS = 12;
 
@@ -289,13 +290,14 @@ export async function changePassword(
 
 // Request password reset
 export async function requestPasswordReset(email: string): Promise<string> {
+  const genericMessage = 'If the email exists, a reset link will be sent';
   const user = await prisma.user.findUnique({
     where: { email: email.toLowerCase() },
   });
 
   if (!user) {
     // Don't reveal if email exists
-    return 'If the email exists, a reset link will be sent';
+    return genericMessage;
   }
 
   // Generate reset token
@@ -310,9 +312,21 @@ export async function requestPasswordReset(email: string): Promise<string> {
     },
   });
 
-  // TODO: Send email with reset link
-  // For now, return token (in production, send via email)
-  return resetToken;
+  const resetUrl = `${config.frontendUrl}/reset-password?token=${resetToken}`;
+
+  await sendGenericEmail({
+    to: user.email,
+    subject: 'Reset your SocialHub password',
+    html: `
+      <p>We received a request to reset your password.</p>
+      <p><a href="${resetUrl}">Click here to reset your password</a></p>
+      <p>This link expires in 1 hour.</p>
+      <p>If you did not request this, you can safely ignore this email.</p>
+    `,
+    text: `We received a request to reset your password.\n\nReset your password: ${resetUrl}\n\nThis link expires in 1 hour.\n\nIf you did not request this, you can safely ignore this email.`,
+  });
+
+  return genericMessage;
 }
 
 // Reset password with token
