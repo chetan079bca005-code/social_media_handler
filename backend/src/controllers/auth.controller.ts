@@ -107,11 +107,8 @@ export const changePassword = asyncHandler(async (req: AuthRequest, res: Respons
 export const requestPasswordReset = asyncHandler(async (req: Request, res: Response) => {
   const { email } = req.body;
 
-  const token = await authService.requestPasswordReset(email);
-
-  // In production, send email with reset link
-  // For now, return token (remove in production)
-  sendSuccess(res, { token }, 'Password reset instructions sent');
+  const message = await authService.requestPasswordReset(email);
+  sendSuccess(res, null, message);
 });
 
 export const resetPassword = asyncHandler(async (req: Request, res: Response) => {
