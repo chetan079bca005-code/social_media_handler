@@ -1,6 +1,14 @@
 # Social Media API Integration Guide
 <!-- ## Complete Step-by-Step Guide to Connect, Post & Analyze -->
 
+## Integration Safety Checklist
+
+- Store platform secrets only in `backend/.env` and never commit real credentials.
+- Use short-lived OAuth tokens where possible and rotate long-lived tokens regularly.
+- Request only minimum scopes required for posting and analytics.
+- Validate redirect/callback URLs exactly against provider dashboard settings.
+- Log API errors without storing access tokens in logs.
+
 ---
 
 <!-- ## Table of Contents
