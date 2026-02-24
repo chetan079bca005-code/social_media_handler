@@ -134,12 +134,13 @@ export async function generateUniqueSlug(
   text: string,
   checkExists: (slug: string) => Promise<boolean>
 ): Promise<string> {
-  let slug = generateSlug(text);
+  const baseSlug = generateSlug(text);
+  let slug = baseSlug;
   let counter = 0;
   
   while (await checkExists(slug)) {
     counter++;
-    slug = `${generateSlug(text)}-${counter}`;
+    slug = `${baseSlug}-${counter}`;
   }
   
   return slug;
