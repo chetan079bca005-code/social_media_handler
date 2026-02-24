@@ -13,7 +13,7 @@ export const config = {
   server: {
     uploadDir: process.env.UPLOAD_DIR || './uploads',
     maxFileSize: parseInt(process.env.MAX_FILE_SIZE || '104857600', 10), // 100MB
-    corsOrigin: process.env.CORS_ORIGIN || 'http://localhost:5173',
+    corsOrigin: process.env.CORS_ORIGIN || process.env.FRONTEND_URL || 'http://localhost:5173',
   },
   
   // Database
