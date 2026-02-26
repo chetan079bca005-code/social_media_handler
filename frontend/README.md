@@ -1,5 +1,13 @@
 # React + TypeScript + Vite
 
+## Frontend Context
+
+This frontend powers the Social Media Handler dashboard and is intentionally kept modular for fast feature iteration.
+
+- Stack: React + TypeScript + Vite
+- UI: Tailwind CSS + reusable component primitives
+- Goal: reliable publishing, scheduling, analytics, and collaboration flows
+
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 
 Currently, two official plugins are available:
