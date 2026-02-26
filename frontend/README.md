@@ -66,6 +66,14 @@ export default defineConfig([
 
 You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
 
+## Pre-Push Verification (Docs Days)
+
+Run these checks before pushing docs-only work:
+
+- Confirm staged files are markdown-only.
+- Confirm commit message explains one clear documentation intent.
+- Confirm no secrets appear in examples or snippets.
+
 ```js
 // eslint.config.js
 import reactX from 'eslint-plugin-react-x'
