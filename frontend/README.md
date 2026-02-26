@@ -74,6 +74,12 @@ Run these checks before pushing docs-only work:
 - Confirm commit message explains one clear documentation intent.
 - Confirm no secrets appear in examples or snippets.
 
+## Contributor Etiquette
+
+- Prefer small, frequent docs commits over large mixed changes.
+- Keep language clear for new contributors and non-native readers.
+- Preserve existing structure unless there is a strong clarity benefit.
+
 ```js
 // eslint.config.js
 import reactX from 'eslint-plugin-react-x'
