@@ -26,6 +26,12 @@ Currently, two official plugins are available:
 
 The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
 
+## Safe Docs Commit Examples
+
+- Clarify setup steps without changing commands.
+- Add troubleshooting notes for common local issues.
+- Improve wording for onboarding and team handoff clarity.
+
 ## Expanding the ESLint configuration
 
 If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
