@@ -10,6 +10,13 @@ This frontend powers the Social Media Handler dashboard and is intentionally kep
 
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 
+## Docs-Only Contribution Checklist
+
+- Keep each commit scoped to one docs change.
+- Use clear commit messages prefixed with `docs(...)`.
+- Avoid editing runtime logic when doing safe daily contributions.
+- Re-check staged files before push to ensure only markdown changes.
+
 Currently, two official plugins are available:
 
 - [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
