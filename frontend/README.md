@@ -1,21 +1,6 @@
 # React + TypeScript + Vite
 
-## Frontend Context
-
-This frontend powers the Social Media Handler dashboard and is intentionally kept modular for fast feature iteration.
-
-- Stack: React + TypeScript + Vite
-- UI: Tailwind CSS + reusable component primitives
-- Goal: reliable publishing, scheduling, analytics, and collaboration flows
-
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
-
-## Docs-Only Contribution Checklist
-
-- Keep each commit scoped to one docs change.
-- Use clear commit messages prefixed with `docs(...)`.
-- Avoid editing runtime logic when doing safe daily contributions.
-- Re-check staged files before push to ensure only markdown changes.
 
 Currently, two official plugins are available:
 
@@ -25,12 +10,6 @@ Currently, two official plugins are available:
 ## React Compiler
 
 The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Safe Docs Commit Examples
-
-- Clarify setup steps without changing commands.
-- Add troubleshooting notes for common local issues.
-- Improve wording for onboarding and team handoff clarity.
 
 ## Expanding the ESLint configuration
 
@@ -65,20 +44,6 @@ export default defineConfig([
 ```
 
 You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
-
-## Pre-Push Verification (Docs Days)
-
-Run these checks before pushing docs-only work:
-
-- Confirm staged files are markdown-only.
-- Confirm commit message explains one clear documentation intent.
-- Confirm no secrets appear in examples or snippets.
-
-## Contributor Etiquette
-
-- Prefer small, frequent docs commits over large mixed changes.
-- Keep language clear for new contributors and non-native readers.
-- Preserve existing structure unless there is a strong clarity benefit.
 
 ```js
 // eslint.config.js

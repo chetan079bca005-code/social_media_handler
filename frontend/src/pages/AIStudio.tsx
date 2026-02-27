@@ -13,6 +13,10 @@ import {
   Copy,
   Check,
   Send,
+  Film,
+  Download,
+  ExternalLink,
+  CheckCircle2,
 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../components/ui/Card'
 import { Button } from '../components/ui/Button'
@@ -38,6 +42,11 @@ import {
   getImageHistory,
   type GeneratedImageHistoryItem,
 } from '../services/ai'
+import {
+  generateT2V,
+  downloadVideo,
+  type Text2VideoOptions,
+} from '../services/video'
 import toast from 'react-hot-toast'
 
 const AI_TOOLS = [
@@ -54,6 +63,13 @@ const AI_TOOLS = [
     description: 'Create AI-generated images from text',
     icon: Image,
     color: 'from-pink-500 to-rose-500',
+  },
+  {
+    id: 'video-generator',
+    name: 'Video Generator',
+    description: 'Generate AI videos from text prompts',
+    icon: Film,
+    color: 'from-sky-500 to-indigo-500',
   },
   {
     id: 'hashtag-generator',
@@ -154,6 +170,17 @@ export function AIStudio() {
   const [contentToTranslate, setContentToTranslate] = useState('')
   const [targetLanguage, setTargetLanguage] = useState('spanish')
   const [translatedContent, setTranslatedContent] = useState('')
+
+  // Text-to-Video State
+  const [t2vPrompt, setT2vPrompt] = useState('')
+  const [t2vAspectRatio, setT2vAspectRatio] = useState<'16:9' | '9:16'>('16:9')
+  const [t2vDuration, setT2vDuration] = useState<4 | 6 | 8>(4)
+  const [t2vResolution, setT2vResolution] = useState<'720p' | '1080p'>('720p')
+  const [t2vStatus, setT2vStatus] = useState<string>('idle')
+  const [t2vStatusDetail, setT2vStatusDetail] = useState<string>('')
+  const [t2vGeneratedVideos, setT2vGeneratedVideos] = useState<string[]>([])
+  const [t2vSavedVideos, setT2vSavedVideos] = useState<{ cloudinaryUrl: string; publicId?: string }[]>([])
+  const isT2vGenerating = ['submitting', 'processing', 'downloading'].includes(t2vStatus)
 
   const handleGenerateCaptions = async () => {
     if (!topic.trim()) {
@@ -313,6 +340,54 @@ export function AIStudio() {
       toast.error('Failed to translate content')
     } finally {
       setIsGenerating(false)
+    }
+  }
+
+  // ── Text-to-Video handler ──
+  const handleGenerateT2V = async () => {
+    if (!t2vPrompt.trim()) {
+      toast.error('Please enter a prompt describing the video')
+      return
+    }
+
+    setT2vGeneratedVideos([])
+    setT2vSavedVideos([])
+    setT2vStatus('submitting')
+    setT2vStatusDetail('Sending request...')
+
+    try {
+      const result = await generateT2V(
+        {
+          prompt: t2vPrompt,
+          aspectRatio: t2vAspectRatio,
+          duration: t2vDuration,
+          resolution: t2vResolution,
+        },
+        (s, detail) => {
+          setT2vStatus(s)
+          if (detail) setT2vStatusDetail(detail)
+        }
+      )
+
+      setT2vGeneratedVideos(result.videoList)
+      setT2vSavedVideos(result.savedVideos || [])
+      setT2vStatus('complete')
+      setT2vStatusDetail('')
+      toast.success('Video generated successfully!')
+    } catch (error: any) {
+      setT2vStatus('error')
+      setT2vStatusDetail('')
+      toast.error(error.message || 'Video generation failed')
+    }
+  }
+
+  const handleT2VDownload = async (url: string, index: number) => {
+    toast.loading('Preparing download...', { id: 'video-dl' })
+    try {
+      await downloadVideo(url, `ai-t2v-${Date.now()}-${index + 1}.mp4`)
+      toast.success('Download started!', { id: 'video-dl' })
+    } catch {
+      toast.error('Download failed — opening in new tab', { id: 'video-dl' })
     }
   }
 
@@ -1015,6 +1090,204 @@ export function AIStudio() {
           </div>
         )
 
+      case 'video-generator':
+        return (
+          <div className="space-y-6">
+            {/* Prompt */}
+            <div>
+              <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                Video Prompt
+              </label>
+              <Textarea
+                value={t2vPrompt}
+                onChange={(e) => setT2vPrompt(e.target.value)}
+                placeholder="Describe the video you want to generate... e.g. 'A red F1 car drifts around a sharp corner in the rain; water splashes high from the tires; neon lights reflect on the wet asphalt.'"
+                className="mt-1.5 min-h-32"
+                disabled={isT2vGenerating}
+              />
+              <p className="text-xs text-slate-400 mt-1">
+                Powered by Google Veo 3.1 Fast — Text-to-Video
+              </p>
+            </div>
+
+            {/* Settings row */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                  Aspect Ratio
+                </label>
+                <Select
+                  value={t2vAspectRatio}
+                  onValueChange={(v) => setT2vAspectRatio(v as '16:9' | '9:16')}
+                  disabled={isT2vGenerating}
+                >
+                  <SelectTrigger className="mt-1.5">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="16:9">16:9 (Landscape)</SelectItem>
+                    <SelectItem value="9:16">9:16 (Portrait)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                  Duration
+                </label>
+                <Select
+                  value={String(t2vDuration)}
+                  onValueChange={(v) => setT2vDuration(Number(v) as 4 | 6 | 8)}
+                  disabled={isT2vGenerating}
+                >
+                  <SelectTrigger className="mt-1.5">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="4">4 seconds</SelectItem>
+                    <SelectItem value="6">6 seconds</SelectItem>
+                    <SelectItem value="8">8 seconds</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                  Resolution
+                </label>
+                <Select
+                  value={t2vResolution}
+                  onValueChange={(v) => setT2vResolution(v as '720p' | '1080p')}
+                  disabled={isT2vGenerating}
+                >
+                  <SelectTrigger className="mt-1.5">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="720p">720p</SelectItem>
+                    <SelectItem value="1080p">1080p</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            {/* Generate button */}
+            <Button
+              onClick={handleGenerateT2V}
+              disabled={isT2vGenerating || !t2vPrompt.trim()}
+              className="w-full"
+              size="lg"
+            >
+              {isT2vGenerating ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  {t2vStatus === 'submitting' ? 'Submitting...' : 'Generating Video...'}
+                </>
+              ) : (
+                <>
+                  <Film className="w-4 h-4 mr-2" />
+                  Generate Video
+                </>
+              )}
+            </Button>
+
+            {/* Status indicator */}
+            {t2vStatus !== 'idle' && (
+              <div
+                className={cn(
+                  'flex items-center gap-2 text-sm font-medium p-3 rounded-lg',
+                  'bg-slate-50 dark:bg-slate-800/50',
+                  t2vStatus === 'complete' ? 'text-emerald-500' :
+                  t2vStatus === 'error' ? 'text-red-500' :
+                  'text-amber-500'
+                )}
+              >
+                {t2vStatus === 'complete' ? (
+                  <CheckCircle2 className="w-4 h-4 shrink-0" />
+                ) : t2vStatus === 'error' ? (
+                  <Film className="w-4 h-4 shrink-0" />
+                ) : (
+                  <Loader2 className="w-4 h-4 shrink-0 animate-spin" />
+                )}
+                <div className="min-w-0">
+                  <span>
+                    {t2vStatus === 'complete' ? 'Complete!' :
+                     t2vStatus === 'error' ? 'Failed' :
+                     t2vStatus === 'submitting' ? 'Submitting...' :
+                     t2vStatus === 'downloading' ? 'Fetching result...' :
+                     'Generating video...'}
+                  </span>
+                  {t2vStatusDetail && isT2vGenerating && (
+                    <p className="text-xs opacity-75 mt-0.5 truncate">{t2vStatusDetail}</p>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Loading animation */}
+            {isT2vGenerating && t2vGeneratedVideos.length === 0 && (
+              <div className="flex flex-col items-center justify-center py-12 text-center space-y-4">
+                <div className="w-16 h-16 rounded-full bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center">
+                  <Loader2 className="w-8 h-8 text-indigo-500 animate-spin" />
+                </div>
+                <div>
+                  <p className="text-base font-medium text-slate-700 dark:text-slate-300">
+                    Generating your video...
+                  </p>
+                  <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
+                    {t2vStatusDetail || 'This may take 1-5 minutes depending on duration and resolution.'}
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {/* Generated videos */}
+            {t2vGeneratedVideos.length > 0 && (
+              <div className="space-y-4">
+                <h3 className="font-semibold text-slate-900 dark:text-white">
+                  Generated Video
+                </h3>
+                {t2vGeneratedVideos.map((url, i) => (
+                  <div key={i} className="space-y-3">
+                    <div className="rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700 bg-black">
+                      <video
+                        src={url}
+                        controls
+                        className="w-full max-h-96"
+                        preload="metadata"
+                      />
+                    </div>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <Button
+                        onClick={() => handleT2VDownload(url, i)}
+                        className="gap-2"
+                        variant="default"
+                        size="sm"
+                      >
+                        <Download className="w-4 h-4" />
+                        Download
+                      </Button>
+                      <Button
+                        onClick={() => window.open(url, '_blank')}
+                        variant="outline"
+                        className="gap-2"
+                        size="sm"
+                      >
+                        <ExternalLink className="w-4 h-4" />
+                        Open in New Tab
+                      </Button>
+                      {t2vSavedVideos[i] && (
+                        <Badge variant="secondary" className="gap-1">
+                          <CheckCircle2 className="w-3 h-3" />
+                          Saved to Cloud
+                        </Badge>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )
+
       default:
         return (
           <div className="text-center py-12">
@@ -1053,7 +1326,7 @@ export function AIStudio() {
             {AI_TOOLS.map((tool) => {
               const Icon = tool.icon
               const isActive = activeTool === tool.id
-              const isAvailable = ['text-generator', 'image-generator', 'hashtag-generator', 'content-ideas', 'caption-rewriter', 'translator'].includes(tool.id)
+              const isAvailable = ['text-generator', 'image-generator', 'video-generator', 'hashtag-generator', 'content-ideas', 'caption-rewriter', 'translator'].includes(tool.id)
 
               return (
                 <button

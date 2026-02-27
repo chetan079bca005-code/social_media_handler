@@ -17,6 +17,7 @@ import {
   Inbox,
   Hash,
   Palette,
+  Film,
   X,
 } from 'lucide-react'
 import { cn } from '../../lib/utils'
@@ -32,6 +33,7 @@ const navItems = [
   { icon: Calendar, label: 'Content Calendar', path: '/calendar' },
   { icon: PlusCircle, label: 'Create Post', path: '/create' },
   { icon: Palette, label: 'Design Studio', path: '/design-studio' },
+  { icon: Film, label: 'Video Studio', path: '/video-studio' },
   { icon: Clock, label: 'Scheduled', path: '/scheduled' },
   { icon: CheckCircle2, label: 'Published', path: '/published' },
   { icon: BarChart3, label: 'Analytics', path: '/analytics' },

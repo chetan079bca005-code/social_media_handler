@@ -9,6 +9,7 @@ import mediaRoutes from './media.routes';
 import analyticsRoutes from './analytics.routes';
 import templateRoutes from './template.routes';
 import searchRoutes from './search.routes';
+import videoRoutes from './video.routes';
 
 const router = Router();
 
@@ -24,6 +25,7 @@ router.use('/workspaces', workspaceRoutes);
 router.use('/social-accounts', socialAccountRoutes);
 router.use('/posts', postRoutes);
 router.use('/ai', aiRoutes);
+router.use('/video', videoRoutes);
 router.use('/media', mediaRoutes);
 router.use('/analytics', analyticsRoutes);
 router.use('/templates', templateRoutes);

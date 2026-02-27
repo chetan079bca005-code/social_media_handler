@@ -20,6 +20,7 @@ import {
   Hashtags,
   ManageWorkspaces,
   DesignStudio,
+  VideoStudio,
   AcceptInvitation,
   Login,
   Register,
@@ -188,6 +189,7 @@ function App() {
             <Route path="templates" element={<Templates />} />
             <Route path="hashtags" element={<Hashtags />} />
             <Route path="design-studio" element={<DesignStudio />} />
+            <Route path="video-studio" element={<VideoStudio />} />
             <Route path="team" element={<Team />} />
             <Route path="settings" element={<SettingsPage />} />
             <Route path="settings/workspaces" element={<ManageWorkspaces />} />

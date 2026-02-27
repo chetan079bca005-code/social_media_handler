@@ -20,3 +20,4 @@ export * from './post.service';
 export * from './ai.service';
 export * from './media.service';
 export * from './analytics.service';
+export * from './video.service';

@@ -288,3 +288,7 @@ export const useAIGenerationStore = create<AIGenerationState>((set) => ({
       error: null,
     }),
 }))
+
+// Re-export stores from separate files
+export { useVideoStore } from './videoStore'
+export { useDraftStore } from './draftStore'

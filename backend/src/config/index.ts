@@ -34,6 +34,10 @@ export const config = {
     password: process.env.REDIS_PASSWORD || undefined,
   },
   
+  // Video AI (Veo 3.1)
+  veoApiKey: process.env.VEO_API_KEY || '',
+  text2videoApiKey: process.env.text2video_MODEL || '',
+
   // AI Services
   ai: {
     apiBaseUrl: process.env.AI_API_BASE_URL || process.env.OPENROUTER_BASE_URL || 'https://api.apifree.ai/v1',
