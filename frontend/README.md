@@ -85,3 +85,10 @@ export default defineConfig([
 - Prefer actionable language over broad descriptions.
 - Keep examples realistic and project-specific.
 - Avoid duplicating information across sections.
+
+## Safe Docs Commit Message Templates
+
+- `docs(frontend): clarify setup instructions`
+- `docs(frontend): add reviewer checklist`
+- `docs(frontend): improve troubleshooting notes`
+- `docs(frontend): document docs-only workflow`
