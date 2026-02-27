@@ -71,3 +71,10 @@ export default defineConfig([
   },
 ])
 ```
+
+## Docs-Only Contribution Protocol
+
+- Keep edits limited to markdown and inline documentation.
+- Avoid touching component logic on documentation contribution days.
+- Prefer one topic per commit for easier review.
+- Ensure headings and bullet formatting stay consistent.
