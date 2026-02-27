@@ -78,3 +78,10 @@ export default defineConfig([
 - Avoid touching component logic on documentation contribution days.
 - Prefer one topic per commit for easier review.
 - Ensure headings and bullet formatting stay consistent.
+
+## Documentation Comment Style
+
+- Write short, direct notes that describe intent.
+- Prefer actionable language over broad descriptions.
+- Keep examples realistic and project-specific.
+- Avoid duplicating information across sections.
