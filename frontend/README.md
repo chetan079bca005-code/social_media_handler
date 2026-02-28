@@ -113,3 +113,10 @@ export default defineConfig([
 - `git diff --name-only --cached`
 - `git log --oneline -6`
 - `git push origin main`
+
+## Safe Reviewer Checklist
+
+- Confirm update improves clarity for contributors.
+- Confirm wording is neutral and non-breaking.
+- Confirm links, headings, and markdown render correctly.
+- Confirm commit remains README-only.
