@@ -106,3 +106,10 @@ export default defineConfig([
 - Prefer 4-10 line additions for small documentation updates.
 - Avoid mixing formatting cleanup with new guidance.
 - Keep commit titles explicit and searchable.
+
+## Docs-Only Pre-Push Commands
+
+- `git status --short`
+- `git diff --name-only --cached`
+- `git log --oneline -6`
+- `git push origin main`
