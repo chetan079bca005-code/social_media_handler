@@ -99,3 +99,10 @@ export default defineConfig([
 - Confirm bullets stay concise and actionable.
 - Verify examples match current project setup.
 - Ensure no code files are included in the commit.
+
+## Docs Commit Splitting Guidance
+
+- One topic per commit.
+- Prefer 4-10 line additions for small documentation updates.
+- Avoid mixing formatting cleanup with new guidance.
+- Keep commit titles explicit and searchable.
