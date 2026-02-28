@@ -92,3 +92,10 @@ export default defineConfig([
 - `docs(frontend): add reviewer checklist`
 - `docs(frontend): improve troubleshooting notes`
 - `docs(frontend): document docs-only workflow`
+
+## Docs Review Quick Pass
+
+- Check heading hierarchy is consistent.
+- Confirm bullets stay concise and actionable.
+- Verify examples match current project setup.
+- Ensure no code files are included in the commit.
