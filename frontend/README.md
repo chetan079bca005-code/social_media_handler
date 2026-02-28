@@ -120,3 +120,10 @@ export default defineConfig([
 - Confirm wording is neutral and non-breaking.
 - Confirm links, headings, and markdown render correctly.
 - Confirm commit remains README-only.
+
+## Docs Handoff Note Format
+
+- What changed:
+- Why it changed:
+- Files touched (README only):
+- Suggested follow-up:
