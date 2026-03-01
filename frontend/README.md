@@ -155,3 +155,10 @@ export default defineConfig([
 - Add a short reviewer summary at the top.
 - Mark optional follow-ups separately from required edits.
 - Resolve wording comments before formatting-only tweaks.
+
+## Docs-Only Safety Guardrails
+
+- Do not stage files outside README scope.
+- Recheck staged files before every commit.
+- Keep commit content additive and non-breaking.
+- Avoid introducing policy statements without team review.
