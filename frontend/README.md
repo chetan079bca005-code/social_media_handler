@@ -127,3 +127,10 @@ export default defineConfig([
 - Why it changed:
 - Files touched (README only):
 - Suggested follow-up:
+
+## Docs Handoff Checklist
+
+- Mention exactly which README section was updated.
+- Include one-line reason for the wording change.
+- Confirm no non-markdown files were staged.
+- Keep handoff note concise and reviewer-friendly.
