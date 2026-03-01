@@ -162,3 +162,10 @@ export default defineConfig([
 - Recheck staged files before every commit.
 - Keep commit content additive and non-breaking.
 - Avoid introducing policy statements without team review.
+
+## Daily Docs Contribution Log Format
+
+- Date and contribution count:
+- Section added or updated:
+- Validation command used:
+- Push status and branch:
