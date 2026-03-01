@@ -141,3 +141,10 @@ export default defineConfig([
 - Prefer specific terms over generic wording.
 - Keep bullets short enough for quick scanning.
 - Remove duplicate guidance when adding new notes.
+
+## Docs Update Naming Pattern
+
+- Start with `docs(frontend):` for frontend README changes.
+- Keep subject line under 72 characters when possible.
+- Make message searchable by using section keywords.
+- Avoid vague commit subjects like "update docs".
