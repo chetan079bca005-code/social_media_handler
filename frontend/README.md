@@ -148,3 +148,10 @@ export default defineConfig([
 - Keep subject line under 72 characters when possible.
 - Make message searchable by using section keywords.
 - Avoid vague commit subjects like "update docs".
+
+## Docs Review Turnaround Guidance
+
+- Keep each docs PR focused on one theme.
+- Add a short reviewer summary at the top.
+- Mark optional follow-ups separately from required edits.
+- Resolve wording comments before formatting-only tweaks.
