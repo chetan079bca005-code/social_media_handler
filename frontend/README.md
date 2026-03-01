@@ -134,3 +134,10 @@ export default defineConfig([
 - Include one-line reason for the wording change.
 - Confirm no non-markdown files were staged.
 - Keep handoff note concise and reviewer-friendly.
+
+## Docs Wording Quality Checks
+
+- Use imperative style for action steps.
+- Prefer specific terms over generic wording.
+- Keep bullets short enough for quick scanning.
+- Remove duplicate guidance when adding new notes.
