@@ -183,3 +183,10 @@ export default defineConfig([
 - Add one assumption line when guidance depends on context.
 - Keep optional guidance clearly marked as optional.
 - Avoid absolute terms unless they are required policy.
+
+## Docs Conflict-Avoidance Checklist
+
+- Append new sections near related guidance blocks.
+- Avoid reordering existing headings without necessity.
+- Keep line edits localized to one logical area.
+- Re-run a quick diff before commit to confirm scope.
