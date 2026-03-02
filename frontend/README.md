@@ -176,3 +176,10 @@ export default defineConfig([
 - Commit message matches section intent.
 - Markdown renders cleanly with headings and bullets.
 - No unrelated formatting churn is included.
+
+## Docs Ambiguity Resolution Notes
+
+- Prefer explicit examples when wording can be interpreted multiple ways.
+- Add one assumption line when guidance depends on context.
+- Keep optional guidance clearly marked as optional.
+- Avoid absolute terms unless they are required policy.
