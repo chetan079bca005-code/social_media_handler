@@ -169,3 +169,10 @@ export default defineConfig([
 - Section added or updated:
 - Validation command used:
 - Push status and branch:
+
+## Docs Merge-Ready Checklist
+
+- Scope stays limited to README updates.
+- Commit message matches section intent.
+- Markdown renders cleanly with headings and bullets.
+- No unrelated formatting churn is included.
