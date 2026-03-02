@@ -190,3 +190,10 @@ export default defineConfig([
 - Avoid reordering existing headings without necessity.
 - Keep line edits localized to one logical area.
 - Re-run a quick diff before commit to confirm scope.
+
+## Docs Publication Note Template
+
+- Audience:
+- Key update:
+- Impact on contributors:
+- Follow-up required:
