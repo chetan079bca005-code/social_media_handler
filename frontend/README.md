@@ -204,3 +204,10 @@ export default defineConfig([
 - Confirm bullets are actionable and concise.
 - Confirm update does not alter implementation guidance.
 - Confirm staged files are documentation-only.
+
+## Docs Release Note Checklist
+
+- Summarize the change in one sentence.
+- Capture contributor-facing impact only.
+- Add any dependency on future docs updates.
+- Keep references limited to README context.
