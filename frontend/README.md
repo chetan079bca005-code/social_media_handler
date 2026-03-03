@@ -197,3 +197,10 @@ export default defineConfig([
 - Key update:
 - Impact on contributors:
 - Follow-up required:
+
+## Docs Quality Gate
+
+- Confirm section title is specific and unique.
+- Confirm bullets are actionable and concise.
+- Confirm update does not alter implementation guidance.
+- Confirm staged files are documentation-only.
