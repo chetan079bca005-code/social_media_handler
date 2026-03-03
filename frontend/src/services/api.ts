@@ -561,7 +561,7 @@ export const templatesApi = {
 
   update: (id: string, data: any) =>
     request<{ success: boolean; data: { template: any } }>({
-      method: 'PATCH',
+      method: 'PUT',
       url: `/templates/${id}`,
       data,
     }),

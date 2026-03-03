@@ -421,7 +421,10 @@ export function Header({ onMenuClick, showMenuButton }: HeaderProps) {
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem
-                onClick={logout}
+                onClick={async () => {
+                  try { await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' }); } catch {}
+                  logout();
+                }}
                 className="cursor-pointer text-red-600 dark:text-red-400 focus:text-red-600 dark:focus:text-red-400"
               >
                 <LogOut className="w-4 h-4 mr-2" />

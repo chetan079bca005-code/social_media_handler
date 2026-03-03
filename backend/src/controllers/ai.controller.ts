@@ -23,8 +23,8 @@ export const generateContent = asyncHandler(async (req: AuthRequest, res: Respon
   }
 
   // Track usage
-  if (req.workspace?.id && result.usage) {
-    await aiService.trackAIUsage(req.workspace.id, 'text', result.usage.totalTokens);
+  if (req.user?.id && result.usage) {
+    await aiService.trackAIUsage(req.user.id, 'text', result.usage.totalTokens);
   }
 
   sendSuccess(res, { content: result.data, usage: result.usage }, 'Content generated');
@@ -42,8 +42,8 @@ export const generateVariations = asyncHandler(async (req: AuthRequest, res: Res
     return sendError(res, result.error || 'Generation failed', 500);
   }
 
-  if (req.workspace?.id && result.usage) {
-    await aiService.trackAIUsage(req.workspace.id, 'text', result.usage.totalTokens);
+  if (req.user?.id && result.usage) {
+    await aiService.trackAIUsage(req.user.id, 'text', result.usage.totalTokens);
   }
 
   sendSuccess(res, { variations: result.data, usage: result.usage }, 'Variations generated');
@@ -62,8 +62,8 @@ export const improveContent = asyncHandler(async (req: AuthRequest, res: Respons
     return sendError(res, result.error || 'Improvement failed', 500);
   }
 
-  if (req.workspace?.id && result.usage) {
-    await aiService.trackAIUsage(req.workspace.id, 'text', result.usage.totalTokens);
+  if (req.user?.id && result.usage) {
+    await aiService.trackAIUsage(req.user.id, 'text', result.usage.totalTokens);
   }
 
   sendSuccess(res, { content: result.data, usage: result.usage }, 'Content improved');
@@ -90,8 +90,8 @@ export const generateHashtags = asyncHandler(async (req: AuthRequest, res: Respo
     }, 'Hashtag generation failed');
   }
 
-  if (req.workspace?.id && result.usage) {
-    await aiService.trackAIUsage(req.workspace.id, 'text', result.usage.totalTokens);
+  if (req.user?.id && result.usage) {
+    await aiService.trackAIUsage(req.user.id, 'text', result.usage.totalTokens);
   }
 
   sendSuccess(res, { hashtags: result.data, usage: result.usage }, 'Hashtags generated');
@@ -118,16 +118,13 @@ export const getImageResult = asyncHandler(async (req: AuthRequest, res: Respons
   const requestIdParam = req.params.requestId;
   const requestId = Array.isArray(requestIdParam) ? requestIdParam[0] : requestIdParam;
 
-  console.log('Fetching image result for requestId:', requestId);
   const result = await aiService.getImageEditResult(requestId);
 
   if (!result.success) {
-    console.error('Image result failed:', result.error);
     return sendError(res, result.error || 'Image result failed', 502);
   }
 
   const data = result.data as { status?: string; images?: string[]; error?: string };
-  console.log('Image result data:', JSON.stringify(data, null, 2));
 
   // Check for success status (already normalized to 'success' by service)
   const isSuccessStatus = data.status === 'success';
@@ -135,12 +132,9 @@ export const getImageResult = asyncHandler(async (req: AuthRequest, res: Respons
   const hasUser = !!req.user?.id;
   const hasImages = Array.isArray(data.images) && data.images.length > 0;
 
-  console.log('Status check:', { isSuccessStatus, hasWorkspace, hasUser, hasImages, status: data.status });
-
-  if (isSuccessStatus && hasWorkspace && hasUser) {
-    await aiService.trackAIUsage(req.workspace!.id, 'image', 1);
-    if (hasImages) {
-      console.log('Saving generated images to workspace:', req.workspace!.id);
+  if (isSuccessStatus && hasUser) {
+    await aiService.trackAIUsage(req.user!.id, 'image', 1);
+    if (hasImages && hasWorkspace) {
       await aiService.saveGeneratedImages({
         workspaceId: req.workspace!.id,
         userId: req.user!.id,
@@ -148,7 +142,6 @@ export const getImageResult = asyncHandler(async (req: AuthRequest, res: Respons
         prompt: 'AI image edit',
         model: process.env.AI_IMAGE_MODEL || 'google/nano-banana-pro/edit',
       });
-      console.log('Images saved successfully');
     }
   }
 

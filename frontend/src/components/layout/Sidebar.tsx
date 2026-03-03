@@ -29,7 +29,7 @@ interface SidebarProps {
 }
 
 const navItems = [
-  { icon: LayoutDashboard, label: 'Dashboard', path: '/' },
+  { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard' },
   { icon: Calendar, label: 'Content Calendar', path: '/calendar' },
   { icon: PlusCircle, label: 'Create Post', path: '/create' },
   { icon: Palette, label: 'Design Studio', path: '/design-studio' },

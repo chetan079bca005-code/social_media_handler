@@ -47,8 +47,10 @@ app.use(cors({
     if (!origin) return callback(null, true);
     if (allowedOrigins.includes(origin)) {
       callback(null, true);
+    } else if (config.nodeEnv !== 'production') {
+      callback(null, true); // Allow all origins in development only
     } else {
-      callback(null, true); // Allow all origins in development
+      callback(new Error('Not allowed by CORS'));
     }
   },
   credentials: true,

@@ -125,6 +125,19 @@ export function validateConfig(): void {
   const missing = required.filter(key => !process.env[key]);
   
   if (missing.length > 0) {
-    console.warn(`Warning: Missing environment variables: ${missing.join(', ')}`);
+    if (process.env.NODE_ENV === 'production') {
+      throw new Error(`FATAL: Missing required environment variables in production: ${missing.join(', ')}`);
+    }
+    console.warn(`⚠️ WARNING: Missing environment variables: ${missing.join(', ')}. Using defaults (NOT safe for production).`);
+  }
+
+  // Extra check: warn about default secrets even if env vars are "set"
+  if (process.env.NODE_ENV === 'production') {
+    if (config.jwt.secret === 'default-secret' || config.jwt.refreshSecret === 'default-refresh-secret') {
+      throw new Error('FATAL: Default JWT secrets detected in production. Set JWT_SECRET and JWT_REFRESH_SECRET.');
+    }
+    if (config.encryptionKey === 'default-encryption-key-32chars!') {
+      throw new Error('FATAL: Default encryption key detected in production. Set ENCRYPTION_KEY.');
+    }
   }
 }

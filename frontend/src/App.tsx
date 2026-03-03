@@ -2,6 +2,7 @@ import React, { useEffect } from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { Toaster } from 'react-hot-toast'
+import { I18nProvider } from './lib/i18n'
 import { MainLayout, AuthLayout } from './components/layout'
 import {
   Dashboard,
@@ -141,6 +142,7 @@ function App() {
   }, [token, login, logout, setLoading])
 
   return (
+    <I18nProvider>
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
         <Routes>
@@ -226,6 +228,7 @@ function App() {
         }}
       />
     </QueryClientProvider>
+    </I18nProvider>
   )
 }
 

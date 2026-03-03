@@ -796,17 +796,20 @@ export function DesignStudio() {
     if (!fabricCanvasRef.current) return
     
     const json = JSON.stringify(fabricCanvasRef.current.toJSON())
-    const newHistory = history.slice(0, historyIndex + 1)
-    newHistory.push({ json, timestamp: Date.now() })
     
-    // Limit history to 50 states
-    if (newHistory.length > 50) {
-      newHistory.shift()
-    }
-    
-    setHistory(newHistory)
-    setHistoryIndex(newHistory.length - 1)
-  }, [history, historyIndex])
+    setHistory(prev => {
+      const newHistory = prev.slice(0, historyIndex + 1)
+      newHistory.push({ json, timestamp: Date.now() })
+      
+      // Limit history to 50 states
+      if (newHistory.length > 50) {
+        newHistory.shift()
+      }
+      
+      setHistoryIndex(newHistory.length - 1)
+      return newHistory
+    })
+  }, [historyIndex])
 
   // ============ Update properties from selected object ============
   const updatePropertiesFromObject = useCallback((obj: fabric.FabricObject | undefined) => {
@@ -3587,6 +3590,40 @@ export function DesignStudio() {
     setShowGrid(!showGrid)
   }, [showGrid])
 
+  // ============ Auto-Save Recovery Check ============
+  useEffect(() => {
+    try {
+      const autosave = localStorage.getItem('designStudio_autosave')
+      if (autosave) {
+        const data = JSON.parse(autosave)
+        // Only offer recovery if saved within last 24 hours
+        if (data.savedAt && Date.now() - new Date(data.savedAt).getTime() < 24 * 60 * 60 * 1000) {
+          const recover = window.confirm('You have unsaved work from a previous session. Would you like to recover it?')
+          if (recover && data.canvas) {
+            setShowTemplateModal(false)
+            if (data.canvasSize) {
+              setCanvasSize(data.canvasSize)
+              initializeCanvas(data.canvasSize.width, data.canvasSize.height)
+            }
+            if (data.designName) setDesignName(data.designName)
+            setTimeout(() => {
+              if (fabricCanvasRef.current) {
+                fabricCanvasRef.current.loadFromJSON(JSON.stringify(data.canvas)).then(() => {
+                  fabricCanvasRef.current?.renderAll()
+                  updateLayers()
+                  saveToHistory()
+                  toast.success('Previous design recovered!')
+                })
+              }
+            }, 300)
+          }
+        }
+      }
+    } catch {
+      // Ignore recovery errors silently
+    }
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
   // ============ Keyboard Shortcuts ============
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -3680,7 +3717,7 @@ export function DesignStudio() {
   return (
     <TooltipProvider>
       <div
-        className="h-screen min-h-screen flex flex-col bg-slate-100 dark:bg-slate-950 overflow-hidden overscroll-none"
+        className="design-studio h-screen min-h-screen flex flex-col bg-slate-100 dark:bg-slate-950 overflow-hidden overscroll-none"
         style={{ height: '100dvh' }}
       >
         {/* Template Selection Modal */}
@@ -3787,7 +3824,7 @@ export function DesignStudio() {
                                 }}
                               >
                                 <span className="text-xs text-slate-400">
-                                  {template.width} Ã— {template.height}
+                                  {template.width} × {template.height}
                                 </span>
                               </div>
                               <p className="text-sm font-medium text-slate-700 dark:text-slate-300 group-hover:text-indigo-600 dark:group-hover:text-indigo-400">
@@ -4131,10 +4168,11 @@ export function DesignStudio() {
                 initial={{ width: 0, opacity: 0 }}
                 animate={{ width: 280, opacity: 1 }}
                 exit={{ width: 0, opacity: 0 }}
+                transition={{ duration: 0.2, ease: 'easeOut' }}
                 className="bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-700 overflow-hidden shrink-0 h-full min-h-0 absolute sm:relative left-12 sm:left-0 z-30 sm:z-auto shadow-xl sm:shadow-none"
               >
                 <div
-                  className="w-70 h-full overflow-y-auto p-4 overscroll-contain scroll-smooth"
+                  className="w-70 h-full overflow-y-auto p-4 overscroll-contain scroll-smooth panel-content"
                   style={{ scrollbarWidth: 'thin', scrollbarColor: '#cbd5e1 transparent' }}
                   onWheel={(e) => e.stopPropagation()}
                 >
@@ -6149,7 +6187,7 @@ export function DesignStudio() {
                     </div>
                   )}
 
-                  {activePanel === 'templates' && (
+                  {activePanel === 'keyboard-shortcuts-only' && (
                     <div className="space-y-4">
                       <h3 className="font-semibold text-slate-900 dark:text-white">Templates</h3>
                       <Button onClick={() => setShowTemplateModal(true)} className="w-full">
@@ -6172,11 +6210,33 @@ export function DesignStudio() {
                 showGrid && 'bg-size-[20px_20px] bg-[linear-gradient(to_right,#e2e8f0_1px,transparent_1px),linear-gradient(to_bottom,#e2e8f0_1px,transparent_1px)]'
               )}
               style={{ backgroundColor: '#f1f5f9' }}
-              onClick={handleCanvasClick}
-              onMouseMove={handleCanvasMouseMove}
             >
-              <div className="shadow-2xl rounded-lg overflow-hidden relative" style={{ backgroundColor: '#fff' }}>
+              <div className="shadow-2xl rounded-lg overflow-hidden relative canvas-wrapper" style={{ backgroundColor: '#fff' }}>
                 <canvas ref={canvasRef} />
+              </div>
+            </div>
+
+            {/* Bottom Status Bar */}
+            <div className="h-8 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-700 flex items-center justify-between px-4 text-[11px] text-slate-500 dark:text-slate-400 select-none">
+              <div className="flex items-center gap-3">
+                <span>{canvasSize.width} × {canvasSize.height}px</span>
+                <span className="text-slate-300 dark:text-slate-600">|</span>
+                <span>{Math.round(zoom * 100)}% zoom</span>
+                <span className="text-slate-300 dark:text-slate-600">|</span>
+                <span>{layers.length} object{layers.length !== 1 ? 's' : ''}</span>
+              </div>
+              <div className="flex items-center gap-3">
+                <span>Page {currentPageIndex + 1} of {pages.length}</span>
+                {selectedObject && (
+                  <>
+                    <span className="text-slate-300 dark:text-slate-600">|</span>
+                    <span className="text-indigo-600 dark:text-indigo-400 font-medium">
+                      {selectedObject.type === 'i-text' || selectedObject.type === 'textbox' ? 'Text' :
+                       selectedObject.type === 'image' ? 'Image' :
+                       selectedObject.type?.charAt(0).toUpperCase() + (selectedObject.type?.slice(1) || '')} selected
+                    </span>
+                  </>
+                )}
               </div>
             </div>
             
@@ -6264,6 +6324,309 @@ export function DesignStudio() {
               </div>
             </div>
           </div>
+
+          {/* Right Side Properties Panel */}
+          <AnimatePresence>
+            {selectedObject && (
+              <motion.div
+                initial={{ width: 0, opacity: 0 }}
+                animate={{ width: 260, opacity: 1 }}
+                exit={{ width: 0, opacity: 0 }}
+                transition={{ duration: 0.2 }}
+                className="hidden lg:block bg-white dark:bg-slate-900 border-l border-slate-200 dark:border-slate-700 overflow-hidden shrink-0 h-full"
+              >
+                <div className="w-[260px] h-full overflow-y-auto p-4" style={{ scrollbarWidth: 'thin' }}>
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-sm font-bold text-slate-900 dark:text-white">Properties</h3>
+                    <button onClick={() => { fabricCanvasRef.current?.discardActiveObject(); fabricCanvasRef.current?.renderAll(); setSelectedObject(null); }} className="p-1 hover:bg-slate-100 dark:hover:bg-slate-800 rounded">
+                      <X className="w-4 h-4 text-slate-400" />
+                    </button>
+                  </div>
+
+                  {/* Position & Size */}
+                  <div className="mb-4 pb-4 border-b border-slate-100 dark:border-slate-800">
+                    <p className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">Position & Size</p>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <label className="text-[10px] text-slate-400 font-medium">X</label>
+                        <Input
+                          type="number"
+                          value={Math.round(selectedObject.left || 0)}
+                          onChange={(e) => { selectedObject.set('left', Number(e.target.value)); fabricCanvasRef.current?.renderAll(); }}
+                          className="h-7 text-xs"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-[10px] text-slate-400 font-medium">Y</label>
+                        <Input
+                          type="number"
+                          value={Math.round(selectedObject.top || 0)}
+                          onChange={(e) => { selectedObject.set('top', Number(e.target.value)); fabricCanvasRef.current?.renderAll(); }}
+                          className="h-7 text-xs"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-[10px] text-slate-400 font-medium">W</label>
+                        <Input
+                          type="number"
+                          value={Math.round((selectedObject.width || 0) * (selectedObject.scaleX || 1))}
+                          onChange={(e) => { selectedObject.set('scaleX', Number(e.target.value) / (selectedObject.width || 1)); fabricCanvasRef.current?.renderAll(); }}
+                          className="h-7 text-xs"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-[10px] text-slate-400 font-medium">H</label>
+                        <Input
+                          type="number"
+                          value={Math.round((selectedObject.height || 0) * (selectedObject.scaleY || 1))}
+                          onChange={(e) => { selectedObject.set('scaleY', Number(e.target.value) / (selectedObject.height || 1)); fabricCanvasRef.current?.renderAll(); }}
+                          className="h-7 text-xs"
+                        />
+                      </div>
+                    </div>
+                    <div className="mt-2">
+                      <label className="text-[10px] text-slate-400 font-medium">Rotation</label>
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="range"
+                          min="0"
+                          max="360"
+                          value={Math.round(selectedObject.angle || 0)}
+                          onChange={(e) => { selectedObject.set('angle', Number(e.target.value)); fabricCanvasRef.current?.renderAll(); }}
+                          className="flex-1 h-1.5 accent-indigo-600 rounded-full appearance-none bg-slate-200 dark:bg-slate-700 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3.5 [&::-webkit-slider-thumb]:h-3.5 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-indigo-600 [&::-webkit-slider-thumb]:shadow-md [&::-webkit-slider-thumb]:cursor-pointer"
+                        />
+                        <span className="text-xs text-slate-500 w-8 text-right">{Math.round(selectedObject.angle || 0)}°</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Opacity */}
+                  <div className="mb-4 pb-4 border-b border-slate-100 dark:border-slate-800">
+                    <p className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">Opacity</p>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="range"
+                        min="0"
+                        max="100"
+                        value={opacity}
+                        onChange={(e) => {
+                          const val = Number(e.target.value)
+                          setOpacity(val)
+                          selectedObject.set('opacity', val / 100)
+                          fabricCanvasRef.current?.renderAll()
+                        }}
+                        className="flex-1 h-1.5 accent-indigo-600 rounded-full appearance-none bg-slate-200 dark:bg-slate-700 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3.5 [&::-webkit-slider-thumb]:h-3.5 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-indigo-600 [&::-webkit-slider-thumb]:shadow-md [&::-webkit-slider-thumb]:cursor-pointer"
+                      />
+                      <span className="text-xs text-slate-500 w-8 text-right">{opacity}%</span>
+                    </div>
+                  </div>
+
+                  {/* Fill & Stroke (non-text objects) */}
+                  {selectedObject.type !== 'i-text' && selectedObject.type !== 'textbox' && selectedObject.type !== 'text' && selectedObject.type !== 'image' && (
+                    <div className="mb-4 pb-4 border-b border-slate-100 dark:border-slate-800">
+                      <p className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">Fill & Stroke</p>
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between">
+                          <label className="text-xs text-slate-600 dark:text-slate-300">Fill</label>
+                          <div className="flex items-center gap-1.5">
+                            <input
+                              type="color"
+                              value={fillColor}
+                              onChange={(e) => {
+                                setFillColor(e.target.value)
+                                selectedObject.set('fill', e.target.value)
+                                fabricCanvasRef.current?.renderAll()
+                              }}
+                              className="w-7 h-7 rounded-md border border-slate-200 dark:border-slate-700 cursor-pointer"
+                            />
+                            <span className="text-[10px] text-slate-400 font-mono">{fillColor}</span>
+                          </div>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <label className="text-xs text-slate-600 dark:text-slate-300">Stroke</label>
+                          <div className="flex items-center gap-1.5">
+                            <input
+                              type="color"
+                              value={strokeColor}
+                              onChange={(e) => {
+                                setStrokeColor(e.target.value)
+                                selectedObject.set('stroke', e.target.value)
+                                fabricCanvasRef.current?.renderAll()
+                              }}
+                              className="w-7 h-7 rounded-md border border-slate-200 dark:border-slate-700 cursor-pointer"
+                            />
+                            <span className="text-[10px] text-slate-400 font-mono">{strokeColor}</span>
+                          </div>
+                        </div>
+                        <div>
+                          <label className="text-xs text-slate-600 dark:text-slate-300">Stroke Width</label>
+                          <div className="flex items-center gap-2">
+                            <input
+                              type="range"
+                              min="0"
+                              max="20"
+                              value={strokeWidth}
+                              onChange={(e) => {
+                                const val = Number(e.target.value)
+                                setStrokeWidth(val)
+                                selectedObject.set('strokeWidth', val)
+                                fabricCanvasRef.current?.renderAll()
+                              }}
+                              className="flex-1 h-1.5 accent-indigo-600 rounded-full appearance-none bg-slate-200 dark:bg-slate-700 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3.5 [&::-webkit-slider-thumb]:h-3.5 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-indigo-600 [&::-webkit-slider-thumb]:shadow-md [&::-webkit-slider-thumb]:cursor-pointer"
+                            />
+                            <span className="text-xs text-slate-500 w-5 text-right">{strokeWidth}</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Text Properties (text objects only) */}
+                  {(selectedObject.type === 'i-text' || selectedObject.type === 'textbox' || selectedObject.type === 'text') && (
+                    <div className="mb-4 pb-4 border-b border-slate-100 dark:border-slate-800">
+                      <p className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">Typography</p>
+                      <div className="space-y-2">
+                        <select
+                          value={fontFamily}
+                          onChange={(e) => {
+                            setFontFamily(e.target.value);
+                            (selectedObject as fabric.IText).set('fontFamily', e.target.value)
+                            fabricCanvasRef.current?.renderAll()
+                          }}
+                          className="w-full h-8 text-xs rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-2"
+                        >
+                          {FONT_FAMILIES.map(f => <option key={f} value={f}>{f}</option>)}
+                        </select>
+                        <div className="flex items-center gap-1.5">
+                          <Input
+                            type="number"
+                            value={fontSize}
+                            onChange={(e) => {
+                              const val = Number(e.target.value);
+                              setFontSize(val);
+                              (selectedObject as fabric.IText).set('fontSize', val)
+                              fabricCanvasRef.current?.renderAll()
+                            }}
+                            className="h-7 text-xs w-16"
+                          />
+                          <div className="flex items-center gap-0.5">
+                            <button
+                              onClick={() => { setIsBold(!isBold); (selectedObject as fabric.IText).set('fontWeight', !isBold ? 'bold' : 'normal'); fabricCanvasRef.current?.renderAll(); }}
+                              className={cn('w-7 h-7 rounded flex items-center justify-center text-xs font-bold transition-colors', isBold ? 'bg-indigo-100 text-indigo-600 dark:bg-indigo-900/50' : 'hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500')}
+                            >B</button>
+                            <button
+                              onClick={() => { setIsItalic(!isItalic); (selectedObject as fabric.IText).set('fontStyle', !isItalic ? 'italic' : 'normal'); fabricCanvasRef.current?.renderAll(); }}
+                              className={cn('w-7 h-7 rounded flex items-center justify-center text-xs italic transition-colors', isItalic ? 'bg-indigo-100 text-indigo-600 dark:bg-indigo-900/50' : 'hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500')}
+                            >I</button>
+                            <button
+                              onClick={() => { setIsUnderline(!isUnderline); (selectedObject as fabric.IText).set('underline', !isUnderline); fabricCanvasRef.current?.renderAll(); }}
+                              className={cn('w-7 h-7 rounded flex items-center justify-center text-xs underline transition-colors', isUnderline ? 'bg-indigo-100 text-indigo-600 dark:bg-indigo-900/50' : 'hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500')}
+                            >U</button>
+                          </div>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <label className="text-xs text-slate-600 dark:text-slate-300">Color</label>
+                          <div className="flex items-center gap-1.5">
+                            <input
+                              type="color"
+                              value={textColor}
+                              onChange={(e) => {
+                                setTextColor(e.target.value);
+                                (selectedObject as fabric.IText).set('fill', e.target.value)
+                                fabricCanvasRef.current?.renderAll()
+                              }}
+                              className="w-7 h-7 rounded-md border border-slate-200 dark:border-slate-700 cursor-pointer"
+                            />
+                            <span className="text-[10px] text-slate-400 font-mono">{textColor}</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Quick Actions */}
+                  <div>
+                    <p className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">Actions</p>
+                    <div className="grid grid-cols-4 gap-1">
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <button onClick={duplicateObject} className="h-9 rounded-lg flex items-center justify-center hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 transition-colors">
+                            <Copy className="w-4 h-4" />
+                          </button>
+                        </TooltipTrigger>
+                        <TooltipContent>Duplicate</TooltipContent>
+                      </Tooltip>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <button onClick={deleteSelected} className="h-9 rounded-lg flex items-center justify-center hover:bg-red-50 dark:hover:bg-red-900/20 text-red-500 transition-colors">
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </TooltipTrigger>
+                        <TooltipContent>Delete</TooltipContent>
+                      </Tooltip>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <button onClick={() => bringToFront()} className="h-9 rounded-lg flex items-center justify-center hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 transition-colors">
+                            <ArrowUpToLine className="w-4 h-4" />
+                          </button>
+                        </TooltipTrigger>
+                        <TooltipContent>Bring to Front</TooltipContent>
+                      </Tooltip>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <button onClick={() => sendToBack()} className="h-9 rounded-lg flex items-center justify-center hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 transition-colors">
+                            <ArrowDownToLine className="w-4 h-4" />
+                          </button>
+                        </TooltipTrigger>
+                        <TooltipContent>Send to Back</TooltipContent>
+                      </Tooltip>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <button onClick={() => { if (selectedObject) { selectedObject.set('flipX', !selectedObject.flipX); fabricCanvasRef.current?.renderAll(); } }} className="h-9 rounded-lg flex items-center justify-center hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 transition-colors">
+                            <FlipHorizontal2 className="w-4 h-4" />
+                          </button>
+                        </TooltipTrigger>
+                        <TooltipContent>Flip Horizontal</TooltipContent>
+                      </Tooltip>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <button onClick={() => { if (selectedObject) { selectedObject.set('flipY', !selectedObject.flipY); fabricCanvasRef.current?.renderAll(); } }} className="h-9 rounded-lg flex items-center justify-center hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 transition-colors">
+                            <FlipVertical2 className="w-4 h-4" />
+                          </button>
+                        </TooltipTrigger>
+                        <TooltipContent>Flip Vertical</TooltipContent>
+                      </Tooltip>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <button
+                            onClick={() => {
+                              if (selectedObject) {
+                                selectedObject.set('selectable', !selectedObject.selectable)
+                                fabricCanvasRef.current?.renderAll()
+                                updateLayers()
+                              }
+                            }}
+                            className="h-9 rounded-lg flex items-center justify-center hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 transition-colors"
+                          >
+                            {selectedObject.selectable === false ? <Lock className="w-4 h-4" /> : <Unlock className="w-4 h-4" />}
+                          </button>
+                        </TooltipTrigger>
+                        <TooltipContent>{selectedObject.selectable === false ? 'Unlock' : 'Lock'}</TooltipContent>
+                      </Tooltip>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <button onClick={alignCenter} className="h-9 rounded-lg flex items-center justify-center hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 transition-colors">
+                            <AlignHorizontalJustifyCenter className="w-4 h-4" />
+                          </button>
+                        </TooltipTrigger>
+                        <TooltipContent>Center</TooltipContent>
+                      </Tooltip>
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
 
         {/* ============ NEW Phase 10: Video Editor Dialog ============ */}
@@ -6294,7 +6657,7 @@ export function DesignStudio() {
                   <video
                     ref={videoRef}
                     src={videoUrl}
-                    className="w-full max-h-90ct-contain"
+                    className="w-full max-h-[360px] object-contain"
                     onLoadedMetadata={(e) => {
                       const video = e.currentTarget
                       setVideoDuration(video.duration)

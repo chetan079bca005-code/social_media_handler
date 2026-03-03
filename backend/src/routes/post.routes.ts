@@ -12,7 +12,7 @@ router.use(authenticate);
 const createPostSchema = z.object({
   title: z.string().max(200).optional(),
   content: z.string().min(1).max(10000),
-  type: z.enum(['TEXT', 'IMAGE', 'VIDEO', 'CAROUSEL', 'STORY', 'REEL']),
+  type: z.enum(['TEXT', 'IMAGE', 'VIDEO', 'CAROUSEL', 'STORY', 'REEL', 'LINK']),
   platforms: z.array(z.object({
     socialAccountId: z.string(),
     platformContent: z.string().optional(),
@@ -28,7 +28,7 @@ const createPostSchema = z.object({
 const updatePostSchema = z.object({
   title: z.string().max(200).optional().nullable(),
   content: z.string().min(1).max(10000).optional(),
-  type: z.enum(['TEXT', 'IMAGE', 'VIDEO', 'CAROUSEL', 'STORY', 'REEL']).optional(),
+  type: z.enum(['TEXT', 'IMAGE', 'VIDEO', 'CAROUSEL', 'STORY', 'REEL', 'LINK']).optional(),
   hashtags: z.array(z.string()).optional(),
   scheduledAt: z.string().datetime().optional().nullable(),
   linkUrl: z.string().url().optional().nullable(),

@@ -6,4 +6,5 @@ export * as postController from './post.controller';
 export * as aiController from './ai.controller';
 export * as mediaController from './media.controller';
 export * as analyticsController from './analytics.controller';
+export * as templateController from './template.controller';
 export * as videoController from './video.controller';

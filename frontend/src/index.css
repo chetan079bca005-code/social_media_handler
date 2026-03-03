@@ -288,3 +288,86 @@ input:-webkit-autofill:focus {
   background: linear-gradient(90deg, #1e293b 25%, #334155 50%, #1e293b 75%);
   background-size: 200% 100%;
 }
+
+/* ============ Design Studio Custom Styles ============ */
+
+/* Custom Range Input Styling */
+.design-studio input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 6px;
+  border-radius: 9999px;
+  background: #e2e8f0;
+  outline: none;
+  cursor: pointer;
+}
+
+.dark .design-studio input[type="range"] {
+  background: #334155;
+}
+
+.design-studio input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #6366f1;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+  cursor: pointer;
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+
+.design-studio input[type="range"]::-webkit-slider-thumb:hover {
+  transform: scale(1.15);
+  box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.15), 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+.design-studio input[type="range"]::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #6366f1;
+  border: none;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+  cursor: pointer;
+}
+
+/* Design Studio smooth panel transitions */
+.design-studio .panel-content {
+  animation: panelFadeIn 0.2s ease-out;
+}
+
+@keyframes panelFadeIn {
+  from { opacity: 0; transform: translateX(-8px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+/* Design Studio canvas shadow */
+.design-studio .canvas-wrapper {
+  transition: box-shadow 0.3s ease;
+}
+
+.design-studio .canvas-wrapper:hover {
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15);
+}
+
+/* Design Studio color picker */
+.design-studio input[type="color"] {
+  -webkit-appearance: none;
+  appearance: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.design-studio input[type="color"]::-webkit-color-swatch-wrapper {
+  padding: 2px;
+}
+
+.design-studio input[type="color"]::-webkit-color-swatch {
+  border: none;
+  border-radius: 4px;
+}

@@ -53,12 +53,16 @@ export async function updateUser(userId: string, data: UpdateUserInput): Promise
     updateData.avatarUrl = data.avatarUrl;
   }
 
-  if (data.timezone !== undefined) {
-    updateData.timezone = data.timezone;
-  }
-
-  if (data.language !== undefined) {
-    updateData.language = data.language;
+  // Store timezone/language inside the preferences JSON field (User model has no standalone columns for these)
+  if (data.timezone !== undefined || data.language !== undefined) {
+    const currentPrefs = (user.preferences as Record<string, unknown>) || {};
+    if (data.timezone !== undefined) {
+      currentPrefs.timezone = data.timezone;
+    }
+    if (data.language !== undefined) {
+      currentPrefs.language = data.language;
+    }
+    updateData.preferences = currentPrefs;
   }
   
   if (data.preferences !== undefined) {

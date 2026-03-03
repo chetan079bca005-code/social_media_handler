@@ -15,13 +15,13 @@ const connectAccountSchema = z.object({
   tokenExpiresAt: z.string().datetime().optional(),
   accountName: z.string().min(1),
   accountUsername: z.string().optional(),
-  accountAvatarUrl: z.string().url().optional(),
+  profileImageUrl: z.string().url().optional(),
 });
 
 const updateAccountSchema = z.object({
   accountName: z.string().min(1).optional(),
   accountUsername: z.string().optional(),
-  accountAvatarUrl: z.string().url().optional().nullable(),
+  profileImageUrl: z.string().url().optional().nullable(),
   isActive: z.boolean().optional(),
 });
 
