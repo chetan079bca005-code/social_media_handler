@@ -218,3 +218,10 @@ export default defineConfig([
 - Keep repeated terms aligned with existing wording.
 - Remove overlap with previous checklist items.
 - Keep additions grouped under related headings.
+
+## Docs Publication Sanity Check
+
+- Reconfirm branch is main before push.
+- Verify unpushed commit count matches target.
+- Validate changed file list is README-only.
+- Push and confirm remote update succeeds.
