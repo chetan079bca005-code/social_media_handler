@@ -211,3 +211,10 @@ export default defineConfig([
 - Capture contributor-facing impact only.
 - Add any dependency on future docs updates.
 - Keep references limited to README context.
+
+## Docs Consistency Audit
+
+- Check tone consistency across nearby sections.
+- Keep repeated terms aligned with existing wording.
+- Remove overlap with previous checklist items.
+- Keep additions grouped under related headings.
