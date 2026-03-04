@@ -225,3 +225,12 @@ export default defineConfig([
 - Verify unpushed commit count matches target.
 - Validate changed file list is README-only.
 - Push and confirm remote update succeeds.
+
+## Docs-Only Daily Contribution Pattern
+
+- Contribution 1: update one navigation/index section for discoverability.
+- Contribution 2: add one reviewer-focused checklist or safety note.
+- Contribution 3: add one onboarding-focused quick-start clarification.
+- Contribution 4: add one handoff template for maintainers.
+
+Use this pattern when you want multiple small, safe, and reviewable docs commits in a single day.
