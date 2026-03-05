@@ -23,3 +23,10 @@ Backend service for authentication, social account integration, content operatio
 - Run `git diff --name-only --cached` before every commit.
 - Use explicit commit messages with `docs(backend): ...`.
 - Push each docs commit separately if daily contribution count matters.
+
+## Backend Docs Reviewer Checklist
+
+- Confirm content is operationally accurate for current backend behavior.
+- Confirm no secrets or credential-like strings are introduced.
+- Confirm wording remains implementation-neutral on docs-only days.
+- Confirm commit scope is markdown-only before approval.
