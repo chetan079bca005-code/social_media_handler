@@ -234,3 +234,10 @@ export default defineConfig([
 - Contribution 4: add one handoff template for maintainers.
 
 Use this pattern when you want multiple small, safe, and reviewable docs commits in a single day.
+
+## Frontend Docs Handoff Snapshot
+
+- Section touched:
+- Why this wording changed:
+- Reviewer impact (one line):
+- Follow-up docs action (if any):
