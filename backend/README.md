@@ -30,3 +30,10 @@ Backend service for authentication, social account integration, content operatio
 - Confirm no secrets or credential-like strings are introduced.
 - Confirm wording remains implementation-neutral on docs-only days.
 - Confirm commit scope is markdown-only before approval.
+
+## Backend Docs Maintenance Notes
+
+- Document behavior, not implementation assumptions.
+- Keep environment-variable examples redacted.
+- Prefer concise bullets over long prose blocks.
+- Re-verify staged file scope before every docs push.
