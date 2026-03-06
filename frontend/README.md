@@ -241,3 +241,10 @@ Use this pattern when you want multiple small, safe, and reviewable docs commits
 - Why this wording changed:
 - Reviewer impact (one line):
 - Follow-up docs action (if any):
+
+## Frontend Docs Safety Pass
+
+- Confirm no UI/component source files are staged.
+- Keep wording scoped to contributor guidance only.
+- Validate markdown headings remain in logical order.
+- Keep each docs commit small and independently reviewable.
