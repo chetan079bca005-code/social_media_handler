@@ -37,3 +37,10 @@ Backend service for authentication, social account integration, content operatio
 - Keep environment-variable examples redacted.
 - Prefer concise bullets over long prose blocks.
 - Re-verify staged file scope before every docs push.
+
+## Backend README Update Pattern
+
+- Update one backend documentation topic at a time.
+- Keep risk-oriented reviewer notes short and explicit.
+- Avoid duplicating guidance already covered in root README.
+- Confirm commit scope is markdown-only before push.
