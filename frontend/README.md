@@ -248,3 +248,10 @@ Use this pattern when you want multiple small, safe, and reviewable docs commits
 - Keep wording scoped to contributor guidance only.
 - Validate markdown headings remain in logical order.
 - Keep each docs commit small and independently reviewable.
+
+## Frontend Docs Daily Review Notes
+
+- Note one clarity improvement per commit.
+- Avoid bundling style cleanups with new guidance.
+- Keep bullets action-focused for fast scanning.
+- Recheck staged file names before pushing.
