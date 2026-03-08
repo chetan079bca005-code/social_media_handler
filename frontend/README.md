@@ -255,3 +255,10 @@ Use this pattern when you want multiple small, safe, and reviewable docs commits
 - Avoid bundling style cleanups with new guidance.
 - Keep bullets action-focused for fast scanning.
 - Recheck staged file names before pushing.
+
+## Frontend README Commit Guard
+
+- Keep updates limited to contributor-facing guidance.
+- Avoid framework or runtime claims without verification.
+- Keep markdown structure flat and easy to review.
+- Confirm staged diff includes only `frontend/README.md`.
