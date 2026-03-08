@@ -44,3 +44,10 @@ Backend service for authentication, social account integration, content operatio
 - Keep risk-oriented reviewer notes short and explicit.
 - Avoid duplicating guidance already covered in root README.
 - Confirm commit scope is markdown-only before push.
+
+## Backend Docs-Day Checklist
+
+- Confirm examples avoid secrets and real credentials.
+- Keep wording consistent with backend naming conventions.
+- Keep each docs commit minimal and scoped.
+- Re-run staged file check before pushing.
