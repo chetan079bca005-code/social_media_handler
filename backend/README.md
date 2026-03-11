@@ -51,3 +51,10 @@ Backend service for authentication, social account integration, content operatio
 - Keep wording consistent with backend naming conventions.
 - Keep each docs commit minimal and scoped.
 - Re-run staged file check before pushing.
+
+## Backend Docs Commit Hygiene
+
+- Keep each backend docs update independently reviewable.
+- Use explicit commit subjects with backend scope.
+- Confirm no non-markdown backend files are staged.
+- Keep reviewer-facing notes concise and actionable.
