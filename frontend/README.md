@@ -262,3 +262,10 @@ Use this pattern when you want multiple small, safe, and reviewable docs commits
 - Avoid framework or runtime claims without verification.
 - Keep markdown structure flat and easy to review.
 - Confirm staged diff includes only `frontend/README.md`.
+
+## Frontend Docs Contribution Notes
+
+- Prefer practical checklist items over long explanations.
+- Keep wording neutral and non-implementation specific.
+- Avoid repeating items already covered in root README.
+- Confirm commit includes only frontend README updates.
