@@ -269,3 +269,10 @@ Use this pattern when you want multiple small, safe, and reviewable docs commits
 - Keep wording neutral and non-implementation specific.
 - Avoid repeating items already covered in root README.
 - Confirm commit includes only frontend README updates.
+
+## Frontend Docs Verification Steps
+
+- Confirm the update helps contributor onboarding clarity.
+- Keep each section additive and easy to diff.
+- Avoid non-doc assumptions about runtime behavior.
+- Verify only `frontend/README.md` is staged.
