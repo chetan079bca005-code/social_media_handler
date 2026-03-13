@@ -276,3 +276,10 @@ Use this pattern when you want multiple small, safe, and reviewable docs commits
 - Keep each section additive and easy to diff.
 - Avoid non-doc assumptions about runtime behavior.
 - Verify only `frontend/README.md` is staged.
+
+## Frontend Docs Final Check
+
+- Ensure commit scope is one clear docs intent.
+- Keep updates concise for faster reviewer pass.
+- Avoid duplicating nearby checklist wording.
+- Confirm staged file list before push.
