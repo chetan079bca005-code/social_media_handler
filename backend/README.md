@@ -65,3 +65,10 @@ Backend service for authentication, social account integration, content operatio
 - Keep examples sanitized and environment-safe.
 - Keep one documentation intent per commit.
 - Confirm staged file scope before push.
+
+## Backend Docs Push Checklist
+
+- Confirm no backend source files are staged.
+- Keep checklist language explicit and short.
+- Maintain consistency with existing section style.
+- Push docs commits individually for traceability.
