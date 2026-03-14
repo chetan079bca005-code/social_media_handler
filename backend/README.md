@@ -72,3 +72,10 @@ Backend service for authentication, social account integration, content operatio
 - Keep checklist language explicit and short.
 - Maintain consistency with existing section style.
 - Push docs commits individually for traceability.
+
+## Backend Docs Scope Reminder
+
+- Limit updates to backend README markdown content.
+- Keep wording aligned with backend operational language.
+- Avoid introducing implementation changes in docs commits.
+- Confirm staged path list before push.
