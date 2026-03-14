@@ -283,3 +283,10 @@ Use this pattern when you want multiple small, safe, and reviewable docs commits
 - Keep updates concise for faster reviewer pass.
 - Avoid duplicating nearby checklist wording.
 - Confirm staged file list before push.
+
+## Frontend Docs Push Notes
+
+- Keep one reviewer-focused point per commit.
+- Confirm section heading is unique and specific.
+- Keep examples non-sensitive and generic.
+- Verify only frontend README is staged.
