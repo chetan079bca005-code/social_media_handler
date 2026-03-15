@@ -79,3 +79,10 @@ Backend service for authentication, social account integration, content operatio
 - Keep wording aligned with backend operational language.
 - Avoid introducing implementation changes in docs commits.
 - Confirm staged path list before push.
+
+## Backend Docs Commit Record
+
+- Commit intent:
+- Section updated:
+- Scope verification:
+- Suggested next docs tweak:
