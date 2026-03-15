@@ -290,3 +290,10 @@ Use this pattern when you want multiple small, safe, and reviewable docs commits
 - Confirm section heading is unique and specific.
 - Keep examples non-sensitive and generic.
 - Verify only frontend README is staged.
+
+## Frontend Docs Commit Snapshot
+
+- Updated section:
+- Reason for change:
+- Staged scope check:
+- Reviewer follow-up:
