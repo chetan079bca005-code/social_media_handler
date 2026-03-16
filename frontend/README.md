@@ -297,3 +297,10 @@ Use this pattern when you want multiple small, safe, and reviewable docs commits
 - Reason for change:
 - Staged scope check:
 - Reviewer follow-up:
+
+## Frontend Docs Commit Footer
+
+- Commit subject:
+- Section intent:
+- Scope result:
+- Next docs note:
