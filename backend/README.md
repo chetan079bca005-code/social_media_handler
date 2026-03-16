@@ -86,3 +86,10 @@ Backend service for authentication, social account integration, content operatio
 - Section updated:
 - Scope verification:
 - Suggested next docs tweak:
+
+## Backend Docs Commit Footer
+
+- Commit title:
+- README scope:
+- Review impact:
+- Next documentation task:
