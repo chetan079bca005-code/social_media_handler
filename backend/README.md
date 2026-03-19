@@ -100,3 +100,10 @@ Backend service for authentication, social account integration, content operatio
 - Section updated:
 - Scope verification result:
 - Next docs refinement:
+
+## Backend Docs Footer Note
+
+- Commit label:
+- Section touched:
+- Scope check:
+- Next docs follow-up:
