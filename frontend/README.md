@@ -311,3 +311,10 @@ Use this pattern when you want multiple small, safe, and reviewable docs commits
 - README section touched:
 - Scope check result:
 - Follow-up docs item:
+
+## Frontend Docs Footer Note
+
+- Commit label:
+- Section updated:
+- Scope verification:
+- Next reviewer note:
