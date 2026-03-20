@@ -318,3 +318,10 @@ Use this pattern when you want multiple small, safe, and reviewable docs commits
 - Section updated:
 - Scope verification:
 - Next reviewer note:
+
+## Frontend Docs Daily Record
+
+- Contribution marker:
+- Updated area:
+- Scope check:
+- Next docs follow-up:
