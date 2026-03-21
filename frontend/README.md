@@ -325,3 +325,10 @@ Use this pattern when you want multiple small, safe, and reviewable docs commits
 - Updated area:
 - Scope check:
 - Next docs follow-up:
+
+## Frontend Docs Intent Log
+
+- Contribution slot:
+- Section touched:
+- Scope verification (README-only):
+- Next contributor-facing note:
