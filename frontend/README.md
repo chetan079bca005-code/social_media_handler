@@ -326,6 +326,13 @@ Use this pattern when you want multiple small, safe, and reviewable docs commits
 - Scope check:
 - Next docs follow-up:
 
+## Frontend Docs Batch Marker
+
+- Contribution number:
+- Updated README path:
+- Scope verification result:
+- Next frontend docs note:
+
 ## Frontend Docs Intent Log
 
 - Contribution slot:
