@@ -115,6 +115,13 @@ Backend service for authentication, social account integration, content operatio
 - Scope verification:
 - Next docs action:
 
+## Backend Docs Batch Marker
+
+- Contribution number:
+- Updated README path:
+- Scope verification result:
+- Next backend docs task:
+
 ## Backend Docs Intent Log
 
 - Contribution slot:
