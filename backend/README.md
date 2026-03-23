@@ -135,3 +135,10 @@ Backend service for authentication, social account integration, content operatio
 - Section scope:
 - Docs-only verification:
 - Next backend docs step:
+
+## Backend Docs Signal B
+
+- Contribution index:
+- Updated README area:
+- Scope status:
+- Next backend handoff note:
