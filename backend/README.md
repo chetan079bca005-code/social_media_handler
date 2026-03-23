@@ -128,3 +128,10 @@ Backend service for authentication, social account integration, content operatio
 - Updated backend docs area:
 - Scope verification (README-only):
 - Next backend docs note:
+
+## Backend Docs Signal A
+
+- Contribution index:
+- Section scope:
+- Docs-only verification:
+- Next backend docs step:
