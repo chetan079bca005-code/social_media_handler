@@ -346,3 +346,10 @@ Use this pattern when you want multiple small, safe, and reviewable docs commits
 - Section scope:
 - Docs-only verification:
 - Next frontend docs step:
+
+## Frontend Docs Signal B
+
+- Contribution index:
+- Updated README area:
+- Scope status:
+- Next reviewer-facing note:
