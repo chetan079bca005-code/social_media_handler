@@ -339,3 +339,10 @@ Use this pattern when you want multiple small, safe, and reviewable docs commits
 - Section touched:
 - Scope verification (README-only):
 - Next contributor-facing note:
+
+## Frontend Docs Signal A
+
+- Contribution index:
+- Section scope:
+- Docs-only verification:
+- Next frontend docs step:
