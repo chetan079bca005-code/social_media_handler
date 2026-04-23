@@ -76,6 +76,7 @@ export default defineConfig([
 
 - Keep edits limited to markdown and inline documentation.
 - Avoid touching component logic on documentation contribution days.
+- Keep doc-only diffs free of reformat-only churn.
 - Prefer one topic per commit for easier review.
 - Ensure headings and bullet formatting stay consistent.
 
