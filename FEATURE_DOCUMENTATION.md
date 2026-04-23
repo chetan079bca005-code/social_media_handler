@@ -1,7 +1,8 @@
 # Feature Documentation — Social Media Handler
 
 > **Version**: Post-Audit Upgrade  
-> **Date**: March 2026
+> **Date**: March 2026  
+> **Note**: Verify feature status against the latest build before rollout.
 
 ---
 
