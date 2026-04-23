@@ -8,6 +8,7 @@
 - Request only minimum scopes required for posting and analytics.
 - Validate redirect/callback URLs exactly against provider dashboard settings.
 - Log API errors without storing access tokens in logs.
+- Capture rate-limit headers to help diagnose throttling issues.
 
 ---
 
