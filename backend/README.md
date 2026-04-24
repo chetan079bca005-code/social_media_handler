@@ -23,6 +23,7 @@ Backend service for authentication, social account integration, content operatio
 - Run `git status --short` and confirm README-only scope.
 - Run `git diff --name-only --cached` before every commit.
 - Use `git diff --stat --cached` to spot unexpected files.
+- Confirm the working tree is clean before the next docs commit.
 - Use explicit commit messages with `docs(backend): ...`.
 - Push each docs commit separately if daily contribution count matters.
 
