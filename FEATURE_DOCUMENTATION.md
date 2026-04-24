@@ -17,6 +17,8 @@
 
 ## 1. Bug Fixes Applied
 
+Note: Confirm each fix is present in the target release branch.
+
 ### Backend (9 fixes)
 
 | Fix | File | What Changed |
