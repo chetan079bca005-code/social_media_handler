@@ -32,6 +32,7 @@ Backend service for authentication, social account integration, content operatio
 - Confirm content is operationally accurate for current backend behavior.
 - Confirm no secrets or credential-like strings are introduced.
 - Confirm wording remains implementation-neutral on docs-only days.
+- Confirm env var names match the current config module.
 - Confirm commit scope is markdown-only before approval.
 
 ## Backend Docs Maintenance Notes
