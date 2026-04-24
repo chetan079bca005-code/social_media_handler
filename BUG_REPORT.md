@@ -3,6 +3,7 @@
 > **Generated**: March 3, 2026  
 > **Scope**: Full-stack audit of backend (Node.js/Express/Prisma) and frontend (React/TypeScript/Vite)  
 > **Note**: Re-validate high-risk items against current code before applying fixes.  
+> **Note**: Reconfirm reproduction steps on the latest main branch.  
 > **Total Issues Found**: 54 (6 Critical, 13 High, 20 Medium, 15 Low)
 
 ---
