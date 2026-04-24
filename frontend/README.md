@@ -98,6 +98,7 @@ export default defineConfig([
 
 - Check heading hierarchy is consistent.
 - Confirm bullets stay concise and actionable.
+- Confirm markdown renders cleanly in the VS Code preview.
 - Verify examples match current project setup.
 - Ensure no code files are included in the commit.
 
