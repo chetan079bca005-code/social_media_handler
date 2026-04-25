@@ -18,6 +18,7 @@
 ## 1. Bug Fixes Applied
 
 Note: Confirm each fix is present in the target release branch.
+Note: Record the verification date when this section changes.
 
 ### Backend (9 fixes)
 
