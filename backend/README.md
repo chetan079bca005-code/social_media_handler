@@ -63,6 +63,7 @@ Backend service for authentication, social account integration, content operatio
 - Use explicit commit subjects with backend scope.
 - Confirm no non-markdown backend files are staged.
 - Keep reviewer-facing notes concise and actionable.
+- Avoid long commit bodies unless required by policy.
 
 ## Backend Docs Review Sequence
 
