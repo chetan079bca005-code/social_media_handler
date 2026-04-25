@@ -10,6 +10,7 @@
 - Log API errors without storing access tokens in logs.
 - Capture rate-limit headers to help diagnose throttling issues.
 - Record provider request IDs to speed up support escalations.
+- Track token expiry times for proactive refresh handling.
 
 ---
 
