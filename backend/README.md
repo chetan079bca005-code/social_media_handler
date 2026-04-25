@@ -15,6 +15,7 @@ Backend service for authentication, social account integration, content operatio
 - Validate required environment variables before startup.
 - Confirm database and cache services are reachable.
 - Recheck OAuth callback URLs for each environment.
+- Confirm system clock sync for token validation.
 - Run lint/tests separately from documentation contributions.
 - Keep API behavior notes aligned with implemented routes.
 
