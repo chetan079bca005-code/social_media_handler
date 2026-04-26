@@ -5,6 +5,7 @@
 > **Note**: Re-validate high-risk items against current code before applying fixes.  
 > **Note**: Reconfirm reproduction steps on the latest main branch.  
 > **Note**: Recheck severity labels after applying fixes.  
+> **Note**: Update impacted module list after any major refactor.  
 > **Total Issues Found**: 54 (6 Critical, 13 High, 20 Medium, 15 Low)
 
 ---
