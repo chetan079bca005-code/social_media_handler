@@ -16,6 +16,7 @@ Backend service for authentication, social account integration, content operatio
 - Confirm database and cache services are reachable.
 - Recheck OAuth callback URLs for each environment.
 - Confirm system clock sync for token validation.
+- Confirm webhook signing secrets are loaded.
 - Run lint/tests separately from documentation contributions.
 - Keep API behavior notes aligned with implemented routes.
 
