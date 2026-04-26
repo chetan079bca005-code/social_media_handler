@@ -19,6 +19,7 @@
 
 Note: Confirm each fix is present in the target release branch.
 Note: Record the verification date when this section changes.
+Note: Remove fixes from this list when they are superseded.
 
 ### Backend (9 fixes)
 
