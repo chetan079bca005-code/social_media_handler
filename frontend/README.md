@@ -101,6 +101,7 @@ export default defineConfig([
 - Confirm markdown renders cleanly in the VS Code preview.
 - Confirm code fences include language hints where possible.
 - Confirm relative links resolve in the repo view.
+- Confirm headings use consistent capitalization.
 - Verify examples match current project setup.
 - Ensure no code files are included in the commit.
 
