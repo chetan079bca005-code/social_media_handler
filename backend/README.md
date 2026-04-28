@@ -38,6 +38,7 @@ Backend service for authentication, social account integration, content operatio
 - Confirm wording remains implementation-neutral on docs-only days.
 - Confirm env var names match the current config module.
 - Confirm commit scope is markdown-only before approval.
+- Confirm any examples stay environment-agnostic.
 
 ## Backend Docs Maintenance Notes
 
