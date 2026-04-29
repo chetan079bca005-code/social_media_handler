@@ -18,6 +18,7 @@ Backend service for authentication, social account integration, content operatio
 - Confirm system clock sync for token validation.
 - Confirm webhook signing secrets are loaded.
 - Confirm outbound email settings are present when alerts are enabled.
+- Confirm log retention settings are documented.
 - Run lint/tests separately from documentation contributions.
 - Keep API behavior notes aligned with implemented routes.
 
