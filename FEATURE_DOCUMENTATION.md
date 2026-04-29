@@ -21,6 +21,7 @@ Note: Confirm each fix is present in the target release branch.
 Note: Record the verification date when this section changes.
 Note: Remove fixes from this list when they are superseded.
 Note: Keep the list ordered by user impact, not implementation order.
+Note: Update any totals if the list length changes.
 
 ### Backend (9 fixes)
 
