@@ -8,6 +8,7 @@
 > **Note**: Update impacted module list after any major refactor.  
 > **Note**: Rebaseline any metrics used to rank issue impact.  
 > **Note**: Update counts after closing or merging fixes.  
+> **Note**: Reconfirm ownership and affected roles for each issue.  
 > **Total Issues Found**: 54 (6 Critical, 13 High, 20 Medium, 15 Low)
 
 ---
