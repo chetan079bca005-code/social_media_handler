@@ -28,8 +28,7 @@ Backend service for authentication, social account integration, content operatio
 - Use `git diff --stat --cached` to spot unexpected files.
 - Confirm the working tree is clean before the next docs commit.
 - Verify commit author info is correct before pushing.
-- Confirm no pending stash entries before pushing.
-- Use explicit commit messages with `docs(backend): ...`.
+- Confirm no pending stash entries before pushing. - Verify no uncommitted changes in other directories.- Use explicit commit messages with `docs(backend): ...`.
 - Push each docs commit separately if daily contribution count matters.
 
 ## Backend Docs Reviewer Checklist
