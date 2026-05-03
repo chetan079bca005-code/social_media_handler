@@ -59,6 +59,7 @@ Backend service for authentication, social account integration, content operatio
 - Confirm no non-markdown backend files are staged.
 - Keep reviewer-facing notes concise and actionable.
 - Avoid long commit bodies unless required by policy.
+- Use clear section titles for each docs change.
 
 ## Backend Docs Review Sequence
 
