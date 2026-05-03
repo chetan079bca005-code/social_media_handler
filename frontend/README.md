@@ -102,7 +102,10 @@ export default defineConfig([
 - Confirm code fences include language hints where possible.
 - Confirm relative links resolve in the repo view.
 - Confirm headings use consistent capitalization.
-- Confirm checklist items are not duplicated. - Confirm table alignment is consistent.- Verify examples match current project setup.
+- Confirm checklist items are not duplicated.
+- Confirm table alignment is consistent.
+- Confirm note wording stays concise.
+- Verify examples match current project setup.
 - Ensure no code files are included in the commit.
 
 ## Docs Commit Splitting Guidance
