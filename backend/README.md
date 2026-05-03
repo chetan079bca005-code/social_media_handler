@@ -12,16 +12,7 @@ Backend service for authentication, social account integration, content operatio
 
 ## Quick Operational Notes
 
-- Validate required environment variables before startup.
-- Confirm database and cache services are reachable.
-- Recheck OAuth callback URLs for each environment.
-- Confirm system clock sync for token validation.
-- Confirm webhook signing secrets are loaded.
-- Confirm outbound email settings are present when alerts are enabled.
-- Confirm log retention settings are documented. - Confirm database backup verification runs on startup.- Run lint/tests separately from documentation contributions.
-- Keep API behavior notes aligned with implemented routes.
-
-## Docs Commit Validation
+- Confirm feature flags are documented before rollout.
 
 - Run `git status --short` and confirm README-only scope.
 - Run `git diff --name-only --cached` before every commit.
