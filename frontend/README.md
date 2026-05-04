@@ -106,6 +106,7 @@ export default defineConfig([
 - Confirm table alignment is consistent.
 - Confirm note wording stays concise.
 - Verify examples match current project setup.
+- Confirm new bullets fit the existing tone.
 - Ensure no code files are included in the commit.
 
 ## Docs Commit Splitting Guidance
