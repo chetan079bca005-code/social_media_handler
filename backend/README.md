@@ -24,6 +24,7 @@ Backend service for authentication, social account integration, content operatio
 - Verify no uncommitted changes in other directories.
 - Use explicit commit messages with `docs(backend): ...`.
 - Push each docs commit separately if daily contribution count matters.
+- Keep changelog language consistent across docs files.
 
 ## Backend Docs Reviewer Checklist
 
