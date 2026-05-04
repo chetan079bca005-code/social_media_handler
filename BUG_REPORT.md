@@ -10,6 +10,7 @@
 > **Note**: Update counts after closing or merging fixes.  
 > **Note**: Reconfirm ownership and affected roles for each issue.  
 > **Note**: Keep issue references synchronized with the latest branch.  
+> **Note**: Cross-check linked files before closing each report.  
 > **Total Issues Found**: 54 (6 Critical, 13 High, 20 Medium, 15 Low)
 
 ---
