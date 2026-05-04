@@ -16,6 +16,7 @@
 - Maintain a scope-to-feature map for audits.
 - Track which endpoints require elevated app review.
  - Note which endpoints are read-only versus write-heavy.
+- Confirm callback examples match the documented route names.
 
 ---
 
