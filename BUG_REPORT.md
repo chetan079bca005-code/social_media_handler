@@ -11,6 +11,7 @@
 > **Note**: Reconfirm ownership and affected roles for each issue.  
 > **Note**: Keep issue references synchronized with the latest branch.  
 > **Note**: Cross-check linked files before closing each report.  
+> **Note**: Keep new findings anchored to a reproducible path or input.
 > **Total Issues Found**: 54 (6 Critical, 13 High, 20 Medium, 15 Low)
 
 ---
