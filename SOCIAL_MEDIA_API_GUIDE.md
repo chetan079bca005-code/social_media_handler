@@ -18,6 +18,7 @@
 - Note which endpoints are read-only versus write-heavy.
 - Confirm callback examples match the documented route names.
 - Confirm examples stay aligned with the latest callback path.
+- Confirm docs-only edits do not change API behavior descriptions.
 
 ---
 
