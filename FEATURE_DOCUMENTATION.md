@@ -25,6 +25,7 @@ Note: Update any totals if the list length changes.
 Note: Confirm each entry has a user-facing summary.
 Note: Mirror terminology used in the active release notes.
 Note: Revalidate the screenshots after visual changes.
+Note: Keep docs-only additions focused on release verification.
 
 ### Backend (9 fixes)
 
