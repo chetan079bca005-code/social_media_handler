@@ -19,6 +19,7 @@
 - Confirm callback examples match the documented route names.
 - Confirm examples stay aligned with the latest callback path.
 - Confirm docs-only edits do not change API behavior descriptions.
+- Confirm provider naming stays consistent across sections.
 
 ---
 
