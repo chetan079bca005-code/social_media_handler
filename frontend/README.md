@@ -108,6 +108,7 @@ export default defineConfig([
 - Verify examples match current project setup.
 - Confirm new bullets fit the existing tone.
 - Confirm docs-only notes do not drift into implementation details.
+- Confirm checklist wording is easy to scan in reviews.
 - Ensure no code files are included in the commit.
 
 ## Docs Commit Splitting Guidance
