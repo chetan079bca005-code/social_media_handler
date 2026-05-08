@@ -36,6 +36,7 @@ Backend service for authentication, social account integration, content operatio
 - Confirm env var names match the current config module.
 - Confirm commit scope is markdown-only before approval.
 - Confirm any examples stay environment-agnostic.
+- Confirm reviewer checklist items remain concise and actionable.
 
 ## Backend Docs Maintenance Notes
 
