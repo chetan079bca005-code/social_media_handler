@@ -15,6 +15,7 @@ Backend service for authentication, social account integration, content operatio
 - Confirm feature flags are documented before rollout.
 - Confirm release notes stay synchronized with README updates.
 - Confirm docs-only commits stay scoped to markdown files.
+- Confirm README guidance stays aligned with current workflow.
 
 - Run `git status --short` and confirm README-only scope.
 - Run `git diff --name-only --cached` before every commit.
