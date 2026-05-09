@@ -58,6 +58,7 @@ Backend service for authentication, social account integration, content operatio
 - Keep wording consistent with backend naming conventions.
 - Keep each docs commit minimal and scoped.
 - Re-run staged file check before pushing.
+- Confirm new bullets add practical value before pushing.
 
 ## Backend Docs Commit Hygiene
 
