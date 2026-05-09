@@ -60,6 +60,9 @@ This guide covers how to integrate social media APIs with your Social Media Hand
 ## Get Free API Access
 
 ### Step 1: Create Facebook Developer Account
+
+**Timeline:** 5-10 minutes
+
 ```
 1. Go to https://developers.facebook.com/
 2. Click "Get Started"
