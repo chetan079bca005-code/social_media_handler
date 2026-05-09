@@ -51,6 +51,7 @@ Note: Keep note phrasing consistent across update entries.
 | **Logout Security** | `components/layout/Header.tsx` | Logout now calls the backend logout endpoint via `fetch('/api/auth/logout', { method: 'POST', credentials: 'include' })` to invalidate the refresh token before clearing local state |
 | **Unicode Encoding** | `pages/DesignStudio.tsx` | Replaced garbled `Ã—` with proper `×` character in template dimension display |
 | **CSS Typo** | `pages/DesignStudio.tsx` | Fixed video editor class `max-h-90ct-contain` to `max-h-[360px] object-contain` |
+| **Layout Responsive** | `pages/DesignStudio.tsx` | Ensured properties panel hides on breakpoints below `lg` for mobile screens |
 
 ---
 
