@@ -2272,4 +2272,6 @@ This comprehensive guide covers:
 - TikTok Developer Docs: https://developers.tiktok.com/
 - YouTube API Docs: https://developers.google.com/youtube
 
+**Security Note:** Always store API keys and tokens in environment variables, never in code.
+
 Good luck with your Social Media Handler platform! 🚀
