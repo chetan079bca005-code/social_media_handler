@@ -131,6 +131,7 @@ export default defineConfig([
 - Confirm wording is neutral and non-breaking.
 - Confirm links, headings, and markdown render correctly.
 - Confirm commit remains README-only.
+- Confirm frontend docs updates align with backend changelog.
 
 ## Docs Handoff Note Format
 
