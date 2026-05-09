@@ -31,6 +31,8 @@
 
 ## 1. Critical Issues
 
+**Last Verified**: May 9, 2026
+
 ### BUG-001: AI Usage Tracking Passes Workspace ID Instead of User ID
 - **File**: `backend/src/controllers/ai.controller.ts` (line ~30)
 - **Description**: `aiService.trackAIUsage(req.workspace!.id, ...)` passes workspace ID but the function signature expects a user ID. The `ActivityLog.userId` has a `@relation` to `User`, so storing a workspace ID violates the foreign key constraint.
@@ -48,6 +50,7 @@
 - **Description**: The else branch allows all origins without checking `NODE_ENV`. No environment guard exists.
 - **Impact**: Any website can make authenticated requests to the API
 - **Solution**: Add `NODE_ENV` check — only allow all origins in development mode
+- **Verification**: Confirm CORS headers in production match whitelisted domains only.
 
 ### BUG-004: IDOR Vulnerability on All Resource Routes
 - **Files**: `backend/src/routes/post.routes.ts`, `social-account.routes.ts`, `media.routes.ts`, `template.routes.ts`, `analytics.routes.ts`
