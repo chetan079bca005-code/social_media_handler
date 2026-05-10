@@ -51,6 +51,7 @@
 - **Impact**: Any website can make authenticated requests to the API
 - **Solution**: Add `NODE_ENV` check — only allow all origins in development mode
 - **Verification**: Confirm CORS headers in production match whitelisted domains only.
+- **Testing**: Use curl or Postman to test CORS preflight from external origin.
 
 ### BUG-004: IDOR Vulnerability on All Resource Routes
 - **Files**: `backend/src/routes/post.routes.ts`, `social-account.routes.ts`, `media.routes.ts`, `template.routes.ts`, `analytics.routes.ts`
