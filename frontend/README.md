@@ -146,6 +146,7 @@ export default defineConfig([
 - Include one-line reason for the wording change.
 - Confirm no non-markdown files were staged.
 - Keep handoff note concise and reviewer-friendly.
+- Confirm handoff checklist aligns with backend timeline.
 
 ## Docs Wording Quality Checks
 
