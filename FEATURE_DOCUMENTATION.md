@@ -27,6 +27,7 @@ Note: Mirror terminology used in the active release notes.
 Note: Revalidate the screenshots after visual changes.
 Note: Keep docs-only additions focused on release verification.
 Note: Keep note phrasing consistent across update entries.
+Note: Verify each fix entry has a user-facing benefit statement.
 
 ### Backend (9 fixes)
 
