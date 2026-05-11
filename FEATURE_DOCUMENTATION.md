@@ -28,6 +28,7 @@ Note: Revalidate the screenshots after visual changes.
 Note: Keep docs-only additions focused on release verification.
 Note: Keep note phrasing consistent across update entries.
 Note: Verify each fix entry has a user-facing benefit statement.
+Note: Keep each fix summary short enough for changelog reuse.
 
 ### Backend (9 fixes)
 
