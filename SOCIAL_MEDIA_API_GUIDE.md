@@ -21,6 +21,7 @@
 - Confirm examples stay aligned with the latest callback path.
 - Confirm docs-only edits do not change API behavior descriptions.
 - Confirm provider naming stays consistent across sections.
+- Confirm step labels remain sequential in setup instructions.
 
 ---
 
