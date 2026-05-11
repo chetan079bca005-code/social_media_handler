@@ -38,6 +38,7 @@ Backend service for authentication, social account integration, content operatio
 - Confirm any examples stay environment-agnostic.
 - Confirm reviewer checklist items remain concise and actionable.
 - Confirm approval notes stay focused on documentation scope.
+- Confirm wording stays short enough for quick review.
 
 ## Backend Docs Maintenance Notes
 
