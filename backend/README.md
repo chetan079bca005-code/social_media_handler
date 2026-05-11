@@ -39,6 +39,7 @@ Backend service for authentication, social account integration, content operatio
 - Confirm reviewer checklist items remain concise and actionable.
 - Confirm approval notes stay focused on documentation scope.
 - Confirm wording stays short enough for quick review.
+- Confirm backend docs bullets remain one idea each.
 
 ## Backend Docs Maintenance Notes
 
