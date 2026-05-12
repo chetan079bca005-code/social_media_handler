@@ -22,6 +22,7 @@
 - Confirm docs-only edits do not change API behavior descriptions.
 - Confirm provider naming stays consistent across sections.
 - Confirm step labels remain sequential in setup instructions.
+- Confirm each checklist item avoids multi-part conditions.
 
 ---
 
