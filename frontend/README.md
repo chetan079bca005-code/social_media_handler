@@ -148,6 +148,7 @@ export default defineConfig([
 - Confirm no non-markdown files were staged.
 - Keep handoff note concise and reviewer-friendly.
 - Confirm handoff checklist aligns with backend timeline.
+- Confirm each handoff note stays under three lines.
 
 ## Docs Wording Quality Checks
 
