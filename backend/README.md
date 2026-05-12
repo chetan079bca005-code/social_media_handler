@@ -40,6 +40,7 @@ Backend service for authentication, social account integration, content operatio
 - Confirm approval notes stay focused on documentation scope.
 - Confirm wording stays short enough for quick review.
 - Confirm backend docs bullets remain one idea each.
+- Confirm maintenance notes stay brief and actionable.
 
 ## Backend Docs Maintenance Notes
 
