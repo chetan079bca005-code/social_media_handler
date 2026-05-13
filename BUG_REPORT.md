@@ -15,6 +15,7 @@
 > **Note**: Keep newly added notes concise and verifiable.
 > **Note**: Keep verification steps short and repeatable.
 > **Note**: Confirm issue summaries stay under one sentence.
+> **Note**: Confirm all issue links remain valid and accessible.
 > **Total Issues Found**: 54 (6 Critical, 13 High, 20 Medium, 15 Low)
 
 ---
