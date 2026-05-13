@@ -41,6 +41,7 @@ Backend service for authentication, social account integration, content operatio
 - Confirm wording stays short enough for quick review.
 - Confirm backend docs bullets remain one idea each.
 - Confirm maintenance notes stay brief and actionable.
+- Confirm backend README stays relevant to current codebase.
 
 ## Backend Docs Maintenance Notes
 
