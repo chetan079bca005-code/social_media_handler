@@ -30,6 +30,7 @@ Note: Keep note phrasing consistent across update entries.
 Note: Verify each fix entry has a user-facing benefit statement.
 Note: Keep each fix summary short enough for changelog reuse.
 Note: Confirm all fix descriptions use simple present tense.
+Note: Keep fix descriptions aligned with the current release branch.
 
 ### Backend (9 fixes)
 
