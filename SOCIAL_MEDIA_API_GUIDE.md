@@ -23,6 +23,7 @@
 - Confirm provider naming stays consistent across sections.
 - Confirm step labels remain sequential in setup instructions.
 - Confirm each checklist item avoids multi-part conditions.
+- Confirm all OAuth steps match the current backend routes.
 
 ---
 
