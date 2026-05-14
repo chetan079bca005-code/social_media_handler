@@ -13,9 +13,7 @@
 > **Note**: Cross-check linked files before closing each report.  
 > **Note**: Keep new findings anchored to a reproducible path or input.
 > **Note**: Keep newly added notes concise and verifiable.
-> **Note**: Keep verification steps short and repeatable.
-> **Note**: Confirm issue summaries stay under one sentence.
-> **Note**: Confirm all issue links remain valid and accessible.
+> **Note**: Add a short repro priority when possible.
 > **Total Issues Found**: 54 (6 Critical, 13 High, 20 Medium, 15 Low)
 
 ---
@@ -54,7 +52,6 @@
 - **Impact**: Any website can make authenticated requests to the API
 - **Solution**: Add `NODE_ENV` check — only allow all origins in development mode
 - **Verification**: Confirm CORS headers in production match whitelisted domains only.
-- **Testing**: Use curl or Postman to test CORS preflight from external origin.
 
 ### BUG-004: IDOR Vulnerability on All Resource Routes
 - **Files**: `backend/src/routes/post.routes.ts`, `social-account.routes.ts`, `media.routes.ts`, `template.routes.ts`, `analytics.routes.ts`
