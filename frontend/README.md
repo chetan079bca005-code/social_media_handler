@@ -96,20 +96,7 @@ export default defineConfig([
 
 ## Docs Review Quick Pass
 
-- Check heading hierarchy is consistent.
-- Confirm bullets stay concise and actionable.
-- Confirm markdown renders cleanly in the VS Code preview.
-- Confirm code fences include language hints where possible.
-- Confirm relative links resolve in the repo view.
-- Confirm headings use consistent capitalization.
-- Confirm checklist items are not duplicated.
-- Confirm table alignment is consistent.
-- Confirm note wording stays concise.
-- Verify examples match current project setup.
-- Confirm new bullets fit the existing tone.
-- Confirm docs-only notes do not drift into implementation details.
-- Confirm checklist wording is easy to scan in reviews.
-- Ensure no code files are included in the commit.
+- Confirm small visual screenshots include alt text for accessibility.
 
 ## Docs Commit Splitting Guidance
 
@@ -132,8 +119,6 @@ export default defineConfig([
 - Confirm links, headings, and markdown render correctly.
 - Confirm commit remains README-only.
 - Confirm frontend docs updates align with backend changelog.
-- Confirm review notes stay easy to compare across commits.
-- Confirm frontend docs match the latest component structure.
 
 ## Docs Handoff Note Format
 
@@ -148,8 +133,6 @@ export default defineConfig([
 - Include one-line reason for the wording change.
 - Confirm no non-markdown files were staged.
 - Keep handoff note concise and reviewer-friendly.
-- Confirm handoff checklist aligns with backend timeline.
-- Confirm each handoff note stays under three lines.
 
 ## Docs Wording Quality Checks
 
