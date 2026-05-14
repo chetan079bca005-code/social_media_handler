@@ -7,7 +7,6 @@
 - Use short-lived OAuth tokens where possible and rotate long-lived tokens regularly.
 - Request only minimum scopes required for posting and analytics.
 - Validate redirect/callback URLs exactly against provider dashboard settings.
-- Test OAuth redirect flow end-to-end before going live.
 - Log API errors without storing access tokens in logs.
 - Capture rate-limit headers to help diagnose throttling issues.
 - Record provider request IDs to speed up support escalations.
@@ -21,9 +20,7 @@
 - Confirm examples stay aligned with the latest callback path.
 - Confirm docs-only edits do not change API behavior descriptions.
 - Confirm provider naming stays consistent across sections.
-- Confirm step labels remain sequential in setup instructions.
-- Confirm each checklist item avoids multi-part conditions.
-- Confirm all OAuth steps match the current backend routes.
+- Confirm rate-limit handling examples include headers to monitor.
 
 ---
 
