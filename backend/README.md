@@ -37,11 +37,7 @@ Backend service for authentication, social account integration, content operatio
 - Confirm commit scope is markdown-only before approval.
 - Confirm any examples stay environment-agnostic.
 - Confirm reviewer checklist items remain concise and actionable.
-- Confirm approval notes stay focused on documentation scope.
-- Confirm wording stays short enough for quick review.
-- Confirm backend docs bullets remain one idea each.
-- Confirm maintenance notes stay brief and actionable.
-- Confirm backend README stays relevant to current codebase.
+- Confirm docs reference the current release branch when relevant.
 
 ## Backend Docs Maintenance Notes
 
