@@ -15,6 +15,7 @@
 > **Note**: Keep newly added notes concise and verifiable.
 > **Note**: Add a short repro priority when possible.
 > **Note**: Add links to the test cases when available.
+> **Note**: Mark high-impact issues with a follow-up owner.
 > **Total Issues Found**: 54 (6 Critical, 13 High, 20 Medium, 15 Low)
 
 ---
