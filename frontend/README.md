@@ -134,6 +134,7 @@ export default defineConfig([
 - Confirm no non-markdown files were staged.
 - Keep handoff note concise and reviewer-friendly.
 - Confirm screenshots include accessible captions when present.
+- Confirm captions contain short descriptive phrases only.
 
 ## Docs Wording Quality Checks
 
