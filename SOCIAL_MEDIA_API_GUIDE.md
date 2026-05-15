@@ -22,6 +22,7 @@
 - Confirm provider naming stays consistent across sections.
 - Confirm rate-limit handling examples include headers to monitor.
 - Confirm retry/backoff guidance accompanies rate-limit notes.
+- Confirm examples show the HTTP header names to inspect.
 
 ---
 
