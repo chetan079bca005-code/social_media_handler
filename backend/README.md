@@ -38,6 +38,7 @@ Backend service for authentication, social account integration, content operatio
 - Confirm any examples stay environment-agnostic.
 - Confirm reviewer checklist items remain concise and actionable.
 - Confirm docs reference the current release branch when relevant.
+- Confirm PR descriptions link to the release notes when applicable.
 
 ## Backend Docs Maintenance Notes
 

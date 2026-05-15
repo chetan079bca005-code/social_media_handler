@@ -133,6 +133,7 @@ export default defineConfig([
 - Include one-line reason for the wording change.
 - Confirm no non-markdown files were staged.
 - Keep handoff note concise and reviewer-friendly.
+- Confirm screenshots include accessible captions when present.
 
 ## Docs Wording Quality Checks
 
