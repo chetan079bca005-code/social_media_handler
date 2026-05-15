@@ -39,6 +39,7 @@ Backend service for authentication, social account integration, content operatio
 - Confirm reviewer checklist items remain concise and actionable.
 - Confirm docs reference the current release branch when relevant.
 - Confirm PR descriptions link to the release notes when applicable.
+- Confirm changelog entries reference the exact PR number.
 
 ## Backend Docs Maintenance Notes
 
