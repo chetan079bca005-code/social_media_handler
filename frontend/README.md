@@ -135,6 +135,7 @@ export default defineConfig([
 - Keep handoff note concise and reviewer-friendly.
 - Confirm screenshots include accessible captions when present.
 - Confirm captions contain short descriptive phrases only.
+- Prefer captions under 10 words for quick scanning.
 
 ## Docs Wording Quality Checks
 
