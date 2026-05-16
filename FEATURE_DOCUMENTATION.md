@@ -30,6 +30,7 @@ Note: Keep note phrasing consistent across update entries.
 Note: Ensure screenshots reference the correct release tag.
 Note: Store screenshot source file names for traceability.
 - Note: Include image alt text for all screenshots.
+- Note: Tag screenshots with the release version in filenames when possible.
 
 ### Backend (9 fixes)
 
