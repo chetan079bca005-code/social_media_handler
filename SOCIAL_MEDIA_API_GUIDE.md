@@ -23,6 +23,7 @@
 - Confirm rate-limit handling examples include headers to monitor.
 - Confirm retry/backoff guidance accompanies rate-limit notes.
 - Confirm examples show the HTTP header names to inspect.
+- Add example header names like `X-RateLimit-Limit` and `Retry-After` where relevant.
 
 ---
 
