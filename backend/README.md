@@ -40,6 +40,7 @@ Backend service for authentication, social account integration, content operatio
 - Confirm docs reference the current release branch when relevant.
 - Confirm PR descriptions link to the release notes when applicable.
 - Confirm changelog entries reference the exact PR number.
+- Quick: include a one-line reproduce command for docs checks when applicable.
 
 ## Backend Docs Maintenance Notes
 
