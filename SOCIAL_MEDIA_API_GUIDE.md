@@ -9,6 +9,7 @@
 - Validate redirect/callback URLs exactly against provider dashboard settings.
 - Log API errors without storing access tokens in logs.
 - Capture rate-limit headers to help diagnose throttling issues.
+- Example header names to check: `X-RateLimit-Limit`, `X-RateLimit-Remaining`, `Retry-After`.
 - Record provider request IDs to speed up support escalations.
 - Track token expiry times for proactive refresh handling.
 - Document sandbox vs production app IDs in the runbook.
@@ -20,10 +21,6 @@
 - Confirm examples stay aligned with the latest callback path.
 - Confirm docs-only edits do not change API behavior descriptions.
 - Confirm provider naming stays consistent across sections.
-- Confirm rate-limit handling examples include headers to monitor.
-- Confirm retry/backoff guidance accompanies rate-limit notes.
-- Confirm examples show the HTTP header names to inspect.
-- Add example header names like `X-RateLimit-Limit` and `Retry-After` where relevant.
 
 ---
 
