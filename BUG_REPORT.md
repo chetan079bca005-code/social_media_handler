@@ -9,14 +9,12 @@
 > **Note**: Rebaseline any metrics used to rank issue impact.  
 > **Note**: Update counts after closing or merging fixes.  
 > **Note**: Reconfirm ownership and affected roles for each issue.  
+**Note**: Reconfirm ownership and affected roles for each issue.  
+**Note**: Assign a clear owner for high-impact bugs to ensure timely follow-up.  
 > **Note**: Keep issue references synchronized with the latest branch.  
 > **Note**: Cross-check linked files before closing each report.  
 > **Note**: Keep new findings anchored to a reproducible path or input.
 > **Note**: Keep newly added notes concise and verifiable.
-> **Note**: Add a short repro priority when possible.
-> **Note**: Add links to the test cases when available.
-> **Note**: Mark high-impact issues with a follow-up owner.
-- Note: Assign an owner for high-impact bugs to ensure follow-up.
 > **Total Issues Found**: 54 (6 Critical, 13 High, 20 Medium, 15 Low)
 
 ---
