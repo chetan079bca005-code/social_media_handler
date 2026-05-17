@@ -85,6 +85,7 @@ export default defineConfig([
 - Write short, direct notes that describe intent.
 - Prefer actionable language over broad descriptions.
 - Keep examples realistic and project-specific.
+- Prefer captions under 10 words for quick scanning where screenshots are used.
 - Avoid duplicating information across sections.
 
 ## Safe Docs Commit Message Templates
@@ -96,7 +97,20 @@ export default defineConfig([
 
 ## Docs Review Quick Pass
 
-- Confirm small visual screenshots include alt text for accessibility.
+- Check heading hierarchy is consistent.
+- Confirm bullets stay concise and actionable.
+- Confirm markdown renders cleanly in the VS Code preview.
+- Confirm code fences include language hints where possible.
+- Confirm relative links resolve in the repo view.
+- Confirm headings use consistent capitalization.
+- Confirm checklist items are not duplicated.
+- Confirm table alignment is consistent.
+- Confirm note wording stays concise.
+- Verify examples match current project setup.
+- Confirm new bullets fit the existing tone.
+- Confirm docs-only notes do not drift into implementation details.
+- Confirm checklist wording is easy to scan in reviews.
+- Ensure no code files are included in the commit.
 
 ## Docs Commit Splitting Guidance
 
@@ -133,9 +147,6 @@ export default defineConfig([
 - Include one-line reason for the wording change.
 - Confirm no non-markdown files were staged.
 - Keep handoff note concise and reviewer-friendly.
-- Confirm screenshots include accessible captions when present.
-- Confirm captions contain short descriptive phrases only.
-- Prefer captions under 10 words for quick scanning.
 
 ## Docs Wording Quality Checks
 
