@@ -27,6 +27,7 @@ Backend service for authentication, social account integration, content operatio
 - Use explicit commit messages with `docs(backend): ...`.
 - Push each docs commit separately if daily contribution count matters.
 - Keep changelog language consistent across docs files.
+- Quick: include a one-line reproduce command for troubleshooting notes when applicable.
 
 ## Backend Docs Reviewer Checklist
 
@@ -37,10 +38,6 @@ Backend service for authentication, social account integration, content operatio
 - Confirm commit scope is markdown-only before approval.
 - Confirm any examples stay environment-agnostic.
 - Confirm reviewer checklist items remain concise and actionable.
-- Confirm docs reference the current release branch when relevant.
-- Confirm PR descriptions link to the release notes when applicable.
-- Confirm changelog entries reference the exact PR number.
-- Quick: include a one-line reproduce command for docs checks when applicable.
 
 ## Backend Docs Maintenance Notes
 
