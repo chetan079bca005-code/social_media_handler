@@ -27,9 +27,6 @@ Note: Mirror terminology used in the active release notes.
 Note: Revalidate the screenshots after visual changes.
 Note: Keep docs-only additions focused on release verification.
 Note: Keep note phrasing consistent across update entries.
-Note: Ensure screenshots reference the correct release tag.
-Note: Store screenshot source file names for traceability.
-- Note: Include image alt text for all screenshots.
 - Note: Tag screenshots with the release version in filenames when possible.
 
 ### Backend (9 fixes)
