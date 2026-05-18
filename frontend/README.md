@@ -85,7 +85,7 @@ export default defineConfig([
 - Write short, direct notes that describe intent.
 - Prefer actionable language over broad descriptions.
 - Keep examples realistic and project-specific.
-- Prefer captions under 10 words for quick scanning where screenshots are used.
+- Prefer image captions under 10 words for quick readability where screenshots are used.
 - Avoid duplicating information across sections.
 
 ## Safe Docs Commit Message Templates
