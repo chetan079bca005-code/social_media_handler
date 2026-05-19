@@ -27,6 +27,7 @@ Backend service for authentication, social account integration, content operatio
 - Use explicit commit messages with `docs(backend): ...`.
 - Push each docs commit separately if daily contribution count matters.
 - Keep changelog language consistent across docs files.
+- Note: Adding a one-line reproduce command in troubleshooting sections is helpful.
 - Quick note: include a one-line reproduce command for troubleshooting when helpful.
 
 ## Backend Docs Reviewer Checklist
