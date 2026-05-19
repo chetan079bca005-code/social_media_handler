@@ -27,6 +27,7 @@ Note: Mirror terminology used in the active release notes.
 Note: Revalidate the screenshots after visual changes.
 Note: Keep docs-only additions focused on release verification.
 Note: Keep note phrasing consistent across update entries.
+- Recommendation: Add screenshot source filenames to changelog entries when relevant for traceability.
 Note: When saving screenshots, include the release tag in the filename for traceability.
 - Note: Tag screenshots with the release version in filenames when possible.
 
