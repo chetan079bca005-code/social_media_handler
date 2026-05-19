@@ -10,6 +10,7 @@
 > **Note**: Update counts after closing or merging fixes.  
 > **Note**: Reconfirm ownership and affected roles for each issue.  
 > **Note**: Assign a clear owner for high-impact bugs to ensure timely follow-up and tracking.  
+> **Note**: Add an SLA/expected response time for high-impact issues where appropriate.  
 > **Note**: Keep issue references synchronized with the latest branch.  
 > **Note**: Cross-check linked files before closing each report.  
 > **Note**: Keep new findings anchored to a reproducible path or input.
