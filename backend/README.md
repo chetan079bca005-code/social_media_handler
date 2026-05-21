@@ -29,6 +29,7 @@ Backend service for authentication, social account integration, content operatio
 - Keep changelog language consistent across docs files.
 - Note: Adding a one-line reproduce command in troubleshooting sections is helpful.
 - Quick note: include a one-line reproduce command for troubleshooting when helpful.
+- Tip: When adding repro steps, prefer a single command example for reproducibility.
 
 ## Backend Docs Reviewer Checklist
 
