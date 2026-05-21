@@ -11,6 +11,7 @@
 - Capture rate-limit headers to help diagnose throttling issues.
 - Example headers to check: `X-RateLimit-Limit`, `X-RateLimit-Remaining`, `Retry-After`.
 - Note: Confirm `Retry-After` units (seconds vs milliseconds) when using provider headers.
+- Tip: Treat `Retry-After` as seconds unless provider docs state otherwise.
 - Record provider request IDs to speed up support escalations.
 - Track token expiry times for proactive refresh handling.
 - Document sandbox vs production app IDs in the runbook.
