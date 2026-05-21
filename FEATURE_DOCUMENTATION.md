@@ -28,8 +28,9 @@ Note: Revalidate the screenshots after visual changes.
 Note: Keep docs-only additions focused on release verification.
 Note: Keep note phrasing consistent across update entries.
 - Recommendation: Add screenshot source filenames to changelog entries when relevant for traceability.
-Note: When saving screenshots, include the release tag in the filename for traceability.
-- Note: Tag screenshots with the release version in filenames when possible.
+-Note: When saving screenshots, include the release tag in the filename for traceability.
+-Note: Use descriptive slugs for screenshot filenames (e.g., `v1.2.0-dashboard-login.png`).
+ - Note: Tag screenshots with the release version in filenames when possible.
 
 ### Backend (9 fixes)
 
