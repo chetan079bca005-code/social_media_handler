@@ -86,6 +86,7 @@ export default defineConfig([
 - Prefer actionable language over broad descriptions.
 - Keep examples realistic and project-specific.
 - Prefer image captions under 10 words for quick readability where screenshots are used.
+- Tip: Keep image captions under 10 words for quick readability.
 - Always include concise image `alt` text for accessibility alongside captions.
 - Avoid duplicating information across sections.
 
