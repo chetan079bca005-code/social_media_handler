@@ -88,6 +88,7 @@ export default defineConfig([
 - Prefer image captions under 10 words for quick readability where screenshots are used.
 - Tip: Keep image captions under 10 words for quick readability.
 - Always include concise image `alt` text for accessibility alongside captions.
+- Keep screenshot captions specific to the UI state being shown.
 - Avoid duplicating information across sections.
 
 ## Safe Docs Commit Message Templates
