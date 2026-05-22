@@ -30,6 +30,7 @@ Backend service for authentication, social account integration, content operatio
 - Note: Adding a one-line reproduce command in troubleshooting sections is helpful.
 - Quick note: include a one-line reproduce command for troubleshooting when helpful.
 - Tip: When adding repro steps, prefer a single command example for reproducibility.
+- Tip: Keep troubleshooting examples free of secrets and real credentials.
 
 ## Backend Docs Reviewer Checklist
 
