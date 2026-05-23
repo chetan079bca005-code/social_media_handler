@@ -14,6 +14,7 @@
 > **Note**: Include a link to a tracking board (e.g., GitHub Project/Issue) for ownership transparency.
 > **Note**: Keep the owner, SLA, and tracking link together in the same follow-up note.
 > **Note**: Keep issue references synchronized with the latest branch.  
+> **Note**: Keep high-impact follow-up notes under one sentence when possible.
 > **Note**: Cross-check linked files before closing each report.  
 > **Note**: Keep new findings anchored to a reproducible path or input.
 > **Note**: Keep newly added notes concise and verifiable.
