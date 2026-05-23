@@ -89,6 +89,7 @@ export default defineConfig([
 - Tip: Keep image captions under 10 words for quick readability.
 - Always include concise image `alt` text for accessibility alongside captions.
 - Keep screenshot captions specific to the UI state being shown.
+- Keep one frontend docs note per bullet to stay review-friendly.
 - Avoid duplicating information across sections.
 
 ## Safe Docs Commit Message Templates
