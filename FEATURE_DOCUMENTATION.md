@@ -32,6 +32,7 @@ Note: Keep note phrasing consistent across update entries.
 -Note: When saving screenshots, include the release tag in the filename for traceability.
 -Note: Use descriptive slugs for screenshot filenames (e.g., `v1.2.0-dashboard-login.png`).
  - Note: Tag screenshots with the release version in filenames when possible.
+- Note: Keep feature docs bullets short enough to scan during release review.
 
 ### Backend (9 fixes)
 
