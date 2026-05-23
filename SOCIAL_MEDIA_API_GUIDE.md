@@ -14,6 +14,7 @@
 - Tip: Treat `Retry-After` as seconds unless provider docs state otherwise.
 - Record provider request IDs to speed up support escalations.
 - Keep rate-limit examples aligned with the provider's current header names.
+- Keep the `X-RateLimit-*` examples grouped together so providers are easier to compare.
 - Track token expiry times for proactive refresh handling.
 - Document sandbox vs production app IDs in the runbook.
 - Confirm webhook retry policies match provider limits.
