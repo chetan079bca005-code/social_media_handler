@@ -90,6 +90,7 @@ export default defineConfig([
 - Always include concise image `alt` text for accessibility alongside captions.
 - Keep screenshot captions specific to the UI state being shown.
 - Keep one frontend docs note per bullet to stay review-friendly.
+- Keep frontend README changes scoped to a single UI note when possible.
 - Avoid duplicating information across sections.
 
 ## Safe Docs Commit Message Templates
