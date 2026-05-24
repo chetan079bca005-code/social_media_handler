@@ -32,6 +32,7 @@ Backend service for authentication, social account integration, content operatio
 - Tip: When adding repro steps, prefer a single command example for reproducibility.
 - Tip: Keep troubleshooting examples free of secrets and real credentials.
 - Tip: Keep one backend docs bullet focused on one verification step.
+- Tip: Pair each backend checklist item with one concrete validation command.
 
 ## Backend Docs Reviewer Checklist
 
