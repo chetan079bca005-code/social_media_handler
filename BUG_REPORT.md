@@ -16,6 +16,7 @@
 > **Note**: Keep issue references synchronized with the latest branch.  
 > **Note**: Keep high-impact follow-up notes under one sentence when possible.
 > **Note**: Keep the tracking board link visible in the first follow-up bullet when possible.
+> **Note**: Keep the first follow-up note short and action-oriented.
 > **Note**: Cross-check linked files before closing each report.  
 > **Note**: Keep new findings anchored to a reproducible path or input.
 > **Note**: Keep newly added notes concise and verifiable.
