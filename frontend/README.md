@@ -92,6 +92,7 @@ export default defineConfig([
 - Keep one frontend docs note per bullet to stay review-friendly.
 - Keep frontend README changes scoped to a single UI note when possible.
 - Tip: Keep frontend docs edits limited to a single screenshot or caption rule.
+- Tip: Keep frontend README notes short enough to scan in one pass.
 - Avoid duplicating information across sections.
 
 ## Safe Docs Commit Message Templates
