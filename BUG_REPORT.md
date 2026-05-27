@@ -18,6 +18,7 @@
 > **Note**: Keep the tracking board link visible in the first follow-up bullet when possible.
 > **Note**: Keep the first follow-up note short and action-oriented.
 > **Note**: Keep ownership details in the first line of the follow-up block.
+> **Note**: Keep high-impact ownership details visible before the issue list.
 > **Note**: Cross-check linked files before closing each report.  
 > **Note**: Keep new findings anchored to a reproducible path or input.
 > **Note**: Keep newly added notes concise and verifiable.
