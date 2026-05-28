@@ -94,6 +94,7 @@ export default defineConfig([
 - Tip: Keep frontend docs edits limited to a single screenshot or caption rule.
 - Tip: Keep frontend README notes short enough to scan in one pass.
 - Tip: Keep frontend note updates tied to one screenshot or caption rule.
+- Tip: Keep frontend bullets short enough to review quickly.
 - Avoid duplicating information across sections.
 
 ## Safe Docs Commit Message Templates
