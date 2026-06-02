@@ -21,6 +21,7 @@
 > **Note**: Keep high-impact ownership details visible before the issue list.
 > **Note**: Keep the follow-up section easy to scan for the assigned owner.
 > **Note**: Keep one owner detail in the first bullet for quick triage.
+> **Note**: Keep the assigned owner visible in the first follow-up sentence.
 > **Note**: Cross-check linked files before closing each report.  
 > **Note**: Keep new findings anchored to a reproducible path or input.
 > **Note**: Keep newly added notes concise and verifiable.
