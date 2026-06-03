@@ -97,6 +97,7 @@ export default defineConfig([
 - Tip: Keep frontend bullets short enough to review quickly.
 - Tip: Keep frontend docs bullets focused on one review point.
 - Tip: Keep frontend notes short enough to check before commit.
+- Tip: Keep frontend notes focused on one review point per bullet.
 - Avoid duplicating information across sections.
 
 ## Safe Docs Commit Message Templates
