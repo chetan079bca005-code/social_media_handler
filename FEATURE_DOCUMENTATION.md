@@ -32,6 +32,7 @@ Note: Keep note phrasing consistent across update entries.
 - Note: Keep screenshot traceability notes next to the screenshot guidance they explain.
 - Note: Keep screenshot traceability notes next to the screenshot guidance they explain.
 - Note: Keep screenshot traceability notes next to the screenshot guidance they explain.
+- Note: Keep screenshot traceability notes next to the screenshot guidance they explain.
 - Note: Keep screenshot traceability notes close to the screenshot section they reference.
 - Note: Keep screenshot traceability notes next to the relevant screenshot guidance.
 - Note: Keep screenshot traceability notes close to the feature they describe.
