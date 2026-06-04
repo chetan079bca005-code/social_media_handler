@@ -23,6 +23,7 @@
 - Tip: Use the same header order in every provider example.
 - Tip: Keep provider rate-limit examples in matching order for quick review.
 - Tip: Keep every provider example ordered the same way for faster comparison.
+- Tip: Keep provider examples aligned so a diff shows only the changed value.
 - Track token expiry times for proactive refresh handling.
 - Document sandbox vs production app IDs in the runbook.
 - Confirm webhook retry policies match provider limits.
