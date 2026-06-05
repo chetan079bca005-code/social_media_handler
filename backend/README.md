@@ -33,6 +33,7 @@ Backend service for authentication, social account integration, content operatio
 - Tip: Keep troubleshooting examples free of secrets and real credentials.
 - Tip: Keep one backend docs bullet focused on one verification step.
 - Tip: Pair each backend checklist item with one concrete validation command.
+- Tip: Keep backend notes short enough for a quick review pass.
 - Tip: Keep backend notes compact enough for a quick pre-push review.
 - Tip: Keep backend notes short enough for a fast review pass.
 - Tip: Keep backend notes short enough for a quick pre-push scan.
