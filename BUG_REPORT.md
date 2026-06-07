@@ -25,6 +25,7 @@
 > **Note**: Keep the owner name near the top of the follow-up block.
 > **Note**: Keep owner details visible without scrolling the follow-up block.
 > **Note**: Keep owner details visible in the first two lines of follow-up notes.
+> **Note**: Keep the assigned owner visible without opening the entire issue.
 > **Note**: Cross-check linked files before closing each report.  
 > **Note**: Keep new findings anchored to a reproducible path or input.
 > **Note**: Keep newly added notes concise and verifiable.
