@@ -29,6 +29,7 @@ Note: Keep docs-only additions focused on release verification.
 Note: Keep note phrasing consistent across update entries.
 - Recommendation: Add screenshot source filenames to changelog entries when relevant for traceability.
 - Note: Keep screenshot traceability notes next to the guidance they explain.
+- Note: Keep screenshot traceability notes next to the guidance they explain.
 - Note: Keep screenshot traceability notes next to the guidance they refer to.
 - Note: Keep screenshot traceability notes next to the screenshot guidance they explain.
 - Note: Keep screenshot traceability notes next to the screenshot guidance they explain.
