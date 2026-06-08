@@ -26,6 +26,7 @@
 - Tip: Keep provider examples aligned so a diff shows only the changed value.
 - Tip: Keep header examples aligned so changes are easy to review in diffs.
 - Tip: Keep API examples aligned so review diffs stay minimal.
+- Tip: Keep API examples short enough to compare at a glance.
 - Track token expiry times for proactive refresh handling.
 - Document sandbox vs production app IDs in the runbook.
 - Confirm webhook retry policies match provider limits.
