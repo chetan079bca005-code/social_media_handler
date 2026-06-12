@@ -27,24 +27,6 @@ Note: Mirror terminology used in the active release notes.
 Note: Revalidate the screenshots after visual changes.
 Note: Keep docs-only additions focused on release verification.
 Note: Keep note phrasing consistent across update entries.
-- Recommendation: Add screenshot source filenames to changelog entries when relevant for traceability.
-- Note: Keep screenshot traceability notes next to the guidance they explain.
-- Note: Keep screenshot traceability notes next to the guidance they explain.
-- Note: Keep screenshot traceability notes next to the guidance they refer to.
-- Note: Keep screenshot traceability notes next to the screenshot guidance they explain.
-- Note: Keep screenshot traceability notes next to the screenshot guidance they explain.
-- Note: Keep screenshot traceability notes next to the screenshot guidance they explain.
-- Note: Keep screenshot traceability notes next to the screenshot guidance they explain.
-- Note: Keep screenshot traceability notes next to the screenshot guidance they explain.
-- Note: Keep screenshot traceability notes close to the screenshot section they reference.
-- Note: Keep screenshot traceability notes next to the relevant screenshot guidance.
-- Note: Keep screenshot traceability notes close to the feature they describe.
-- Reminder: Keep screenshot filenames tied to the release version for easy audit trails.
--Note: When saving screenshots, include the release tag in the filename for traceability.
--Note: Use descriptive slugs for screenshot filenames (e.g., `v1.2.0-dashboard-login.png`).
- - Note: Tag screenshots with the release version in filenames when possible.
-- Note: Keep feature docs bullets short enough to scan during release review.
-- Note: Keep traceability notes near the screenshot guidance they describe.
 
 ### Backend (9 fixes)
 

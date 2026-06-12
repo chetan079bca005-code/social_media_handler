@@ -85,23 +85,6 @@ export default defineConfig([
 - Write short, direct notes that describe intent.
 - Prefer actionable language over broad descriptions.
 - Keep examples realistic and project-specific.
-- Prefer image captions under 10 words for quick readability where screenshots are used.
-- Tip: Keep image captions under 10 words for quick readability.
-- Always include concise image `alt` text for accessibility alongside captions.
-- Keep screenshot captions specific to the UI state being shown.
-- Keep one frontend docs note per bullet to stay review-friendly.
-- Keep frontend README changes scoped to a single UI note when possible.
-- Tip: Keep frontend docs edits limited to a single screenshot or caption rule.
-- Tip: Keep frontend README notes short enough to scan in one pass.
-- Tip: Keep frontend note updates tied to one screenshot or caption rule.
-- Tip: Keep frontend bullets short enough to review quickly.
-- Tip: Keep frontend docs bullets focused on one review point.
-- Tip: Keep frontend notes short enough to check before commit.
-- Tip: Keep frontend notes focused on one review point per bullet.
-- Tip: Keep frontend notes compact enough for a quick commit review.
-- Tip: Keep frontend notes short enough for a fast pass review.
-- Tip: Keep frontend notes short enough to skim during review.
-- Tip: Keep frontend notes compact enough for a quick push review.
 - Avoid duplicating information across sections.
 
 ## Safe Docs Commit Message Templates

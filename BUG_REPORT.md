@@ -9,30 +9,12 @@
 > **Note**: Rebaseline any metrics used to rank issue impact.  
 > **Note**: Update counts after closing or merging fixes.  
 > **Note**: Reconfirm ownership and affected roles for each issue.  
-> **Note**: Assign a clear owner for high-impact bugs to ensure timely follow-up and tracking.  
-> **Note**: Add an SLA/expected response time for high-impact issues where appropriate.  
-> **Note**: Include a link to a tracking board (e.g., GitHub Project/Issue) for ownership transparency.
-> **Note**: Keep the owner, SLA, and tracking link together in the same follow-up note.
 > **Note**: Keep issue references synchronized with the latest branch.  
-> **Note**: Keep high-impact follow-up notes under one sentence when possible.
-> **Note**: Keep the tracking board link visible in the first follow-up bullet when possible.
-> **Note**: Keep the first follow-up note short and action-oriented.
-> **Note**: Keep ownership details in the first line of the follow-up block.
-> **Note**: Keep high-impact ownership details visible before the issue list.
-> **Note**: Keep the follow-up section easy to scan for the assigned owner.
-> **Note**: Keep one owner detail in the first bullet for quick triage.
-> **Note**: Keep the assigned owner visible in the first follow-up sentence.
-> **Note**: Keep the owner name near the top of the follow-up block.
-> **Note**: Keep owner details visible without scrolling the follow-up block.
-> **Note**: Keep owner details visible in the first two lines of follow-up notes.
-> **Note**: Keep the assigned owner visible without opening the entire issue.
-> **Note**: Keep owner details in the first summary sentence for fast triage.
 > **Note**: Cross-check linked files before closing each report.  
 > **Note**: Keep new findings anchored to a reproducible path or input.
 > **Note**: Keep newly added notes concise and verifiable.
 > **Total Issues Found**: 54 (6 Critical, 13 High, 20 Medium, 15 Low)
 
-eeee hello
 ---
 
 ## Table of Contents
