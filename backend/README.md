@@ -321,7 +321,6 @@ Backend service for authentication, social account integration, content operatio
 
 
 
-## Backend Contribution Pulse Y
 
 - Date: 2026-04-06
 - Scope: backend README only
