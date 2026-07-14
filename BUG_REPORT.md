@@ -31,7 +31,7 @@
 
 ## 1. Critical Issues
 
-**Last Verified**: May 9, 2026
+**Last Verified**: May 9, 20
 
 ### BUG-001: AI Usage Tracking Passes Workspace ID Instead of User ID
 - **File**: `backend/src/controllers/ai.controller.ts` (line ~30)
