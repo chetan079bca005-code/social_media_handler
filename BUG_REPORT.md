@@ -27,8 +27,6 @@
 6. [Solution Manual](#6-solution-manual)
 7. [New Features Applied](#7-new-features-applied)
 
-
-
 ## 1. Critical Issues
 
 **Last Verified**:
