@@ -56,7 +56,7 @@
 - **File**: `backend/src/routes/social-account.routes.ts` (line 22) vs `backend/src/controllers/social-account.controller.ts` (line 52)
 - **Description**: Zod schema validates `accountAvatarUrl` but controller destructures `profileImageUrl`. Since `schema.parse()` strips unknown fields, profile image URL is always `undefined`.
 - **Impact**: Profile images for social accounts can never be set through the API
-- **Solution**: Align field names between Zod schema and
+- **Solution**: Align field names between Zod schema 
 ### BUG-006: User Update Sets Non-Existent Prisma Fields
 - **File**: `backend/src/services/user.service.ts` (lines 59-65)
 - **Description**: Sets `updateData.timezone` and `updateData.language` but the `User` model has no `timezone` or `language` columns — only a `preferences` JSON field.
